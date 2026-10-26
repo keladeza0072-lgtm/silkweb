@@ -95,6 +95,56 @@ describe('booking-slot-guard@0.1.0', () => {
     );
   });
 
+  it('rejects rephrased duplicate instants instead of double-booking', () => {
+    createBooking(a, { staffId: 1, serviceId: 1, startTime: '2026-11-01T09:30:00.000Z' });
+    // Same instant in non-canonical spellings: validation refuses them, so
+    // the uniqueness invariant is never at risk and nothing is stored.
+    for (const startTime of [
+      '2026-11-01T09:30:00Z',
+      '2026-11-01T09:30:00.000+00:00',
+      '2026-11-01T11:30:00.000+02:00',
+      '2026-11-01T09:30:00.000',
+    ]) {
+      assert.throws(
+        () => createBooking(b, { staffId: 1, serviceId: 1, startTime }),
+        (error) => error instanceof BookingValidationError && error.code === 'BOOKING_VALIDATION_ERROR',
+        `expected validation rejection of ${startTime}`,
+      );
+    }
+    const count = b.prepare(`SELECT COUNT(*) AS c FROM appointments`).get();
+    assert.equal(count.c, 1);
+  });
+
+  it('refuses bookings against legacy non-30-minute services', () => {
+    // Prototype migration case: a database created before the services
+    // CHECK required exactly 30 minutes may still hold a 45-minute row.
+    // Bookings against it fail predictably instead of creating overlaps.
+    const legacyDir = mkdtempSync(join(SCRATCH, 'silkweb-slot-legacy-'));
+    const legacyFile = join(legacyDir, 'bookings.db');
+    const legacy = new DatabaseSync(legacyFile);
+    try {
+      legacy.exec(`CREATE TABLE staff (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL)`);
+      legacy.exec(
+        `CREATE TABLE services (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, duration_minutes INTEGER NOT NULL CHECK (duration_minutes > 0))`,
+      );
+      legacy.exec(
+        `CREATE TABLE appointments (id INTEGER PRIMARY KEY AUTOINCREMENT, staff_id INTEGER NOT NULL, service_id INTEGER NOT NULL, start_time TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'active')`,
+      );
+      legacy.prepare(`INSERT INTO staff (name) VALUES ('Ava')`).run();
+      legacy.prepare(`INSERT INTO services (name, duration_minutes) VALUES ('Long Cut', 45)`).run();
+      createBookingSchema(legacy);
+      assert.throws(
+        () => createBooking(legacy, { staffId: 1, serviceId: 1, startTime: '2026-11-01T09:00:00.000Z' }),
+        (error) => error instanceof BookingReferenceError && error.code === 'BOOKING_REFERENCE_ERROR',
+      );
+      const count = legacy.prepare(`SELECT COUNT(*) AS c FROM appointments`).get();
+      assert.equal(count.c, 0);
+    } finally {
+      legacy.close();
+      rmSync(legacyDir, { recursive: true, force: true });
+    }
+  });
+
   it('rejects invalid input and unknown staff/service references', () => {
     assert.throws(
       () => createBooking(a, { staffId: 1, serviceId: 1, startTime: '2026-11-01T09:15:00.000Z' }),

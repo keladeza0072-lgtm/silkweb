@@ -6,7 +6,8 @@ import { parseBookingInput, type BookingInput } from './validation.js';
  * booking-slot-guard@0.1.0 — transactional booking creation.
  *
  * Each booking runs in its own `BEGIN IMMEDIATE` transaction: validation
- * first, then an existence check on staff/service, then the insert. A
+ * first, then an existence check on staff/service (including the MVP
+ * fixed-30-minute service duration), then the insert. A
  * conflicting active reservation for the same staff member at the same
  * start time violates the database partial unique index
  * (`appointments_active_slot_unique`) and surfaces as a SlotConflictError;
@@ -64,7 +65,8 @@ function isUniqueViolation(error: unknown): boolean {
 
 /**
  * Create one active booking. Throws BookingValidationError (bad input),
- * BookingReferenceError (unknown staff/service), or SlotConflictError
+ * BookingReferenceError (unknown staff/service, or a service whose
+ * duration is not exactly 30 minutes), or SlotConflictError
  * (active reservation already holds the staff/time slot).
  */
 export function createBooking(db: DatabaseSync, raw: unknown): AppointmentRow {
@@ -78,10 +80,19 @@ export function createBooking(db: DatabaseSync, raw: unknown): AppointmentRow {
       throw new BookingReferenceError(`unknown staff id: ${input.staffId}`);
     }
     const service = db
-      .prepare('SELECT id FROM services WHERE id = ?')
-      .get(input.serviceId) as { id: number } | undefined;
+      .prepare('SELECT id, duration_minutes FROM services WHERE id = ?')
+      .get(input.serviceId) as { id: number; duration_minutes: number } | undefined;
     if (!service) {
       throw new BookingReferenceError(`unknown service id: ${input.serviceId}`);
+    }
+    // Defense in depth for databases created before the services CHECK
+    // required exactly 30 minutes: refuse bookings against legacy
+    // variable-duration services, since the MVP slot model assumes every
+    // appointment occupies exactly one fixed 30-minute slot.
+    if (service.duration_minutes !== 30) {
+      throw new BookingReferenceError(
+        `service ${input.serviceId} has unsupported duration_minutes ${service.duration_minutes}: MVP supports fixed 30-minute slots only`,
+      );
     }
     try {
       const result = db

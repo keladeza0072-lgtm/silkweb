@@ -8,7 +8,7 @@
   "capabilities": ["booking-validation", "slot-constraints"],
   "invariants": [
     "staffId and serviceId must be positive integers.",
-    "startTime must be a parseable UTC ISO-8601 timestamp.",
+    "startTime must be the strict canonical UTC form YYYY-MM-DDTHH:mm:00.000Z for a real calendar date; numeric timezone offsets, missing or non-Z timezone markers, non-canonical fractional seconds, non-ISO strings and unreal dates are rejected.",
     "startTime must fall exactly on a 30-minute boundary (minutes 00 or 30, zero seconds and milliseconds).",
     "All failures throw BookingValidationError with code BOOKING_VALIDATION_ERROR."
   ],

@@ -7,6 +7,9 @@
   "invariants": [
     "Tables staff, services and appointments exist after createBookingSchema.",
     "At most one active appointment per (staff_id, start_time), enforced by partial unique index appointments_active_slot_unique.",
+    "appointments.start_time must already be the canonical UTC form YYYY-MM-DDTHH:mm:00.000Z for a real date on a 30-minute boundary (CHECK constraint), so rephrased duplicate instants are rejected even by direct SQL writes.",
+    "services.duration_minutes must be exactly 30 (CHECK constraint); variable-duration services are out of scope for the MVP.",
+    "Schema changes are prototype changes with no ALTER migration: existing databases must be recreated from scratch to gain new CHECK constraints.",
     "Cancelled appointments are excluded from the uniqueness index and may be rebooked.",
     "createBookingSchema is idempotent (CREATE TABLE/INDEX IF NOT EXISTS)."
   ],

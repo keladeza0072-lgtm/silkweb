@@ -9,7 +9,8 @@
   "capabilities": ["booking-creation", "slot-guard", "booking-cancellation"],
   "invariants": [
     "Booking creation runs in a BEGIN IMMEDIATE transaction and rolls back on any failure.",
-    "A second active booking for the same staff member at the same start time always fails with SlotConflictError (code SLOT_CONFLICT).",
+    "A second active booking for the same staff member at the same start time always fails with SlotConflictError (code SLOT_CONFLICT); non-canonical rephrasings of the same instant are rejected earlier by validation.",
+    "Bookings against services whose duration is not exactly 30 minutes fail with BookingReferenceError (code BOOKING_REFERENCE_ERROR); variable-duration services are out of scope for the MVP.",
     "Different staff members may hold active bookings at the same start time.",
     "Cancelling an active booking frees the slot for rebooking; cancelling an unknown or already-cancelled booking fails predictably.",
     "Concurrency claim is limited to sequential same-process checks: no genuine simultaneous-race test is claimed."
