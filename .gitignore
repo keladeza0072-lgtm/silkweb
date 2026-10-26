@@ -8,6 +8,7 @@ node_modules/
 *.db-*
 *.sqlite
 *.sqlite-*
+packages/registry/tests/tmp/
 .DS_Store
 experiments/runs/*.jsonl
 experiments/runs/*.log

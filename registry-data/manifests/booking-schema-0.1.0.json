@@ -1,0 +1,23 @@
+{
+  "id": "booking-schema",
+  "version": "0.1.0",
+  "sourcePath": "packages/registry/src/schema.ts",
+  "dependencies": [],
+  "capabilities": ["booking-schema", "sqlite-ddl"],
+  "invariants": [
+    "Tables staff, services and appointments exist after createBookingSchema.",
+    "At most one active appointment per (staff_id, start_time), enforced by partial unique index appointments_active_slot_unique.",
+    "Cancelled appointments are excluded from the uniqueness index and may be rebooked.",
+    "createBookingSchema is idempotent (CREATE TABLE/INDEX IF NOT EXISTS)."
+  ],
+  "runtime": {
+    "stack": "node24+sqlite",
+    "node": ">=24",
+    "dependencies": {}
+  },
+  "verification": {
+    "status": "unverified",
+    "testCommand": "cd packages/registry && npm run check",
+    "evidence": "No passing test run tied to a source hash has been recorded yet; status must remain unverified until then."
+  }
+}
