@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 
 const entry = fileURLToPath(new URL('../apps/mcp-server/dist/index.js', import.meta.url));
 const config = {
+  schema_version: 1,
   mcp_servers: {
     silkweb: {
       transport: 'stdio',
