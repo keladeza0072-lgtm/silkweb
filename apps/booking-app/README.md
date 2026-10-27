@@ -17,8 +17,14 @@ can create and cancel bookings.
 
 ## Install, build, test, run
 
+Build prerequisite: the app reuses the certified registry's compiled
+output, so build it first (from the repository root):
+
 ```powershell
-cd apps/booking-app
+cd packages/registry
+npm install
+npm run build
+cd ../../apps/booking-app
 npm install
 npm run build
 npm test
