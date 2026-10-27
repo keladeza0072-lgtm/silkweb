@@ -73,29 +73,46 @@ until a human runs the steps below and records real evidence.
 
 - Fingerprint: deterministic SHA-256 over the component's manifest
   identity/functional metadata, the source bytes of its transitive
-  dependency closure, the covering test files, the package lockfile, and
-  the declared environment (`package.json`). File paths are repo-relative
-  and sorted; entries are null-framed; metadata is canonical JSON.
-  Mutable verification results are excluded (hashing them would be
-  circular), as are actual runtime versions (recorded in evidence instead,
-  so the same tree hashes identically on any machine).
+  dependency closure plus every shared local module in the explicit
+  `COMPONENT_EXTRA_SOURCES` map (e.g. `src/manifest.ts` for
+  registry-loader; local-import scanning fails closed with
+  `INCOMPLETE_SOURCE_MAP` if the map misses one), the covering test
+  files, the package lockfile, the declared environment (`package.json`),
+  and the compiler configuration (`tsconfig.json`, section `build`).
+  File paths are repo-relative and sorted; entries are null-framed;
+  metadata is canonical JSON. Mutable verification results are excluded
+  (hashing them would be circular), as are actual runtime versions
+  (recorded in evidence instead, so the same tree hashes identically on
+  any machine).
 - Evidence: a JSON record (`registry-data/evidence/<id>-<version>.json`,
   schema version 1) with component id/version, artifact fingerprint plus
-  per-section hashes, exact test command, exit code, outcome, Node/SQLite
-  versions, timestamp, scope, and limitations. Written only by the runner
-  after it really executes a command; failures are preserved as failures.
+  per-section hashes, the exact test command and the test files it
+  actually executed, the bounded fresh-build command plus SHA-256 of
+  every compiled artifact the tests ran, exit code, outcome,
+  Node/SQLite versions, timestamp, scope, and limitations. Written only
+  by the runner after it really executes a command; failures are
+  preserved as failures.
 - Runner: executes ONLY fixed argv arrays from the explicit allowlist
-  `TEST_COMMAND_ALLOWLIST` with no shell. A manifest's `testCommand`
-  string is never executed. Only exit code 0 is recorded as a pass.
-  `NODE_TEST_*` markers are scrubbed so a nested `node --test` child
-  cannot report success for failing tests.
+  `TEST_COMMAND_ALLOWLIST` with no shell and a bounded timeout — a
+  fresh `tsc` build first, then the tests against that build, so changed
+  TypeScript can never be certified with stale compiled output. A failed
+  build, missing build output, or scope violation throws without writing
+  evidence. The explicit `COMPONENT_ALLOWED_COMMANDS` map decides which
+  test commands may certify which component (booking components never
+  pass on loader-only tests). A manifest's `testCommand` string is never
+  executed. Only exit code 0 is recorded as a pass. `NODE_TEST_*`
+  markers are scrubbed so a nested `node --test` child cannot report
+  success for failing tests.
 - Validation: recomputes fingerprints from the current checkout, resolves
   the dependency closure, checks declared dependencies against the
   lockfile, and requires schema-valid evidence with a passing outcome for
-  an allowlisted command. Anything missing, mismatched, or stale fails
-  closed. `selectVerifiedManifests` is the verified-only entry point: a
-  manifest that merely says `"verified"` without valid evidence is
-  rejected with an explicit reason, never silently accepted.
+  an allowlisted command that the component-to-test mapping allows for
+  this component, naming exactly the executed tests and covering the
+  component's scope. Every recorded build artifact must still be
+  byte-identical. Anything missing, mismatched, or stale fails closed.
+  `selectVerifiedManifests` is the verified-only entry point: a manifest
+  that merely says `"verified"` without valid evidence is rejected with
+  an explicit reason, never silently accepted.
 
 How a human reproduces verification (no secrets, no network, no paid
 calls):

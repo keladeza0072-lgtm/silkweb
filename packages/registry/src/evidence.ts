@@ -20,10 +20,26 @@ const testScopeSchema = z.strictObject({
   command: z.string().min(1),
   /** Allowlist key that produced the command (never a manifest string). */
   commandKey: z.string().min(1),
-  /** Repo-relative test files hashed into the fingerprint (exact scope). */
+  /** Repo-relative test files the command actually executed (exact scope). */
   files: z.array(z.string().min(1)),
   /** Known limitations of the recorded run (sequential, same-process, …). */
   limitations: z.string().min(1),
+});
+
+const buildScopeSchema = z.strictObject({
+  /**
+   * Human-reproducible build command string that produced the executed
+   * artifacts (an allowlist entry's fixed build argv, run from its
+   * cwdRel), or "none" when the test command needs no build.
+   */
+  command: z.string().min(1),
+  /** SHA-256 of every compiled artifact the tests executed, sorted by file. */
+  artifacts: z.array(
+    z.strictObject({
+      file: z.string().min(1),
+      sha256: z.string().regex(/^[0-9a-f]{64}$/),
+    }),
+  ),
 });
 
 export const evidenceSchema = z.strictObject({
@@ -37,8 +53,10 @@ export const evidenceSchema = z.strictObject({
     tests: z.string().regex(/^[0-9a-f]{64}$/),
     lockfile: z.string().regex(/^[0-9a-f]{64}$/),
     environment: z.string().regex(/^[0-9a-f]{64}$/),
+    build: z.string().regex(/^[0-9a-f]{64}$/),
   }),
   testScope: testScopeSchema,
+  build: buildScopeSchema,
   exitCode: z.number().int(),
   outcome: z.enum(['pass', 'fail']),
   nodeVersion: z.string().min(1),

@@ -1,14 +1,16 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import {
   LOCKFILE_REL,
+  closureTestFiles,
   computeArtifactFingerprint,
   indexManifests,
   resolveClosure,
   resolveRepoPath,
+  sha256Hex,
   FingerprintError,
 } from './fingerprint.js';
 import { EVIDENCE_SCHEMA_VERSION, resolveEvidencePath, readEvidenceFile, EvidenceError } from './evidence.js';
-import { TEST_COMMAND_ALLOWLIST } from './runner.js';
+import { COMPONENT_ALLOWED_COMMANDS, TEST_COMMAND_ALLOWLIST } from './runner.js';
 import type { RegistryManifest } from './manifest.js';
 
 /**
@@ -21,8 +23,14 @@ import type { RegistryManifest } from './manifest.js';
  * - a schema-valid evidence file exists for the exact id@version
  * - the evidence records an actual passing run (outcome "pass", exit 0)
  *   of a command from the explicit test-command allowlist
- * - the evidence fingerprint (per section) matches a fresh recomputation
- *   from current repository files
+ * - the recorded command is allowed for this component by the explicit
+ *   component-to-test mapping, names exactly the tests it executed,
+ *   and covers the component's test scope
+ * - the evidence fingerprint (per section, including shared sources and
+ *   compiler configuration) matches a fresh recomputation from current
+ *   repository files
+ * - every recorded build artifact is still byte-identical in the
+ *   current checkout (mapped components must record artifacts)
  * - the recorded runtime satisfies the manifest's declared Node requirement
  *
  * The manifest's own `verification.status` is NEVER trusted: a
@@ -34,8 +42,13 @@ import type { RegistryManifest } from './manifest.js';
 export interface ValidationOptions {
   /** Repo-relative directory holding real evidence records. */
   evidenceDir: string;
-  /** Explicit allowlist the evidence command must belong to. */
-  allowlist?: Record<string, { command: string }>;
+  /**
+   * Explicit allowlist the evidence command must belong to. Entries
+   * may declare the test files they execute and the build command
+   * that produced the artifacts; entries without them keep the
+   * legacy check (evidence files must equal the closure test scope).
+   */
+  allowlist?: Record<string, { command: string; testFiles?: readonly string[]; build?: { command: string } }>;
 }
 
 export interface ComponentValidation {
@@ -176,7 +189,8 @@ export function validateComponent(
     );
   }
 
-  // 6. The recorded command must be a current allowlist member, exactly.
+  // 6. The recorded command must be a current allowlist member, exactly,
+  // and the component-to-test mapping must allow it for this component.
   const allowlist = options.allowlist ?? TEST_COMMAND_ALLOWLIST;
   const allowed = allowlist[evidence.testScope.commandKey];
   if (!allowed || allowed.command !== evidence.testScope.command) {
@@ -186,8 +200,54 @@ export function validateComponent(
       `Evidence test command ${JSON.stringify(evidence.testScope.command)} (key ${JSON.stringify(evidence.testScope.commandKey)}) is not an allowlisted repository-owned test command; manifest-supplied commands are never trusted.`,
     );
   }
+  const mapped = COMPONENT_ALLOWED_COMMANDS[manifest.id];
+  if (mapped !== undefined && !mapped.includes(evidence.testScope.commandKey)) {
+    return fail(
+      manifest,
+      'WRONG_TEST_SCOPE',
+      `Evidence test command ${JSON.stringify(evidence.testScope.commandKey)} cannot certify ${manifest.id}@${manifest.version} ` +
+        `(allowed: ${mapped.map((key) => JSON.stringify(key)).join(', ')}). ` +
+        `A component must be verified with tests that actually cover it — booking components never pass on loader-only tests.`,
+    );
+  }
 
-  // 7. Fingerprint recomputed from the current checkout must match.
+  // 7. The recorded test files must be exactly what the allowlisted
+  // command executes, and they must cover the component's test scope.
+  // (Entries without declared testFiles keep the legacy check: the
+  // evidence must name the closure's test files exactly.)
+  let closureTests: string[];
+  try {
+    closureTests = closureTestFiles(manifest, allManifests);
+  } catch (error: unknown) {
+    const code = error instanceof FingerprintError ? error.code : 'DEPENDENCY_ERROR';
+    return fail(manifest, code, `Cannot resolve test scope of ${manifest.id}@${manifest.version}: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  const declaredTestFiles = [...(allowed.testFiles ?? closureTests)].sort();
+  if (JSON.stringify([...evidence.testScope.files].sort()) !== JSON.stringify(declaredTestFiles)) {
+    return fail(
+      manifest,
+      'STALE_TEST_SCOPE',
+      `Evidence test scope [${evidence.testScope.files.join(', ')}] differs from what ${JSON.stringify(evidence.testScope.commandKey)} executes [${declaredTestFiles.join(', ')}].`,
+    );
+  }
+  const uncovered = closureTests.filter((file) => !evidence.testScope.files.includes(file));
+  if (uncovered.length > 0) {
+    return fail(
+      manifest,
+      'WRONG_TEST_SCOPE',
+      `Evidence test scope [${evidence.testScope.files.join(', ')}] does not cover ${manifest.id}@${manifest.version} (missing ${uncovered.map((file) => JSON.stringify(file)).join(', ')}).`,
+    );
+  }
+  const expectedBuildCommand = allowed.build?.command ?? 'none';
+  if (evidence.build.command !== expectedBuildCommand) {
+    return fail(
+      manifest,
+      'STALE_TEST_SCOPE',
+      `Evidence build command ${JSON.stringify(evidence.build.command)} differs from the allowlisted build ${JSON.stringify(expectedBuildCommand)} for ${JSON.stringify(evidence.testScope.commandKey)}.`,
+    );
+  }
+
+  // 8. Fingerprint recomputed from the current checkout must match.
   let computed;
   try {
     computed = computeArtifactFingerprint(repoRoot, manifest, allManifests);
@@ -207,16 +267,61 @@ export function validateComponent(
         `Re-run verification to refresh evidence; stale passes are not trusted.`,
     );
   }
-  const currentTestFiles = computed.files.filter((file) => file.includes('/tests/')).sort();
-  if (JSON.stringify([...evidence.testScope.files].sort()) !== JSON.stringify(currentTestFiles)) {
-    return fail(
-      manifest,
-      'STALE_TEST_SCOPE',
-      `Evidence test scope [${evidence.testScope.files.join(', ')}] differs from the current scope [${currentTestFiles.join(', ')}].`,
-    );
+
+  // 9. The executed build artifacts must still be byte-identical.
+  // Components with an explicit test mapping always record artifacts;
+  // evidence without them is missing its executable binding.
+  if (evidence.build.artifacts.length === 0) {
+    if (mapped !== undefined) {
+      return fail(
+        manifest,
+        'MISSING_BUILD_ARTIFACTS',
+        `Evidence for ${manifest.id}@${manifest.version} binds no executed build artifacts; ` +
+          `only a fresh-build verification run can certify this component.`,
+      );
+    }
+  } else {
+    const seen = new Set<string>();
+    for (const artifact of evidence.build.artifacts) {
+      if (seen.has(artifact.file)) {
+        return fail(
+          manifest,
+          'INVALID_EVIDENCE',
+          `Evidence lists build artifact ${JSON.stringify(artifact.file)} more than once.`,
+        );
+      }
+      seen.add(artifact.file);
+      let data: Buffer;
+      try {
+        const absolute = resolveRepoPath(repoRoot, artifact.file);
+        const stat = statSync(absolute);
+        if (!stat.isFile()) {
+          return fail(
+            manifest,
+            'STALE_ARTIFACT',
+            `Executed build artifact ${JSON.stringify(artifact.file)} is missing from the current checkout; re-run verification to rebuild it.`,
+          );
+        }
+        data = readFileSync(absolute);
+      } catch (error: unknown) {
+        return fail(
+          manifest,
+          'STALE_ARTIFACT',
+          `Cannot read executed build artifact ${JSON.stringify(artifact.file)}: ${String(error)}`,
+        );
+      }
+      if (sha256Hex(data) !== artifact.sha256) {
+        return fail(
+          manifest,
+          'STALE_ARTIFACT',
+          `Executed build artifact ${JSON.stringify(artifact.file)} changed after the verification run; ` +
+            `the recorded tests did not execute this file. Re-run verification to rebuild and re-test.`,
+        );
+      }
+    }
   }
 
-  // 8. Recorded runtime must satisfy the declared Node requirement.
+  // 10. Recorded runtime must satisfy the declared Node requirement.
   const required = requiredNodeMajor(manifest.runtime.node);
   const actual = nodeMajor(evidence.nodeVersion);
   if (required !== undefined && (actual === undefined || actual < required)) {

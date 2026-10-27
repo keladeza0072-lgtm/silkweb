@@ -34,6 +34,8 @@ export {
 export {
   LOCKFILE_REL,
   PACKAGE_JSON_REL,
+  TSCONFIG_REL,
+  COMPONENT_EXTRA_SOURCES,
   FingerprintError,
   assertSafeRepoRelPath,
   resolveRepoPath,
@@ -42,6 +44,10 @@ export {
   indexManifests,
   resolveClosure,
   testFilesFor,
+  extraSourcesFor,
+  localSourceImports,
+  sourceFilesForComponent,
+  closureTestFiles,
   computeArtifactFingerprint,
   type FingerprintSections,
   type ArtifactFingerprint,
@@ -59,8 +65,12 @@ export {
 } from './evidence.js';
 export {
   TEST_COMMAND_ALLOWLIST,
+  BUILD_OUTPUTS,
+  COMPONENT_ALLOWED_COMMANDS,
+  allowedCommandsFor,
   RunnerError,
   runVerification,
+  type AllowedBuild,
   type AllowedTestCommand,
   type RunVerificationOptions,
   type VerificationRun,
