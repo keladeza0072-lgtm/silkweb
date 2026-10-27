@@ -1,0 +1,388 @@
+import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { after, describe, it } from 'node:test';
+import { Client } from '@modelcontextprotocol/client';
+import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
+import {
+  assertServableSourcePath,
+  discoverRepoRoot,
+  isTrusted,
+  searchTrusted,
+  sourceTrustedComponent,
+} from '../dist/librarian.js';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const serverFile = join(here, '..', 'dist', 'index.js');
+const repoRoot = dirname(dirname(dirname(here)));
+const realManifestDir = join(repoRoot, 'registry-data', 'manifests');
+
+const textOf = (result) => result.content.find((block) => block.type === 'text')?.text ?? '';
+
+async function withClient(env, fn) {
+  const client = new Client({ name: 'silkweb-librarian-test', version: '0.1.0' });
+  const transport = new StdioClientTransport({
+    command: process.execPath,
+    args: [serverFile],
+    env: { ...process.env, ...env },
+  });
+  await client.connect(transport);
+  try {
+    return await fn(client);
+  } finally {
+    await client.close();
+  }
+}
+
+async function callOk(client, name, args) {
+  const result = await client.callTool({ name, arguments: args });
+  assert.notEqual(result.isError, true, `${name} returned an error: ${textOf(result).slice(0, 300)}`);
+  return JSON.parse(textOf(result));
+}
+
+async function callErr(client, name, args) {
+  const result = await client.callTool({ name, arguments: args });
+  assert.equal(result.isError, true, `${name} should have failed closed`);
+  return textOf(result);
+}
+
+function readManifest(id, version) {
+  return JSON.parse(readFileSync(join(realManifestDir, `${id}-${version}.json`), 'utf8'));
+}
+
+const scratchRoot = join(here, 'tmp');
+mkdirSync(scratchRoot, { recursive: true });
+const scratchDirs = [];
+after(() => {
+  for (const dir of scratchDirs) rmSync(dir, { recursive: true, force: true });
+});
+
+function scratchDir(prefix) {
+  const dir = mkdtempSync(join(scratchRoot, `${prefix}-`));
+  scratchDirs.push(dir);
+  return dir;
+}
+
+function fixtureManifestDir(mutants) {
+  const dir = scratchDir('fixture');
+  for (const [name, manifest] of Object.entries(mutants)) {
+    writeFileSync(join(dir, name), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  }
+  return dir;
+}
+
+describe('librarian trust gate (unit)', () => {
+  it('requires verified status AND valid evidence together', () => {
+    const verified = { verification: { status: 'verified' } };
+    const unverified = { verification: { status: 'unverified' } };
+    assert.equal(isTrusted(verified, { valid: true }), true);
+    // Evidence-valid but declaratively unverified: never trusted.
+    assert.equal(isTrusted(unverified, { valid: true }), false);
+    assert.equal(isTrusted(verified, { valid: false }), false);
+    assert.equal(isTrusted(unverified, { valid: false }), false);
+  });
+
+  it('resolves the repo root independently of the caller working directory', () => {
+    const serverDir = join(repoRoot, 'apps', 'mcp-server', 'dist');
+    const previous = process.cwd();
+    process.chdir(tmpdir());
+    try {
+      assert.equal(discoverRepoRoot(serverDir), repoRoot);
+    } finally {
+      process.chdir(previous);
+    }
+  });
+
+  it('rejects unsafe and held-out source paths', () => {
+    assert.equal(assertServableSourcePath('packages/registry/src/schema.ts'), 'packages/registry/src/schema.ts');
+    for (const bad of [
+      '../experiments/harness/secret.ts',
+      '/absolute/path.ts',
+      'C:/windows/path.ts',
+      'packages/registry/src/../../experiments/harness/x.ts',
+      'experiments/harness/steal.ts',
+      'packages/harness/helper.ts',
+      '',
+    ]) {
+      assert.throws(() => assertServableSourcePath(bad), /Refusing/, `should refuse ${JSON.stringify(bad)}`);
+    }
+  });
+
+  it('search filters deterministically without touching the registry', () => {
+    const selection = {
+      trusted: [
+        {
+          id: 'b-comp', version: '0.1.0', capabilities: ['slot-guard'],
+          runtime: { stack: 'node24+sqlite' }, invariants: ['Second invariant text.'],
+        },
+        {
+          id: 'a-comp', version: '0.1.0', capabilities: ['slot-guard', 'extra'],
+          runtime: { stack: 'other' }, invariants: ['First invariant text.'],
+        },
+      ],
+      rejected: [],
+    };
+    const all = searchTrusted(selection, {});
+    assert.deepEqual(all.components.map((c) => c.id), ['a-comp', 'b-comp']);
+    assert.equal(searchTrusted(selection, { stack: 'other' }).components.length, 1);
+    assert.equal(searchTrusted(selection, { capabilities: ['slot-guard', 'extra'] }).components.length, 1);
+    assert.equal(searchTrusted(selection, { query: 'SECOND' }).components[0].id, 'b-comp');
+    assert.equal(searchTrusted(selection, { query: 'no-such-text' }).components.length, 0);
+    assert.equal(searchTrusted(selection, { limit: 1 }).components.length, 1);
+  });
+
+  it('bounds source payloads and refuses unlisted files', () => {
+    const dir = scratchDir('src');
+    mkdirSync(join(dir, 'docs'), { recursive: true });
+    writeFileSync(join(dir, 'docs', 'a.ts'), 'x'.repeat(5000), 'utf8');
+    const manifest = {
+      id: 'demo', version: '0.1.0', verification: { status: 'verified' },
+    };
+    const selection = {
+      repoRoot: dir,
+      all: [manifest],
+      lib: {
+        validateComponent: () => ({ valid: true, code: 'OK', reason: 'ok' }),
+        sourceFilesForComponent: () => ['docs/a.ts'],
+      },
+    };
+    const full = sourceTrustedComponent(selection, 'demo', '0.1.0', {});
+    assert.equal(full.files.length, 1);
+    assert.equal(full.files[0].truncated, false);
+    const bounded = sourceTrustedComponent(selection, 'demo', '0.1.0', { maxBytesPerFile: 100, maxTotalBytes: 100 });
+    assert.equal(bounded.files[0].truncated, true);
+    assert.ok(bounded.files[0].content.length < 5000);
+    assert.deepEqual(
+      sourceTrustedComponent(selection, 'demo', '0.1.0', { maxBytesPerFile: 10 ** 9, maxTotalBytes: 10 ** 9 }).files[0].content.length,
+      5000,
+      'caller budgets are clamped to hard caps, not honored blindly',
+    );
+    const evil = {
+      ...selection,
+      lib: {
+        validateComponent: () => ({ valid: true, code: 'OK', reason: 'ok' }),
+        sourceFilesForComponent: () => ['../experiments/harness/steal.ts'],
+      },
+    };
+    assert.throws(() => sourceTrustedComponent(evil, 'demo', '0.1.0', {}), /Refusing/);
+  });
+});
+
+const REAL_COMPONENTS = [
+  'booking-schema@0.1.0',
+  'booking-slot-guard@0.1.0',
+  'booking-validation@0.1.0',
+  'registry-loader@0.1.0',
+];
+
+describe('librarian MCP tools against the certified registry', () => {
+  it('lists ping plus the three librarian tools', async () => {
+    await withClient({}, async (client) => {
+      const listed = await client.listTools();
+      const names = listed.tools.map((tool) => tool.name).sort();
+      assert.deepEqual(names, [
+        'get_verified_component_source',
+        'inspect_verified_component',
+        'ping',
+        'search_verified_components',
+      ]);
+    });
+  });
+
+  it('discovers all four certified components with exact id/version', async () => {
+    await withClient({}, async (client) => {
+      const result = await callOk(client, 'search_verified_components', {});
+      assert.equal(result.totalTrusted, 4);
+      assert.deepEqual(result.components.map((c) => `${c.id}@${c.version}`), REAL_COMPONENTS);
+      for (const component of result.components) {
+        assert.ok(component.capabilities.length > 0);
+        assert.equal(component.stack, 'node24+sqlite');
+        assert.ok(component.summary.length > 0);
+      }
+      assert.deepEqual(result.rejected, []);
+    });
+  });
+
+  it('filters by capabilities, stack, and text query', async () => {
+    await withClient({}, async (client) => {
+      const byCapability = await callOk(client, 'search_verified_components', {
+        capabilities: ['slot-guard'],
+      });
+      assert.deepEqual(byCapability.components.map((c) => c.id), ['booking-slot-guard']);
+
+      const andSemantics = await callOk(client, 'search_verified_components', {
+        capabilities: ['slot-guard', 'registry-loading'],
+      });
+      assert.equal(andSemantics.components.length, 0);
+
+      const byStack = await callOk(client, 'search_verified_components', { stack: 'node24+sqlite' });
+      assert.equal(byStack.components.length, 4);
+      const wrongStack = await callOk(client, 'search_verified_components', { stack: 'node20+postgres' });
+      assert.equal(wrongStack.components.length, 0);
+
+      const byQuery = await callOptSearch(client, 'cancellation');
+      assert.ok(byQuery.components.some((c) => c.id === 'booking-slot-guard'));
+
+      const limited = await callOk(client, 'search_verified_components', { limit: 2 });
+      assert.equal(limited.components.length, 2);
+      assert.equal(limited.totalTrusted, 4);
+    });
+  });
+
+  async function callOptSearch(client, query) {
+    return callOk(client, 'search_verified_components', { query });
+  }
+
+  it('inspects every certified component contract', async () => {
+    await withClient({}, async (client) => {
+      for (const id of ['booking-schema', 'booking-validation', 'booking-slot-guard', 'registry-loader']) {
+        const contract = await callOk(client, 'inspect_verified_component', { id, version: '0.1.0' });
+        assert.equal(contract.id, id);
+        assert.ok(contract.invariants.length > 0);
+        assert.equal(contract.runtime.stack, 'node24+sqlite');
+        assert.ok(contract.runtime.node.length > 0);
+        assert.equal(contract.verification.status, 'verified');
+        assert.ok(contract.verification.sourceHash?.length === 64);
+        assert.equal(contract.evidence.outcome, 'pass');
+        assert.equal(contract.evidence.exitCode, 0);
+        assert.ok(contract.testScope.files.length > 0);
+        assert.ok(contract.testScope.limitations.length > 0);
+        assert.ok(contract.limitations.length > 0);
+      }
+      const guard = await callOk(client, 'inspect_verified_component', {
+        id: 'booking-slot-guard', version: '0.1.0',
+      });
+      assert.deepEqual(guard.dependencies, [
+        { id: 'booking-schema', version: '0.1.0' },
+        { id: 'booking-validation', version: '0.1.0' },
+      ]);
+    });
+  });
+
+  it('retrieves bounded source including required local dependencies', async () => {
+    await withClient({}, async (client) => {
+      const loader = await callOk(client, 'get_verified_component_source', {
+        id: 'registry-loader', version: '0.1.0',
+      });
+      assert.deepEqual(loader.files.map((f) => f.path), [
+        'packages/registry/src/loader.ts',
+        'packages/registry/src/manifest.ts',
+      ]);
+      assert.ok(loader.files.every((f) => f.truncated === false));
+
+      const guard = await callOk(client, 'get_verified_component_source', {
+        id: 'booking-slot-guard', version: '0.1.0',
+      });
+      const paths = guard.files.map((f) => f.path);
+      assert.ok(paths.includes('packages/registry/src/slotGuard.ts'));
+      assert.ok(paths.includes('packages/registry/src/validation.ts'));
+      assert.ok(paths.includes('packages/registry/src/schema.ts'));
+      const slotGuard = guard.files.find((f) => f.path.endsWith('slotGuard.ts'));
+      assert.ok(slotGuard.content.includes('SlotConflictError'));
+      for (const file of guard.files) {
+        assert.ok(!file.path.includes('experiments') && !file.path.includes('harness'));
+      }
+    });
+  });
+
+  it('fails closed for wrong id/version without leaking source', async () => {
+    await withClient({}, async (client) => {
+      for (const args of [
+        { id: 'no-such-component', version: '0.1.0' },
+        { id: 'booking-schema', version: '9.9.9' },
+      ]) {
+        const inspectMsg = await callErr(client, 'inspect_verified_component', args);
+        assert.match(inspectMsg, /NOT_FOUND/);
+        const sourceMsg = await callErr(client, 'get_verified_component_source', args);
+        assert.match(sourceMsg, /NOT_FOUND/);
+        assert.ok(!sourceMsg.includes('CREATE TABLE'));
+      }
+    });
+  });
+});
+
+describe('librarian fail-closed fixtures (isolated, real records untouched)', () => {
+  it('rejects a forged verified status without valid evidence', async () => {
+    const forged = readManifest('booking-schema', '0.1.0');
+    forged.verification.sourceHash = '0'.repeat(64);
+    const dir = fixtureManifestDir({ 'booking-schema-0.1.0.json': forged });
+    await withClient({ SILKWEB_MANIFEST_DIR: dir }, async (client) => {
+      const result = await callOk(client, 'search_verified_components', {});
+      assert.equal(result.components.length, 0);
+      assert.deepEqual(result.rejected.map((r) => r.code), ['SOURCE_HASH_MISMATCH']);
+      const msg = await callErr(client, 'get_verified_component_source', {
+        id: 'booking-schema', version: '0.1.0',
+      });
+      assert.match(msg, /SOURCE_HASH_MISMATCH/);
+      assert.ok(!msg.includes('CREATE TABLE'));
+    });
+  });
+
+  it('rejects stale evidence after the manifest changes', async () => {
+    const stale = readManifest('booking-validation', '0.1.0');
+    stale.invariants = [...stale.invariants, 'Forged invariant added after certification.'];
+    const dir = fixtureManifestDir({
+      'booking-schema-0.1.0.json': readManifest('booking-schema', '0.1.0'),
+      'booking-validation-0.1.0.json': stale,
+    });
+    await withClient({ SILKWEB_MANIFEST_DIR: dir }, async (client) => {
+      const result = await callOk(client, 'search_verified_components', {});
+      assert.deepEqual(result.components.map((c) => c.id), ['booking-schema']);
+      assert.deepEqual(
+        result.rejected.filter((r) => r.id === 'booking-validation').map((r) => r.code),
+        ['STALE_EVIDENCE'],
+      );
+      const msg = await callErr(client, 'inspect_verified_component', {
+        id: 'booking-validation', version: '0.1.0',
+      });
+      assert.match(msg, /STALE_EVIDENCE/);
+    });
+  });
+
+  it('rejects a verified claim with missing evidence', async () => {
+    const ghost = readManifest('booking-schema', '0.1.0');
+    ghost.id = 'fixture-ghost';
+    ghost.verification.evidence = 'registry-data/evidence/fixture-ghost-0.1.0.json';
+    const dir = fixtureManifestDir({ 'fixture-ghost-0.1.0.json': ghost });
+    await withClient({ SILKWEB_MANIFEST_DIR: dir }, async (client) => {
+      const msg = await callErr(client, 'get_verified_component_source', {
+        id: 'fixture-ghost', version: '0.1.0',
+      });
+      assert.match(msg, /MISSING_EVIDENCE/);
+      assert.ok(!msg.includes('CREATE TABLE'));
+    });
+  });
+
+  it('rejects an unverified manifest even though the label is the only change', async () => {
+    const flipped = readManifest('registry-loader', '0.1.0');
+    flipped.verification.status = 'unverified';
+    const dir = fixtureManifestDir({ 'registry-loader-0.1.0.json': flipped });
+    await withClient({ SILKWEB_MANIFEST_DIR: dir }, async (client) => {
+      const result = await callOk(client, 'search_verified_components', {});
+      assert.equal(result.components.length, 0);
+      const msg = await callErr(client, 'get_verified_component_source', {
+        id: 'registry-loader', version: '0.1.0',
+      });
+      assert.match(msg, /(UNVERIFIED|STALE_EVIDENCE)/);
+      assert.ok(!msg.includes('readdirSync'));
+    });
+  });
+
+  it('never serves source through an unsafe sourcePath', async () => {
+    const evil = readManifest('booking-schema', '0.1.0');
+    evil.id = 'fixture-evil';
+    evil.sourcePath = '../experiments/harness/steal.ts';
+    evil.verification.evidence = 'registry-data/evidence/fixture-evil-0.1.0.json';
+    const dir = fixtureManifestDir({ 'fixture-evil-0.1.0.json': evil });
+    await withClient({ SILKWEB_MANIFEST_DIR: dir }, async (client) => {
+      const msg = await callErr(client, 'get_verified_component_source', {
+        id: 'fixture-evil', version: '0.1.0',
+      });
+      assert.match(msg, /(MISSING_EVIDENCE|UNSAFE_PATH|FINGERPRINT_ERROR|MISSING_FILE)/);
+      assert.ok(!msg.includes('steal'));
+    });
+  });
+});
+

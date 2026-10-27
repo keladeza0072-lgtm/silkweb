@@ -9,6 +9,7 @@ node_modules/
 *.sqlite
 *.sqlite-*
 packages/registry/tests/tmp/
+apps/mcp-server/tests/tmp/
 .DS_Store
 experiments/runs/*.jsonl
 experiments/runs/*.log
