@@ -310,18 +310,27 @@ describe('registry verification engine', () => {
     assert.equal(selection.rejected.length, 1);
     assert.match(selection.rejected[0].reason, /claims verification\.status="verified"/);
 
-    // Hand-written evidence with a wrong fingerprint is equally rejected.
+    // Hand-written evidence with a wrong fingerprint is equally rejected,
+    // even when the manifest carries well-formed certification metadata.
     const run = runVerification(repoRoot, manifest, [manifest], {
       commandKey: 'fixture:pass',
       evidenceDir: EVIDENCE_DIR,
       allowlist: fixtureAllowlist,
     });
+    const certified = manifestFor({
+      verification: {
+        status: 'verified',
+        testCommand: 'x',
+        sourceHash: computeArtifactFingerprint(repoRoot, manifest, [manifest]).sections.sources,
+        evidence: `${EVIDENCE_DIR}/${forged.id}-${forged.version}.json`,
+      },
+    });
     const tampered = { ...run.evidence, artifactFingerprint: '1'.repeat(64) };
     writeEvidenceFile(
-      resolveEvidencePath(repoRoot, EVIDENCE_DIR, forged.id, forged.version),
-      { ...tampered, componentId: forged.id, componentVersion: forged.version },
+      resolveEvidencePath(repoRoot, EVIDENCE_DIR, certified.id, certified.version),
+      { ...tampered, componentId: certified.id, componentVersion: certified.version },
     );
-    const retry = validateComponent(repoRoot, forged, [forged], {
+    const retry = validateComponent(repoRoot, certified, [certified], {
       evidenceDir: EVIDENCE_DIR,
       allowlist: fixtureAllowlist,
     });
@@ -394,13 +403,28 @@ describe('registry verification engine', () => {
   });
 
   it('keeps test evidence isolated from real evidence records', () => {
-    runVerification(repoRoot, manifest, [manifest], {
+    mkdirSync(REAL_EVIDENCE_DIR, { recursive: true });
+    const snapshotRealEvidence = () =>
+      new Map(
+        readdirSync(REAL_EVIDENCE_DIR)
+          .filter((name) => name.endsWith('.json'))
+          .sort()
+          .map((name) => [name, readFileSync(join(REAL_EVIDENCE_DIR, name), 'utf8')]),
+      );
+    const before = snapshotRealEvidence();
+    const run = runVerification(repoRoot, manifest, [manifest], {
       commandKey: 'fixture:pass',
       evidenceDir: EVIDENCE_DIR,
       allowlist: fixtureAllowlist,
     });
-    mkdirSync(REAL_EVIDENCE_DIR, { recursive: true });
-    const realFiles = readdirSync(REAL_EVIDENCE_DIR).filter((name) => name.endsWith('.json'));
-    assert.deepEqual(realFiles, []);
+    assert.ok(
+      run.evidencePath.startsWith(repoRoot),
+      `test evidence must stay in the isolated fixture checkout, got ${run.evidencePath}`,
+    );
+    assert.ok(
+      run.evidencePath.startsWith(SCRATCH),
+      `test evidence must stay under tests/tmp, got ${run.evidencePath}`,
+    );
+    assert.deepEqual(snapshotRealEvidence(), before, 'the suite must not modify real evidence records');
   });
 });

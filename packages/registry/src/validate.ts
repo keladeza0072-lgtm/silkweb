@@ -9,7 +9,7 @@ import {
   sha256Hex,
   FingerprintError,
 } from './fingerprint.js';
-import { EVIDENCE_SCHEMA_VERSION, resolveEvidencePath, readEvidenceFile, EvidenceError } from './evidence.js';
+import { EVIDENCE_SCHEMA_VERSION, evidenceFileName, resolveEvidencePath, readEvidenceFile, EvidenceError } from './evidence.js';
 import { COMPONENT_ALLOWED_COMMANDS, TEST_COMMAND_ALLOWLIST } from './runner.js';
 import type { RegistryManifest } from './manifest.js';
 
@@ -37,6 +37,16 @@ import type { RegistryManifest } from './manifest.js';
  * "verified" claim without valid evidence is rejected (or downgraded to
  * unverified) with an explicit reason. Use `selectVerifiedManifests` for
  * verified-only consumption.
+ *
+ * Validated evidence vs declared certification: passing `validateComponent`
+ * with valid evidence means the evidence record checks out against the
+ * current checkout. A manifest that additionally claims
+ * `verification.status="verified"` makes a FORMAL certification declaration
+ * and must carry its own metadata: a 64-character SHA-256 `sourceHash`
+ * equal to the recomputed fingerprint `sources` section, plus a canonical
+ * evidence-file reference identifying its own evidence record
+ * (`<evidenceDir>/<id>-<version>.json`). Unverified manifests skip the
+ * declaration checks; verified manifests fail closed without them.
  */
 
 export interface ValidationOptions {
@@ -77,6 +87,23 @@ function fail(manifest: RegistryManifest, code: string, reason: string): Compone
     reason: claimNote(manifest, reason),
     unsubstantiatedClaim: manifest.verification.status === 'verified',
   };
+}
+
+const SHA256_HEX_PATTERN = /^[0-9a-f]{64}$/;
+
+/**
+ * Canonical evidence-file reference a verified manifest must declare:
+ * `<evidenceDir>/<id>-<version>.json` with `/` separators and no
+ * trailing slash on the directory. Compared verbatim after normalizing
+ * the manifest's backslashes and surrounding whitespace.
+ */
+function expectedEvidenceRef(evidenceDir: string, id: string, version: string): string {
+  const dir = evidenceDir.trim().replace(/\\/g, '/').replace(/\/+$/, '');
+  return `${dir}/${evidenceFileName(id, version)}`;
+}
+
+function normalizeEvidenceRef(raw: unknown): string {
+  return typeof raw === 'string' ? raw.trim().replace(/\\/g, '/') : '';
 }
 
 /** Lockfile's pinned version for one dependency name (or undefined). */
@@ -134,6 +161,30 @@ export function validateComponent(
         manifest,
         'DEPENDENCY_MISMATCH',
         `Declared runtime dependency ${name}@${declared} does not match lockfile-pinned ${name}@${pinned}.`,
+      );
+    }
+  }
+
+  // 2b. Verified manifests must formally declare their certification:
+  // a valid 64-character SHA-256 sourceHash plus the canonical
+  // evidence-file reference for this exact component. Unverified
+  // manifests skip this declaration check entirely, so valid evidence
+  // for an unverified manifest keeps its existing behavior.
+  if (manifest.verification.status === 'verified') {
+    const declared = manifest.verification.sourceHash;
+    if (typeof declared !== 'string' || !SHA256_HEX_PATTERN.test(declared)) {
+      return fail(
+        manifest,
+        'MISSING_SOURCE_HASH',
+        `Manifest ${manifest.id}@${manifest.version} claims verification.status="verified" but declares no valid 64-character SHA-256 sourceHash.`,
+      );
+    }
+    const expectedRef = expectedEvidenceRef(options.evidenceDir, manifest.id, manifest.version);
+    if (normalizeEvidenceRef(manifest.verification.evidence) !== expectedRef) {
+      return fail(
+        manifest,
+        'EVIDENCE_REF_MISMATCH',
+        `Manifest ${manifest.id}@${manifest.version} claims verification.status="verified" but its evidence reference ${JSON.stringify(manifest.verification.evidence)} does not identify the expected component evidence record ${JSON.stringify(expectedRef)}.`,
       );
     }
   }
@@ -254,6 +305,16 @@ export function validateComponent(
   } catch (error: unknown) {
     const code = error instanceof FingerprintError ? error.code : 'FINGERPRINT_ERROR';
     return fail(manifest, code, `Cannot recompute artifact fingerprint: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  // 8b. A verified manifest's declared sourceHash must equal the
+  // recomputed sources-section SHA-256: the declaration certifies the
+  // current sources, not merely some past evidence record.
+  if (manifest.verification.status === 'verified' && manifest.verification.sourceHash !== computed.sections.sources) {
+    return fail(
+      manifest,
+      'SOURCE_HASH_MISMATCH',
+      `Manifest ${manifest.id}@${manifest.version} claims verification.status="verified" with sourceHash ${JSON.stringify(manifest.verification.sourceHash)} but the recomputed sources-section SHA-256 is ${JSON.stringify(computed.sections.sources)}.`,
+    );
   }
   const staleSections = (Object.keys(computed.sections) as Array<keyof typeof computed.sections>)
     .filter((section) => computed.sections[section] !== evidence.sections[section])

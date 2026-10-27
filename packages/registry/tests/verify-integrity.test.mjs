@@ -409,6 +409,15 @@ describe('component-to-test mapping and shared sources', () => {
   });
 
   it('real components bind shared modules, compiler config, and an explicit test mapping', () => {
+    mkdirSync(REAL_EVIDENCE_DIR, { recursive: true });
+    const snapshotRealEvidence = () =>
+      new Map(
+        readdirSync(REAL_EVIDENCE_DIR)
+          .filter((name) => name.endsWith('.json'))
+          .sort()
+          .map((name) => [name, readFileSync(join(REAL_EVIDENCE_DIR, name), 'utf8')]),
+      );
+    const before = snapshotRealEvidence();
     const manifests = loadRegistry(REAL_MANIFEST_DIR);
     assert.deepEqual(
       manifests.map((m) => `${m.id}@${m.version}`).sort(),
@@ -459,7 +468,10 @@ describe('component-to-test mapping and shared sources', () => {
     assert.deepEqual(allowedCommandsFor('registry-loader'), ['registry:loader-tests', 'registry:all-tests']);
     assert.ok(!allowedCommandsFor('booking-slot-guard').includes('registry:loader-tests'));
 
-    const realFiles = readdirSync(REAL_EVIDENCE_DIR).filter((name) => name.endsWith('.json'));
-    assert.deepEqual(realFiles, [], 'integrity probes must not certify real components');
+    assert.deepEqual(
+      snapshotRealEvidence(),
+      before,
+      'integrity probes must not modify real evidence records (whether empty or populated)',
+    );
   });
 });

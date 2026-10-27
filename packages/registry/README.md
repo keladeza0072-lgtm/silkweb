@@ -113,6 +113,18 @@ until a human runs the steps below and records real evidence.
   `selectVerifiedManifests` is the verified-only entry point: a manifest
   that merely says `"verified"` without valid evidence is rejected with
   an explicit reason, never silently accepted.
+- Validated evidence vs declared certification: valid evidence means the
+  evidence record checks out against the current checkout — this holds
+  for unverified manifests too, with no extra metadata required. A
+  manifest that formally declares `verification.status="verified"`
+  additionally certifies its current sources and must declare a valid
+  64-character SHA-256 `sourceHash` equal to the recomputed `sources`
+  section plus the canonical evidence-file reference
+  `registry-data/evidence/<id>-<version>.json` for its own record.
+  Fail-closed codes: `MISSING_SOURCE_HASH` (absent or malformed hash),
+  `SOURCE_HASH_MISMATCH` (declaration differs from the recomputed
+  `sources` hash), `EVIDENCE_REF_MISMATCH` (reference does not identify
+  the expected component evidence record).
 
 How a human reproduces verification (no secrets, no network, no paid
 calls):

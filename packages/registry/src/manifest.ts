@@ -27,9 +27,20 @@ const verificationSchema = z.strictObject({
   status: z.enum(['unverified', 'verified']),
   /** Command that reproduces the verification, e.g. "npm run check". */
   testCommand: z.string().min(1),
-  /** Hex sha256 over the module's source files. Absent until verified. */
+  /**
+   * Hex sha256 over the module's source files. Absent until verified;
+   * a manifest claiming status "verified" must declare the recomputed
+   * fingerprint `sources`-section hash, checked by `validateComponent`
+   * (code SOURCE_HASH_MISMATCH on mismatch, MISSING_SOURCE_HASH when
+   * absent or malformed).
+   */
   sourceHash: z.string().regex(/^[0-9a-f]{64}$/).optional(),
-  /** Free-text evidence pointer. Never a fabricated result. */
+  /**
+   * Evidence pointer. Free text while unverified; a manifest claiming
+   * status "verified" must instead name its canonical evidence file
+   * `<evidenceDir>/<id>-<version>.json`, checked by `validateComponent`
+   * (code EVIDENCE_REF_MISMATCH). Never a fabricated result.
+   */
   evidence: z.string().min(1),
 });
 
