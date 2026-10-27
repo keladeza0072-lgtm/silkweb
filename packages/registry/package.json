@@ -7,7 +7,7 @@
   "engines": { "node": ">=24" },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "node --test tests/schema.test.mjs tests/validation.test.mjs tests/slotGuard.test.mjs tests/loader.test.mjs",
+    "test": "node --test tests/schema.test.mjs tests/validation.test.mjs tests/slotGuard.test.mjs tests/loader.test.mjs tests/verify.test.mjs",
     "check": "npm run build && npm run test"
   },
   "dependencies": {

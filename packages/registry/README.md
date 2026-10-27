@@ -64,6 +64,63 @@ npm install
 npm run check   # build (tsc) + tests (node --test tests/)
 ```
 
+## Verification
+
+The registry ships a minimal, reproducible verification engine
+(`src/fingerprint.ts`, `src/evidence.ts`, `src/runner.ts`, `src/validate.ts`,
+re-exported from `src/index.ts`). All four manifests stay `unverified`
+until a human runs the steps below and records real evidence.
+
+- Fingerprint: deterministic SHA-256 over the component's manifest
+  identity/functional metadata, the source bytes of its transitive
+  dependency closure, the covering test files, the package lockfile, and
+  the declared environment (`package.json`). File paths are repo-relative
+  and sorted; entries are null-framed; metadata is canonical JSON.
+  Mutable verification results are excluded (hashing them would be
+  circular), as are actual runtime versions (recorded in evidence instead,
+  so the same tree hashes identically on any machine).
+- Evidence: a JSON record (`registry-data/evidence/<id>-<version>.json`,
+  schema version 1) with component id/version, artifact fingerprint plus
+  per-section hashes, exact test command, exit code, outcome, Node/SQLite
+  versions, timestamp, scope, and limitations. Written only by the runner
+  after it really executes a command; failures are preserved as failures.
+- Runner: executes ONLY fixed argv arrays from the explicit allowlist
+  `TEST_COMMAND_ALLOWLIST` with no shell. A manifest's `testCommand`
+  string is never executed. Only exit code 0 is recorded as a pass.
+  `NODE_TEST_*` markers are scrubbed so a nested `node --test` child
+  cannot report success for failing tests.
+- Validation: recomputes fingerprints from the current checkout, resolves
+  the dependency closure, checks declared dependencies against the
+  lockfile, and requires schema-valid evidence with a passing outcome for
+  an allowlisted command. Anything missing, mismatched, or stale fails
+  closed. `selectVerifiedManifests` is the verified-only entry point: a
+  manifest that merely says `"verified"` without valid evidence is
+  rejected with an explicit reason, never silently accepted.
+
+How a human reproduces verification (no secrets, no network, no paid
+calls):
+
+```sh
+cd packages/registry
+npm install
+npm run build
+node --test tests/schema.test.mjs tests/validation.test.mjs tests/slotGuard.test.mjs tests/loader.test.mjs
+```
+
+A passing run above is the allowlisted `registry:all-tests` command. Only
+after observing it may a human (or a script they approve) call
+`runVerification` with that allowlist key to write the evidence record,
+then confirm `validateComponent`/`selectVerifiedManifests` accepts the
+component. Evidence produced by the test suite itself lives under the
+gitignored `tests/tmp/` and never touches `registry-data/evidence/`.
+
+Known limitations: collision checks are sequential same-process
+connections to a temp file database (no genuine race coverage);
+`node:sqlite` is built-in but still flagged experimental upstream, so the
+stable `DatabaseSync` subset used here is pinned; evidence binds the
+observed machine's runtime and must be refreshed after any source, test,
+lockfile, dependency, or metadata change.
+
 Collision tests use two independent `DatabaseSync` connections to the same
 temporary file-backed database. Execution is sequential same-process, so no
 genuine simultaneous-race coverage is claimed.

@@ -31,3 +31,44 @@ export {
   RegistryLoadError,
   type RegistryQuery,
 } from './loader.js';
+export {
+  LOCKFILE_REL,
+  PACKAGE_JSON_REL,
+  FingerprintError,
+  assertSafeRepoRelPath,
+  resolveRepoPath,
+  sha256Hex,
+  canonicalJson,
+  indexManifests,
+  resolveClosure,
+  testFilesFor,
+  computeArtifactFingerprint,
+  type FingerprintSections,
+  type ArtifactFingerprint,
+  type ManifestIndex,
+} from './fingerprint.js';
+export {
+  EVIDENCE_SCHEMA_VERSION,
+  evidenceSchema,
+  EvidenceError,
+  evidenceFileName,
+  readEvidenceFile,
+  resolveEvidencePath,
+  writeEvidenceFile,
+  type VerificationEvidence,
+} from './evidence.js';
+export {
+  TEST_COMMAND_ALLOWLIST,
+  RunnerError,
+  runVerification,
+  type AllowedTestCommand,
+  type RunVerificationOptions,
+  type VerificationRun,
+} from './runner.js';
+export {
+  validateComponent,
+  selectVerifiedManifests,
+  type ValidationOptions,
+  type ComponentValidation,
+  type VerifiedSelection,
+} from './validate.js';
