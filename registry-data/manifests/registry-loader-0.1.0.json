@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "sourcePath": "packages/registry/src/loader.ts",
   "dependencies": [],
-  "capabilities": ["registry-loading", "manifest-filtering"],
+  "capabilities": [
+    "registry-loading",
+    "manifest-filtering"
+  ],
   "invariants": [
     "Only *.json files in the target directory are read, in sorted filename order.",
     "Every file must parse as JSON and satisfy the strict manifest schema; any failure aborts the load with RegistryLoadError naming all bad files.",
@@ -14,11 +17,14 @@
   "runtime": {
     "stack": "node24+sqlite",
     "node": ">=24",
-    "dependencies": { "zod": "4.6.7" }
+    "dependencies": {
+      "zod": "4.6.7"
+    }
   },
   "verification": {
-    "status": "unverified",
+    "status": "verified",
     "testCommand": "cd packages/registry && npm run check",
-    "evidence": "No passing test run tied to a source hash has been recorded yet; status must remain unverified until then."
+    "evidence": "registry-data/evidence/registry-loader-0.1.0.json",
+    "sourceHash": "e9d1978b676090d3c90939eaab0651fc8d3d3b4c2b2ed58e2ddc02e4fc9aaa86"
   }
 }

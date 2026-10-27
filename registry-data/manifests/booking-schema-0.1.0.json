@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "sourcePath": "packages/registry/src/schema.ts",
   "dependencies": [],
-  "capabilities": ["booking-schema", "sqlite-ddl"],
+  "capabilities": [
+    "booking-schema",
+    "sqlite-ddl"
+  ],
   "invariants": [
     "Tables staff, services and appointments exist after createBookingSchema.",
     "At most one active appointment per (staff_id, start_time), enforced by partial unique index appointments_active_slot_unique.",
@@ -19,8 +22,9 @@
     "dependencies": {}
   },
   "verification": {
-    "status": "unverified",
+    "status": "verified",
     "testCommand": "cd packages/registry && npm run check",
-    "evidence": "No passing test run tied to a source hash has been recorded yet; status must remain unverified until then."
+    "evidence": "registry-data/evidence/booking-schema-0.1.0.json",
+    "sourceHash": "7c04d62469a09c04c1edcec5c006a6cd87d6c562739c401f2aec024f77417231"
   }
 }

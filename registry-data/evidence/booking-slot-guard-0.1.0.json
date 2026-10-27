@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "componentId": "booking-slot-guard",
+  "componentVersion": "0.1.0",
+  "artifactFingerprint": "bb9dbd72808b120d37086b429812c28d4d3ff4cdc3053a1288f96610e380bc63",
+  "sections": {
+    "manifest": "79ae3e45d4027a44e275ecf5649ba8cd4d54a45a28afff01a2d7cddc1afc2cc3",
+    "sources": "fe9869a879a83e85e361ee0d5863c1ab303c8f4ed23faaef86813133193eef09",
+    "tests": "5852d9dc7cae98d6d8c26f8598f81a900fb87243a3a81b39cea76c8cde7ca52e",
+    "lockfile": "4e58b27b1f1f654648bbc4bdd7c8537f2d80cc73fa1ccce1e0384fbe019a92b5",
+    "environment": "f585a087cc03cf4baca38a33b7936ea1891ab8d606eb007ff5c224d2c37a44ca",
+    "build": "78511663927828507ec2123e5ff82a1405628a74422366d6036e70691a52eaad"
+  },
+  "testScope": {
+    "command": "node --test tests/schema.test.mjs tests/validation.test.mjs tests/slotGuard.test.mjs",
+    "commandKey": "registry:booking-tests",
+    "files": [
+      "packages/registry/tests/schema.test.mjs",
+      "packages/registry/tests/slotGuard.test.mjs",
+      "packages/registry/tests/validation.test.mjs"
+    ],
+    "limitations": "Runs the freshly built booking suites only; collision checks use sequential same-process connections to a temp file database, so no genuine simultaneous-race coverage is claimed."
+  },
+  "build": {
+    "command": "node node_modules/typescript/bin/tsc -p tsconfig.json",
+    "artifacts": [
+      {
+        "file": "packages/registry/dist/evidence.js",
+        "sha256": "8649855df879de6b2b103d6a47ec87d59449b6ef5659caf55aa70dc484473274"
+      },
+      {
+        "file": "packages/registry/dist/fingerprint.js",
+        "sha256": "65feae3ccd8ffe70550723a3f7d4837fbc8716870053439bb1bb11a8ddd780ce"
+      },
+      {
+        "file": "packages/registry/dist/index.js",
+        "sha256": "2cea26dd71f1e8d6e8e4fc5606cb198f821b7b5200641998c4ecb46c0c5864a6"
+      },
+      {
+        "file": "packages/registry/dist/loader.js",
+        "sha256": "65ea7c2aade6a5a415e8c49ff7d9f34a32e87ab65db47baaf0eb0d254d8ba9b3"
+      },
+      {
+        "file": "packages/registry/dist/manifest.js",
+        "sha256": "79b14cf48a710d64851079850600ddbb738d6a19e5cc96a204a3e43c59eb1652"
+      },
+      {
+        "file": "packages/registry/dist/runner.js",
+        "sha256": "8e75ce2f6e81bd7993c419b3be7bbeb0d380fd98dcad009ee12aad454b30ddbc"
+      },
+      {
+        "file": "packages/registry/dist/schema.js",
+        "sha256": "c85b17a2f353fdfc8b4562bc428e8ae0744359ddb353b8d2a6364c0e0fd89de9"
+      },
+      {
+        "file": "packages/registry/dist/slotGuard.js",
+        "sha256": "42a1196eb5096f5f2c328984278c594600655322c00983a5426f49ec1e2c0b33"
+      },
+      {
+        "file": "packages/registry/dist/validate.js",
+        "sha256": "6f949d61506b4ab6ee08f84bc7012d3cc42b0b7df194a08719635744c0358500"
+      },
+      {
+        "file": "packages/registry/dist/validation.js",
+        "sha256": "a65d0f26d662a7ad3d8c5623ae29170f3f69a3433cc1e3d0c0f88a370d23a962"
+      }
+    ]
+  },
+  "exitCode": 0,
+  "outcome": "pass",
+  "nodeVersion": "v24.15.0",
+  "sqliteVersion": "3.51.3",
+  "executedAt": "2026-10-27T11:58:51.843Z"
+}

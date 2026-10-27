@@ -3,10 +3,20 @@
   "version": "0.1.0",
   "sourcePath": "packages/registry/src/slotGuard.ts",
   "dependencies": [
-    { "id": "booking-schema", "version": "0.1.0" },
-    { "id": "booking-validation", "version": "0.1.0" }
+    {
+      "id": "booking-schema",
+      "version": "0.1.0"
+    },
+    {
+      "id": "booking-validation",
+      "version": "0.1.0"
+    }
   ],
-  "capabilities": ["booking-creation", "slot-guard", "booking-cancellation"],
+  "capabilities": [
+    "booking-creation",
+    "slot-guard",
+    "booking-cancellation"
+  ],
   "invariants": [
     "Booking creation runs in a BEGIN IMMEDIATE transaction and rolls back on any failure.",
     "A second active booking for the same staff member at the same start time always fails with SlotConflictError (code SLOT_CONFLICT); non-canonical rephrasings of the same instant are rejected earlier by validation.",
@@ -18,11 +28,14 @@
   "runtime": {
     "stack": "node24+sqlite",
     "node": ">=24",
-    "dependencies": { "zod": "4.6.7" }
+    "dependencies": {
+      "zod": "4.6.7"
+    }
   },
   "verification": {
-    "status": "unverified",
+    "status": "verified",
     "testCommand": "cd packages/registry && npm run check",
-    "evidence": "No passing test run tied to a source hash has been recorded yet; status must remain unverified until then."
+    "evidence": "registry-data/evidence/booking-slot-guard-0.1.0.json",
+    "sourceHash": "fe9869a879a83e85e361ee0d5863c1ab303c8f4ed23faaef86813133193eef09"
   }
 }
