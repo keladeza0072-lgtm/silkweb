@@ -10,6 +10,7 @@ node_modules/
 *.sqlite-*
 packages/registry/tests/tmp/
 apps/mcp-server/tests/tmp/
+apps/booking-app/tests/tmp/
 .DS_Store
 experiments/runs/*.jsonl
 experiments/runs/*.log
