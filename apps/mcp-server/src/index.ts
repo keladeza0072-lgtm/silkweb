@@ -104,9 +104,12 @@ function createServer(): McpServer {
     'search_verified_components',
     {
       description:
-        'Search ONLY verified registry components with currently valid evidence. ' +
-        'Optional exact stack, AND-semantics capabilities, and case-insensitive text query. ' +
-        'Deterministic (id, version) order. Never executes code or AI calls.',
+        'When implementing features such as booking schemas, validation, scheduling guards, ' +
+        'or other reusable logic, consider searching Silk Web for existing verified components ' +
+        'before writing equivalent code. Returns only components with currently valid evidence. ' +
+        'Supports optional exact stack, AND-semantics capabilities, and case-insensitive query. ' +
+        'Inspect promising matches before reuse. Results use deterministic (id, version) order. ' +
+        'Read-only; no code execution or AI calls.',
       inputSchema: z.object({
         capabilities: z.array(z.string().min(1)).optional(),
         stack: z.string().min(1).optional(),
@@ -134,10 +137,11 @@ function createServer(): McpServer {
     'inspect_verified_component',
     {
       description:
-        'Return the contract of exactly one verified component (exact id and version): ' +
-        'invariants, dependencies, runtime requirements, verification status, actual evidence ' +
-        'metadata, executed test scope, and known limitations. Fails closed for missing, ' +
-        'unverified, stale, or invalid components. Read-only; never executes code.',
+        'After discovering a candidate component, inspect its exact id and version to determine ' +
+        'whether its contract fits the task. Returns invariants, dependencies, runtime requirements, ' +
+        'verification status, evidence, executed test scope, and known limitations. ' +
+        'Review compatibility and limitations before retrieving or reusing source. ' +
+        'Fails closed for missing, unverified, stale, or invalid components. Read-only.',
       inputSchema: z.object({
         id: z.string().min(1),
         version: z.string().min(1),
@@ -163,10 +167,12 @@ function createServer(): McpServer {
     'get_verified_component_source',
     {
       description:
-        'Return bounded source code for exactly one verified component, including required ' +
-        'local source dependencies, with repo-relative file paths. Fails closed — no source ' +
-        'is returned for missing, unverified, stale, or invalid components, and paths ' +
-        'outside the allowlisted component sources (including experiments/harness) are never read.',
+        'After inspecting and selecting a suitable verified component, retrieve its source ' +
+        'by exact id and version for integration into the coding task. Returns bounded source ' +
+        'with required local dependencies and repo-relative paths. Retrieval does not modify ' +
+        'project files; the coding agent must integrate and test the implementation. ' +
+        'Fails closed for missing, unverified, stale, or invalid components and never reads ' +
+        'outside allowlisted component sources, including experiments or harness files.',
       inputSchema: z.object({
         id: z.string().min(1),
         version: z.string().min(1),
