@@ -1,0 +1,39 @@
+{
+  "id": "booking-reservation-kernel",
+  "version": "0.2.0",
+  "sourcePath": "packages/registry/src/reservationKernelV2.ts",
+  "dependencies": [
+    {
+      "id": "booking-slot-guard",
+      "version": "0.1.0"
+    }
+  ],
+  "capabilities": [
+    "booking-creation",
+    "atomic-slot-conflict-prevention",
+    "idempotent-booking",
+    "atomic-cancellation",
+    "multi-process-sqlite"
+  ],
+  "invariants": [
+    "Each idempotency key is permanently bound to an exact (staffId, serviceId, canonical startTime) request and one booking ID, including after cancellation.",
+    "Simultaneous same-key/same-payload requests serialize with BEGIN IMMEDIATE and return one booking; exactly one response is marked replayed.",
+    "Reusing an idempotency key with a different payload throws IdempotencyKeyConflictError and does not mutate the database.",
+    "Different keys cannot create two active bookings for the same staff/time; the V1 partial unique index remains the final database constraint.",
+    "Atomic cancellation transitions an active booking only once; replay of the original booking key after cancellation returns the cancelled booking, never a new booking.",
+    "Canonical UTC 30-minute slots remain mandatory; variable-duration scheduling, cross-host distributed locking and external databases are out of scope.",
+    "SQLite busy-lock contention beyond the configured five-second timeout reports RESERVATION_BUSY without claiming success."
+  ],
+  "runtime": {
+    "stack": "node24+sqlite",
+    "node": ">=24",
+    "dependencies": {
+      "zod": "4.6.7"
+    }
+  },
+  "verification": {
+    "status": "unverified",
+    "testCommand": "cd packages/registry && npm run build && node --test tests/reservationKernelV2.test.mjs",
+    "evidence": "NOT_YET_CERTIFIED; no passing V2 verification evidence has been recorded"
+  }
+}
