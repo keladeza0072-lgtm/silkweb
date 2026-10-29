@@ -322,6 +322,16 @@ const SEARCH_ALIASES: Record<string, string> = {
   schedules: 'schedule',
   scheduling: 'schedule',
   guards: 'guard',
+  // User intent expressed as behavior, not necessarily a manifest tag.
+  concurrent: 'atomic',
+  concurrently: 'atomic',
+  concurrency: 'atomic',
+  race: 'atomic',
+  races: 'atomic',
+  parallel: 'atomic',
+  retries: 'idempotency',
+  retry: 'idempotency',
+  idempotent: 'idempotency',
 };
 
 // Implementation wrappers are *not* registry concepts. A coding model
