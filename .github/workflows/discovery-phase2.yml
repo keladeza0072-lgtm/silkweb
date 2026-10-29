@@ -29,3 +29,6 @@ jobs:
       - name: Build, smoke and test ranked MCP discovery
         working-directory: apps/mcp-server
         run: npm ci && npm run check
+      - name: Live ranked discovery demonstration (zero inference)
+        working-directory: apps/mcp-server
+        run: npm run discovery:demo
