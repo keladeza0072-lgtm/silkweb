@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { discover, type MatchExplanation, type DiscoveryQuery } from './discovery.js';
 
 /**
  * Librarian trust core for the local Silk Web MCP server.
@@ -286,6 +287,8 @@ export interface ComponentSummary {
   capabilities: string[];
   stack: string;
   summary: string;
+  /** Present for a natural-language or exact-ID query, absent for inventory. */
+  match?: MatchExplanation;
 }
 
 export interface SearchResult {
@@ -305,104 +308,24 @@ function summarizeManifest(manifest: RegistryManifestView): ComponentSummary {
   };
 }
 
-const SEARCH_ALIASES: Record<string, string> = {
-  appointment: 'booking',
-  appointments: 'booking',
-  bookings: 'booking',
-  reservation: 'booking',
-  reservations: 'booking',
-  validators: 'validation',
-  validator: 'validation',
-  validate: 'validation',
-  validating: 'validation',
-  schemas: 'schema',
-  slots: 'slot',
-  mins: 'minute',
-  minutes: 'minute',
-  schedules: 'schedule',
-  scheduling: 'schedule',
-  guards: 'guard',
-  // User intent expressed as behavior, not necessarily a manifest tag.
-  concurrent: 'atomic',
-  concurrently: 'atomic',
-  concurrency: 'atomic',
-  race: 'atomic',
-  races: 'atomic',
-  parallel: 'atomic',
-  retries: 'idempotency',
-  retry: 'idempotency',
-  idempotent: 'idempotency',
-};
-
-// Implementation wrappers are *not* registry concepts. A coding model
-// asking for a "reservation booking appointment API" means "booking",
-// not "booking AND api". Remove generic transport/app words before requiring
-// all meaningful tokens to match.
-const SEARCH_STOP_WORDS = new Set([
-  'a', 'an', 'the', 'for', 'of', 'and', 'or', 'to', 'with', 'that',
-  'which', 'find', 'me', 'need', 'component', 'components',
-  'api', 'apis', 'http', 'rest', 'endpoint', 'endpoints',
-  'app', 'apps', 'application', 'applications', 'backend', 'server',
-  'implement', 'implementation', 'build', 'building', 'create',
-  'creating', 'code', 'module', 'library', 'using', 'use',
-]);
-
-function searchTokens(value: string): string[] {
-  return [...new Set(
-    (value.toLowerCase().match(/[a-z0-9]+/g) ?? [])
-      .map(word => SEARCH_ALIASES[word] ?? word)
-      .filter(word => !SEARCH_STOP_WORDS.has(word))
-  )];
-}
-
-function matchesNaturalLanguageSearch(manifest: RegistryManifestView, query: string): boolean {
-  const haystack =
-    `${manifest.id} ${manifest.version} ${manifest.capabilities.join(' ')} ${manifest.invariants.join(' ')}`.toLowerCase();
-  const normalized = query.trim().toLowerCase();
-
-  // Preserve pre-existing literal substring search behavior.
-  if (haystack.includes(normalized)) return true;
-
-  const tokens = searchTokens(normalized);
-  if (tokens.length === 0) return false;
-
-  const available = new Set(searchTokens(haystack));
-  const matched = tokens.filter(term => available.has(term)).length;
-
-  // A matching canonical domain term is necessary. Do not fall back to
-  // all components on empty/unknown queries; preserve fail-closed discovery.
-  // Require all terms for short queries and >=70% for longer queries.
-  return matched >= (tokens.length <= 2 ? tokens.length : Math.ceil(tokens.length * 0.7));
-}
-
 /**
- * Deterministic search over trusted components only. Exact stack and AND
- * capability filters stay unchanged; free-text search supports exact
- * substrings plus conservative token/alias matching. No additional LLM
- * inference and no unverified component exposure.
+ * Discover solely from selectTrustedComponents().trusted. The original
+ * verification gate remains authoritative and is never bypassed for search.
+ * Unfiltered inventory order is stable by id@version; task queries are
+ * ranked by transparent, conservative metadata signals.
  */
 export function searchTrusted(
   selection: TrustedSelection,
-  options: { capabilities?: string[]; stack?: string; query?: string; limit?: number },
+  options: DiscoveryQuery & { limit?: number },
 ): SearchResult {
   const limitRaw = options.limit ?? SEARCH_DEFAULT_LIMIT;
   const limit = Math.max(1, Math.min(SEARCH_MAX_LIMIT, Math.floor(limitRaw)));
-  const query = options.query?.trim().toLowerCase();
-  const ordered = selection.trusted
-    .slice()
-    .sort((a, b) => (`${a.id}@${a.version}` < `${b.id}@${b.version}` ? -1 : 1));
-  const matched = ordered.filter((manifest) => {
-    if (options.stack !== undefined && manifest.runtime.stack !== options.stack) return false;
-    if (options.capabilities !== undefined) {
-      for (const capability of options.capabilities) {
-        if (!manifest.capabilities.includes(capability)) return false;
-      }
-    }
-    if (query && !matchesNaturalLanguageSearch(manifest, query)) return false;
-    return true;
-  });
+  const hits = discover(selection.trusted, options);
   return {
-    components: matched.slice(0, limit).map(summarizeManifest),
+    components: hits.slice(0, limit).map(({manifest,match}) => ({
+      ...summarizeManifest(manifest),
+      ...(match ? {match} : {}),
+    })),
     totalTrusted: selection.trusted.length,
     rejected: selection.rejected.map(({ id, version, code }) => ({ id, version, code })),
   };
