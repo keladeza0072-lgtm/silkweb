@@ -300,6 +300,7 @@ describe('librarian MCP tools against the certified registry', () => {
         // which synonyms or generic API terms the coding agent will use.
         ['reservation booking appointment API', 'booking-reservation-kernel'],
         ['build a reservation booking appointment API', 'booking-reservation-kernel'],
+        ['concurrent bookings with retries API', 'booking-reservation-kernel'],
         ['appointment idempotency', 'booking-reservation-kernel'],
         ['idempotent reservations', 'booking-reservation-kernel'],
         ['booking schema', 'booking-schema'],
