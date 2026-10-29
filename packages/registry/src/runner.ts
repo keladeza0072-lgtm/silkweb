@@ -103,6 +103,22 @@ const TSC_BUILD: AllowedBuild = {
   outputs: BUILD_OUTPUTS,
 };
 
+/**
+ * V2 is additive: V1 build-output inventories remain unchanged.
+ * The new compiled module is bound only to the V2 certification.
+ */
+const V2_TSC_BUILD: AllowedBuild = {
+  ...TSC_BUILD,
+  outputs: [...BUILD_OUTPUTS, 'packages/registry/dist/reservationKernelV2.js'],
+};
+
+const V2_TEST_FILES: readonly string[] = [
+  'packages/registry/tests/schema.test.mjs',
+  'packages/registry/tests/validation.test.mjs',
+  'packages/registry/tests/slotGuard.test.mjs',
+  'packages/registry/tests/booking-reservation-kernel.test.mjs',
+];
+
 export const TEST_COMMAND_ALLOWLIST: Record<string, AllowedTestCommand> = {
   'registry:loader-tests': {
     command: 'node --test tests/loader.test.mjs',
@@ -128,6 +144,23 @@ export const TEST_COMMAND_ALLOWLIST: Record<string, AllowedTestCommand> = {
       'packages/registry/tests/slotGuard.test.mjs',
     ],
     build: TSC_BUILD,
+  },
+  'registry:reservation-v2-tests': {
+    command: 'node --test tests/schema.test.mjs tests/validation.test.mjs tests/slotGuard.test.mjs tests/booking-reservation-kernel.test.mjs',
+    cwdRel: 'packages/registry',
+    argv: [
+      NODE, '--test',
+      'tests/schema.test.mjs',
+      'tests/validation.test.mjs',
+      'tests/slotGuard.test.mjs',
+      'tests/booking-reservation-kernel.test.mjs',
+    ],
+    limitations:
+      'Runs the freshly built V1 booking suites and V2 reservation suite. ' +
+      'Two independent Node processes race against a single SQLite file. ' +
+      'No claim of arbitrary concurrent load, cross-host transactions, or filesystem portability.',
+    testFiles: V2_TEST_FILES,
+    build: V2_TSC_BUILD,
   },
   'registry:all-tests': {
     command:
@@ -165,6 +198,7 @@ export const COMPONENT_ALLOWED_COMMANDS: Record<string, readonly string[]> = {
   'booking-schema': ['registry:booking-tests', 'registry:all-tests'],
   'booking-validation': ['registry:booking-tests', 'registry:all-tests'],
   'booking-slot-guard': ['registry:booking-tests', 'registry:all-tests'],
+  'booking-reservation-kernel': ['registry:reservation-v2-tests'],
   'registry-loader': ['registry:loader-tests', 'registry:all-tests'],
 };
 
