@@ -1,0 +1,31 @@
+name: Phase 2 verified discovery
+
+on:
+  push:
+    branches:
+      - feature/discovery-phase2
+    paths:
+      - '.github/workflows/discovery-phase2.yml'
+      - 'apps/mcp-server/**'
+      - 'packages/registry/**'
+      - 'registry-data/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-discovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build and test untouched certified registry
+        working-directory: packages/registry
+        run: npm ci && npm run check
+      - name: Build, smoke and test ranked MCP discovery
+        working-directory: apps/mcp-server
+        run: npm ci && npm run check
