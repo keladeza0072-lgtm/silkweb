@@ -1,0 +1,48 @@
+name: Muse installer adoption preflight (no model calls)
+
+on:
+  push:
+    branches:
+      - experiment/muse-installer-adoption
+    paths:
+      - '.github/workflows/muse-installer-preflight.yml'
+      - 'experiments/installer-trial/**'
+      - 'packages/installer/**'
+      - 'packages/registry/**'
+      - 'apps/mcp-server/**'
+      - 'registry-data/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Use Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build and check registry
+        working-directory: packages/registry
+        run: npm ci && npm run check
+      - name: Build and check read-only MCP
+        working-directory: apps/mcp-server
+        run: npm ci && npm run check
+      - name: Check installer
+        working-directory: packages/installer
+        run: npm run check
+      - name: Check trial scripts syntax
+        run: |
+          node --check experiments/installer-trial/prepare.mjs
+          node --check experiments/installer-trial/evaluate.mjs
+      - name: Prepare isolated non-billable candidate and check prompt
+        run: |
+          node experiments/installer-trial/prepare.mjs
+          test -f "$HOME/Projects/muse-installer-trial-20261029/operator/preflight.json"
+          test ! -f "$HOME/Projects/muse-installer-trial-20261029/operator/run.json"
+          test ! -d "$HOME/Projects/muse-installer-trial-20261029/candidate/src/silkweb"
