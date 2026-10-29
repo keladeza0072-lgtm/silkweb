@@ -49,18 +49,42 @@ SQLite database with a start barrier; this is more meaningful concurrency
 coverage than the V1 sequential two-connection test. It is still a bounded,
 small race test, not proof for every scheduler/filesystem configuration.
 
-## Trust boundary / future certification
+## Trust boundary and controlled certification
 
-The candidate manifest is outside registry-data/manifests intentionally.
-It is NOT served by search_verified_components or get_verified_component_source.
+The candidate manifest is outside registry-data/manifests intentionally. Until
+local certification is promoted, it is NOT served by verified-only MCP tools.
 
-To certify, extend the verification allowlist and build-output coverage,
-bind the new V2 test file and its compiled output, execute verification on the
-actual Node24 environment, and record evidence linked to V2's source hash.
-Changes to the existing verification runner may change compiled artifact
-hashes for V1: preserve historical evidence and plan any migration carefully.
-Never write a fabricated passing evidence record or move this manifest into the
-trusted inventory until the current validator independently accepts it.
+The registry verifier contains a new fixed-command allowlist entry
+`registry:reservation-v2-tests`, which executes the V1 booking tests plus
+genuine multi-process V2 tests. Its build inventory includes the new V2
+compiled module; the existing V1 build-output inventory remains unchanged.
 
-RES-001 benchmark design and held-out evaluator remain separate and unfrozen.
-Do not start paid Muse runs from this development candidate.
+Stage actual observed evidence without touching tracked files:
+
+    cd packages/registry
+    npm.cmd run check
+    node scripts/certify-reservation-v2.mjs
+
+If the tests and staged evidence validations pass, carefully review the
+terminal output. To promote the observed evidence on this **development
+worktree only**, rerun:
+
+    node scripts/certify-reservation-v2.mjs --promote
+
+Promotion reruns all five allowlisted certification commands. Only after
+success does it refresh four V1 evidence records in the development branch
+and add the verified V2 manifest plus evidence. Post-promotion validation
+must accept all five components, or the script restores prior records.
+
+**Important:** because the verification runner and package environment
+changed, the old V1 evidence would become stale in this development branch
+until regenerated. Existing V1 source is unchanged; the historical
+`mvp-freeze` Git tag and frozen benchmark evidence remain untouched.
+No evidence is backdated or fabricated; the changed development evidence
+will show the actual machine and verification timestamps.
+
+After a successful promotion, inspect `git status --short` and
+`git diff --stat`. Commit only the newly observed valid evidence and
+versioned V2 manifest on this separate branch. RES-001 benchmark design and
+held-out evaluator remain separate; do not start paid Muse runs until they
+are frozen.
