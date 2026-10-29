@@ -8,6 +8,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "smoke": "node scripts/smoke.mjs",
+    "discovery:demo": "node scripts/discovery-demo.mjs",
     "test": "node --test tests/librarian.test.mjs tests/discovery.test.mjs",
     "check": "npm run build && npm run smoke && npm run test"
   },
