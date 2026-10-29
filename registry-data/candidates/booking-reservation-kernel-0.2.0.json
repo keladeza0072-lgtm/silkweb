@@ -33,7 +33,7 @@
   },
   "verification": {
     "status": "unverified",
-    "testCommand": "cd packages/registry && npm run build && node --test tests/reservationKernelV2.test.mjs",
+    "testCommand": "cd packages/registry && node --test tests/schema.test.mjs tests/validation.test.mjs tests/slotGuard.test.mjs tests/booking-reservation-kernel.test.mjs",
     "evidence": "NOT_YET_CERTIFIED; no passing V2 verification evidence has been recorded"
   }
 }
