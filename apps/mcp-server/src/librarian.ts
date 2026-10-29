@@ -324,9 +324,17 @@ const SEARCH_ALIASES: Record<string, string> = {
   guards: 'guard',
 };
 
+// Implementation wrappers are *not* registry concepts. A coding model
+// asking for a "reservation booking appointment API" means "booking",
+// not "booking AND api". Remove generic transport/app words before requiring
+// all meaningful tokens to match.
 const SEARCH_STOP_WORDS = new Set([
   'a', 'an', 'the', 'for', 'of', 'and', 'or', 'to', 'with', 'that',
   'which', 'find', 'me', 'need', 'component', 'components',
+  'api', 'apis', 'http', 'rest', 'endpoint', 'endpoints',
+  'app', 'apps', 'application', 'applications', 'backend', 'server',
+  'implement', 'implementation', 'build', 'building', 'create',
+  'creating', 'code', 'module', 'library', 'using', 'use',
 ]);
 
 function searchTokens(value: string): string[] {
@@ -351,8 +359,9 @@ function matchesNaturalLanguageSearch(manifest: RegistryManifestView, query: str
   const available = new Set(searchTokens(haystack));
   const matched = tokens.filter(term => available.has(term)).length;
 
-  // Conservative: all words in a short query; >=70% for longer queries.
-  // No broad component-name fallback that accepts mostly unrelated prose.
+  // A matching canonical domain term is necessary. Do not fall back to
+  // all components on empty/unknown queries; preserve fail-closed discovery.
+  // Require all terms for short queries and >=70% for longer queries.
   return matched >= (tokens.length <= 2 ? tokens.length : Math.ceil(tokens.length * 0.7));
 }
 
