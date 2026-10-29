@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -359,6 +360,51 @@ describe('librarian MCP tools against the certified registry', () => {
         'retrieved V2 source must contain the actual new implementation'
       );
     });
+  });
+
+  it('records independent MCP provenance without logging source text', async () => {
+    const auditPath = join(scratchDir('audit'), 'trace.jsonl');
+    await withClient({ SILKWEB_AUDIT_LOG: auditPath }, async (client) => {
+      await callOk(client, 'search_verified_components', {
+        capabilities: ['idempotent-booking'],
+      });
+      await callOk(client, 'inspect_verified_component', {
+        id: 'booking-reservation-kernel', version: '0.2.0',
+      });
+      await callOk(client, 'get_verified_component_source', {
+        id: 'booking-reservation-kernel', version: '0.2.0',
+        maxBytesPerFile: 20000, maxTotalBytes: 100000,
+      });
+      await callErr(client, 'inspect_verified_component', {
+        id: 'not-a-real-component', version: '0.2.0',
+      });
+    });
+    const raw = readFileSync(auditPath, 'utf8');
+    assert.ok(!raw.includes('createIdempotentBooking('), 'source bodies must not be recorded');
+    const events = raw.trim().split(/\\r?\\n/).map(line => JSON.parse(line));
+    assert.deepEqual(events.map(event => event.tool), [
+      'search_verified_components',
+      'inspect_verified_component',
+      'get_verified_component_source',
+      'inspect_verified_component',
+    ]);
+    assert.deepEqual(events.map(event => event.status), [
+      'success', 'success', 'success', 'failure',
+    ]);
+    assert.equal(events[3].errorCode, 'NOT_FOUND');
+    const retrieved = events[2];
+    assert.equal(retrieved.truncated, false);
+    assert.equal(retrieved.files.length, 4);
+    for (const file of retrieved.files) {
+      assert.equal(file.truncated, false);
+      assert.equal(
+        file.sha256,
+        createHash('sha256')
+          .update(readFileSync(join(repoRoot, ...file.path.split('/'))))
+          .digest('hex'),
+        'audit fingerprint must match retrieved source: ' + file.path
+      );
+    }
   });
 
   it('fails closed for wrong id/version without leaking source', async () => {
