@@ -68,6 +68,17 @@ for (const [id, commandKey] of components) {
     timeoutMs: 120000,
   });
   if (!result.passed) throw new Error(id + ': actual test command failed; no promotion');
+  // An unchanged V1 source must retain its historical source fingerprint.
+  // In particular, CRLF checkout conversion on Windows must never silently
+  // be accepted as a new V1 source hash or overwrite its original claim.
+  if (id !== 'booking-reservation-kernel' &&
+      manifest.verification.sourceHash !== result.evidence.sections.sources) {
+    throw new Error(
+      id + ': original V1 source hash differs from observed source bytes. ' +
+      'Check git ls-files --eol and restore LF line endings before certification. ' +
+      'No active evidence or manifest has been modified.'
+    );
+  }
   // Check staged evidence and full dependency/test/build scopes.
   // Mark a COPY unverified only to avoid enforcing the eventual active
   // evidence path while evidence is staged in gitignored scratch space.
