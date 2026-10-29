@@ -150,7 +150,7 @@ process.stdout.write(
   'RES-001 PREPARATION PASS\n' +
   'Source commit: ' + head + '\n' +
   'Prompt SHA-256: ' + record.taskPromptSha256 + '\n' +
-  'B/C starter copies and initial Git commit: IDENTICAL (' + B.initialCommit.slice(0, 12) + ')\\n' +
+  'B/C starter copies and initial Git commit: IDENTICAL (' + B.initialCommit.slice(0, 12) + ')\n' +
   'Workspace B: ' + record.conditions.B.workspace + '\n' +
   'Workspace C: ' + record.conditions.C.workspace + '\n' +
   'Operator evidence: ' + operator + '\n' +
