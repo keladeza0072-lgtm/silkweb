@@ -295,6 +295,11 @@ describe('librarian MCP tools against the certified registry', () => {
   it('searches verified components with paraphrases while rejecting unrelated prose', async () => {
     await withClient({}, async (client) => {
       const cases = [
+        // This EXACT query came from the failed Muse RES-001 C audit.
+        // It must return the certified reservation kernel without guessing
+        // which synonyms or generic API terms the coding agent will use.
+        ['reservation booking appointment API', 'booking-reservation-kernel'],
+        ['build a reservation booking appointment API', 'booking-reservation-kernel'],
         ['appointment idempotency', 'booking-reservation-kernel'],
         ['idempotent reservations', 'booking-reservation-kernel'],
         ['booking schema', 'booking-schema'],
@@ -303,8 +308,19 @@ describe('librarian MCP tools against the certified registry', () => {
       for (const [query, expected] of cases) {
         const found = await callOk(client, 'search_verified_components', { query });
         assert.ok(found.components.some(component => component.id === expected), query);
+        assert.deepEqual(found.rejected, [], 'verified catalog must remain trusted');
       }
-      for (const query of ['interplanetary coffee roasting', 'booking slot interplanetary coffee roasting']) {
+      const exactMuseQuery = await callOk(client, 'search_verified_components', {
+        query: 'reservation booking appointment API',
+      });
+      assert.equal(exactMuseQuery.components[0].id, 'booking-reservation-kernel',
+        'V2 kernel should be first in the response for the actual Muse query');
+      for (const query of [
+        'interplanetary coffee roasting',
+        'booking slot interplanetary coffee roasting',
+        'coffee roasting API',
+        'generic API server',
+      ]) {
         const found = await callOk(client, 'search_verified_components', { query });
         assert.equal(found.components.length, 0, 'false-positive search: ' + query);
       }
