@@ -44,6 +44,13 @@ foreach ($path in @($recordPath,$stdoutPath,$stderrPath,$buildOutPath,$buildErrP
 }
 $settingsPath = Join-Path $configRoot "muse/settings.json"
 if (-not (Test-Path $settingsPath)) { Refuse "Muse settings absent." }
+# The isolated XDG_CONFIG_HOME replaces the normal Muse credential store.
+# Refuse *before* writing any launch metadata if neither a saved profile
+# credential nor an explicitly supplied Meta key is available.
+$authPath = Join-Path $configRoot "muse/auth.json"
+if (-not (Test-Path $authPath) -and [string]::IsNullOrWhiteSpace($env:META_API_KEY)) {
+  Refuse "Meta credentials missing from isolated profile. Run muse login with XDG_CONFIG_HOME set for this condition, or explicitly set META_API_KEY. No inference started."
+}
 foreach ($entry in $preflight.filesSha256.PSObject.Properties) {
   $path = Join-Path $repo ($entry.Name.Replace("/", "\"))
   if (-not (Test-Path $path)) { Refuse ("missing frozen source " + $entry.Name) }
@@ -158,8 +165,17 @@ $dist = Join-Path $workspace "dist"
 if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
 Push-Location $workspace
 try {
-  & npm.cmd run build 1> $buildOutPath 2> $buildErrPath
-  $buildExit = $LASTEXITCODE
+  # In Windows PowerShell 5.1, npm's ordinary stderr notices may be
+  # surfaced as NativeCommandError records. The native exit code, not
+  # warning text, determines whether the candidate build succeeded.
+  $previousBuildErrorPreference = $ErrorActionPreference
+  try {
+    $ErrorActionPreference = "Continue"
+    & npm.cmd run build 1> $buildOutPath 2> $buildErrPath
+    $buildExit = $LASTEXITCODE
+  } finally {
+    $ErrorActionPreference = $previousBuildErrorPreference
+  }
 } finally { Pop-Location }
 $launch.buildExitCode = $buildExit
 if ($buildExit -eq 0) {
