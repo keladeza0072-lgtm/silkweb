@@ -327,6 +327,35 @@ describe('librarian MCP tools against the certified registry', () => {
     });
   });
 
+  it('turns the actual failed Muse search into verified full-source retrieval', async () => {
+    await withClient({}, async (client) => {
+      const results = await callOk(client, 'search_verified_components', {
+        query: 'reservation booking appointment API',
+      });
+      const discovered = results.components[0];
+      assert.ok(discovered, 'exact Muse query returned no component');
+      assert.equal(discovered.id, 'booking-reservation-kernel');
+      assert.equal(discovered.version, '0.2.0');
+
+      // Do not hardcode the id/version in downstream steps: use the returned
+      // search result, as an actual coding agent should.
+      const args = { id: discovered.id, version: discovered.version };
+      const contract = await callOk(client, 'inspect_verified_component', args);
+      assert.equal(contract.verification.status, 'verified');
+      assert.equal(contract.verification.sourceHash, contract.evidence.sections.sources);
+
+      const source = await callOk(client, 'get_verified_component_source', {
+        ...args,
+        maxBytesPerFile: 20000,
+        maxTotalBytes: 100000,
+      });
+      assert.equal(source.truncated, false);
+      assert.ok(source.files.some(file => file.path.endsWith('/reservationKernelV2.ts')));
+      assert.ok(source.files.every(file => !file.truncated));
+      assert.equal(source.files.length, 4);
+    });
+  });
+
   it('MCP discovers, inspects and retrieves the complete verified V2 kernel', async () => {
     await withClient({}, async (client) => {
       const discovered = await callOk(client, 'search_verified_components', {
