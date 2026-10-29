@@ -7,6 +7,7 @@
  * An operator must subsequently run Muse's echo provider to verify that
  * the actual installed Muse Code honors XDG_CONFIG_HOME on this OS.
  */
+import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import {
   existsSync, mkdirSync, readFileSync, writeFileSync,
@@ -32,8 +33,27 @@ function git(cwd, ...args) {
   return execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 }
 if (git(sourceRepo, 'status', '--porcelain')) fail('source checkout has local changes');
-if (git(sourceRepo, 'rev-parse', 'HEAD') !== info.sourceCommit) {
-  fail('source changed since preparation; do NOT silently change MCP/evaluator sources');
+// The operator-only setup utility was committed after the preflight record.
+// Allow that addition, but reject any drift in the frozen agent task,
+// starter, evaluator, MCP or certified registry code/evidence.
+const currentCommit = git(sourceRepo, 'rev-parse', 'HEAD');
+const protectedPaths = [
+  'apps/mcp-server', 'packages/registry', 'registry-data',
+  'experiments/harness/res001-evaluate.mjs',
+  'experiments/tasks/RES-001-PROMPT.md',
+  'experiments/tasks/res-001-starter',
+];
+let drift;
+try {
+  drift = git(sourceRepo, 'diff', '--name-only', info.sourceCommit, currentCommit, '--', ...protectedPaths);
+} catch {
+  fail('cannot compare current source against frozen preflight revision');
+}
+if (drift) fail('frozen benchmark input changed after preparation: ' + drift);
+for (const [rel, expectedHash] of Object.entries(info.filesSha256 ?? {})) {
+  const file = join(sourceRepo, ...rel.split('/'));
+  const actual = createHash('sha256').update(readFileSync(file)).digest('hex');
+  if (actual !== expectedHash) fail('preflight input differs: ' + rel);
 }
 for (const kind of ['B', 'C']) {
   const directory = join(root, kind);
