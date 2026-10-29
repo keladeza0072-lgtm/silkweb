@@ -105,7 +105,8 @@ function createServer(): McpServer {
     {
       description:
         'Search ONLY verified registry components with currently valid evidence. ' +
-        'Optional exact stack, AND-semantics capabilities, and case-insensitive text query. ' +
+        'Optional exact stack, AND-semantics capabilities, and conservative natural-language aliases ' +
+        'for booking, reservation and appointment queries. ' +
         'Deterministic (id, version) order. Never executes code or AI calls.',
       inputSchema: z.object({
         capabilities: z.array(z.string().min(1)).optional(),
