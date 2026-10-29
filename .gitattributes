@@ -1,0 +1,5 @@
+# Stable on-disk bytes for Silk Web's fingerprinted sources, tests,
+# build inputs, manifests and certification evidence on every platform.
+# Git stores these paths as LF; Windows must not convert them to CRLF.
+packages/registry/** text eol=lf
+registry-data/** text eol=lf
