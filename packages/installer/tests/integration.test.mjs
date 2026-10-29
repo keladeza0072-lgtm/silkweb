@@ -111,7 +111,7 @@ test('no declared app entry never claims fully validated integration',()=>{
 
 test('failed integration test is reported as failed rather than certified',()=>{
   const report=verify({tests:['tests/failing-integration.test.mjs'],saveReport:false});
-  assert.equal(report.status,'verification-failed');
+  assert.equal(report.status,'verification-failed',JSON.stringify(report.checks,null,2));
   assert.equal(report.passed,false);
   const check=report.checks.find(x=>x.id==='selected_application_tests');
   assert.equal(check.passed,false);
@@ -172,7 +172,7 @@ test('CLI prints machine-readable verified scope and returns zero',()=>{
 test('failed CLI selected tests cause non-zero exit (not a silent pass)',()=>{
   const proc=invoke([cli,'verify-integration',spec,'--project',projectRoot,'--entry','src/probe.ts',
     '--test','tests/failing-integration.test.mjs','--json']);
-  assert.equal(proc.status,1,proc.stderr);
+  assert.equal(proc.status,1,'stderr: '+proc.stderr+'\nstdout: '+proc.stdout);
   const result=JSON.parse(proc.stdout);
   assert.equal(result.status,'verification-failed');
 });
