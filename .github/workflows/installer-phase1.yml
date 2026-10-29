@@ -1,0 +1,36 @@
+name: Phase 1 verified installer
+
+on:
+  push:
+    branches:
+      - feature/verified-installer-phase1
+    paths:
+      - '.github/workflows/installer-phase1.yml'
+      - 'packages/installer/**'
+      - 'packages/registry/**'
+      - 'registry-data/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  installer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install pinned registry dependencies
+        working-directory: packages/registry
+        run: npm ci
+      - name: Build and test existing registry
+        working-directory: packages/registry
+        run: npm run check
+      - name: Test verified source installer (real evidence)
+        working-directory: packages/installer
+        run: npm run check
