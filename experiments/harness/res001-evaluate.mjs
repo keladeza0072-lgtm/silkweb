@@ -46,6 +46,46 @@ if (report.startsWith(candidate + (process.platform === 'win32' ? '\\' : '/'))) 
 }
 const scratch = mkdtempSync(join(tmpdir(), 'silkweb-res001-eval-'));
 const checks = [];
+// Predeclared denominator. Missing or skipped checks are FAILS, never
+// excluded from the score when an earlier scenario fails to start.
+const standardChecks = [
+  'health-ok', 'route-404-json', 'invalid-json', 'first-booking-201',
+  'same-key-replay-200', 'read-booking', 'same-slot-other-key-conflict',
+  'same-key-different-staff-conflict', 'same-key-different-service-conflict',
+  'same-key-different-time-conflict', 'different-staff-same-slot',
+  'different-slot-same-staff', 'cancel-active', 'cancel-again-409',
+  'read-cancelled', 'replay-after-cancellation-original',
+  'new-key-rebooks-cancelled-slot', 'unknown-get-404', 'unknown-cancel-404',
+  'valid-half-hour', 'valid-next-date',
+  'persistent-create', 'persistent-read-after-restart',
+  'persistent-idempotent-replay', 'persistent-conflict-after-restart',
+  'two-process-same-key-race', 'two-process-different-key-race',
+];
+const invalidLabels = [
+  'missing-key', 'empty-key', 'whitespace-key', 'missing-staff',
+  'negative-staff', 'fractional-staff', 'unknown-staff', 'missing-service',
+  'unknown-service', 'off-grid-minute', 'offset-timezone',
+  'missing-milliseconds', 'unreal-date', 'seconds-not-zero',
+];
+const higherWeights = new Map([
+  ['first-booking-201', 3],
+  ['same-key-replay-200', 3],
+  ['same-slot-other-key-conflict', 3],
+  ['different-staff-same-slot', 2],
+  ['cancel-active', 2],
+  ['replay-after-cancellation-original', 3],
+  ['new-key-rebooks-cancelled-slot', 2],
+  ['persistent-create', 2],
+  ['persistent-read-after-restart', 2],
+  ['persistent-idempotent-replay', 3],
+  ['persistent-conflict-after-restart', 2],
+  ['two-process-same-key-race', 5],
+  ['two-process-different-key-race', 5],
+]);
+const expectedIds = [...standardChecks, ...invalidLabels.map(x => 'validation-' + x)];
+if (new Set(expectedIds).size !== expectedIds.length || expectedIds.length !== 41) {
+  throw new Error('evaluator checklist is not internally consistent');
+}
 const started = Date.now();
 const zeroA = '2026-11-05T09:00:00.000Z';
 const halfA = '2026-11-05T09:30:00.000Z';
@@ -377,8 +417,21 @@ try {
   rmSync(scratch, { recursive: true, force: true });
 }
 
-const max = checks.reduce((a, c) => a + c.weight, 0);
-const earned = checks.reduce((a, c) => a + (c.passed ? c.weight : 0), 0);
+for (const id of expectedIds) {
+  if (!checks.some(check => check.id === id)) {
+    checks.push({
+      id, weight: higherWeights.get(id) ?? 1, passed: false,
+      error: 'Not executed because an earlier setup/scenario failed',
+    });
+  }
+}
+const scoredChecks = checks.filter(item => expectedIds.includes(item.id));
+for (const item of scoredChecks) {
+  const expectedWeight = higherWeights.get(item.id) ?? 1;
+  if (item.weight !== expectedWeight) throw new Error('score weight mismatch: ' + item.id);
+}
+const max = expectedIds.reduce((a, id) => a + (higherWeights.get(id) ?? 1), 0);
+const earned = scoredChecks.reduce((a, item) => a + (item.passed ? item.weight : 0), 0);
 const result = {
   benchmark: 'RES-001',
   evaluatorVersion: 1,
