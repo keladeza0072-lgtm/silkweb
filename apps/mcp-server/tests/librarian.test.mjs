@@ -291,6 +291,25 @@ describe('librarian MCP tools against the certified registry', () => {
     });
   });
 
+  it('searches verified components with paraphrases while rejecting unrelated prose', async () => {
+    await withClient({}, async (client) => {
+      const cases = [
+        ['appointment idempotency', 'booking-reservation-kernel'],
+        ['idempotent reservations', 'booking-reservation-kernel'],
+        ['booking schema', 'booking-schema'],
+        ['30-minute booking slot', 'booking-slot-guard'],
+      ];
+      for (const [query, expected] of cases) {
+        const found = await callOk(client, 'search_verified_components', { query });
+        assert.ok(found.components.some(component => component.id === expected), query);
+      }
+      for (const query of ['interplanetary coffee roasting', 'booking slot interplanetary coffee roasting']) {
+        const found = await callOk(client, 'search_verified_components', { query });
+        assert.equal(found.components.length, 0, 'false-positive search: ' + query);
+      }
+    });
+  });
+
   it('MCP discovers, inspects and retrieves the complete verified V2 kernel', async () => {
     await withClient({}, async (client) => {
       const discovered = await callOk(client, 'search_verified_components', {
