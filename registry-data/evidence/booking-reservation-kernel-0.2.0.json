@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "componentId": "booking-reservation-kernel",
+  "componentVersion": "0.2.0",
+  "artifactFingerprint": "5f61a8064c4c91508c193abc8ea5080849815d88fccd76c2f24ac480e2ce301d",
+  "sections": {
+    "manifest": "722535572ab2cf79106b2c4ad962f50a7e65f9376cb27637a0ec47a9c0367a34",
+    "sources": "592cb05ebdda504e2b2069a89fc497d76a2b0a734c6fbfbbe2ac274266b963c0",
+    "tests": "090e315e508dfb7c8645fbcc65ff8677e9744a9bd1e149c25af8532284945db1",
+    "lockfile": "4e58b27b1f1f654648bbc4bdd7c8537f2d80cc73fa1ccce1e0384fbe019a92b5",
+    "environment": "22dce1acb581bd6f3e245e3c63c28f987684fef4c9f3b98c6208d4c2d22ab455",
+    "build": "78511663927828507ec2123e5ff82a1405628a74422366d6036e70691a52eaad"
+  },
+  "testScope": {
+    "command": "node --test tests/schema.test.mjs tests/validation.test.mjs tests/slotGuard.test.mjs tests/booking-reservation-kernel.test.mjs",
+    "commandKey": "registry:reservation-v2-tests",
+    "files": [
+      "packages/registry/tests/booking-reservation-kernel.test.mjs",
+      "packages/registry/tests/schema.test.mjs",
+      "packages/registry/tests/slotGuard.test.mjs",
+      "packages/registry/tests/validation.test.mjs"
+    ],
+    "limitations": "Runs the freshly built V1 booking suites and V2 reservation suite. Two independent Node processes race against a single SQLite file. No claim of arbitrary concurrent load, cross-host transactions, or filesystem portability."
+  },
+  "build": {
+    "command": "node node_modules/typescript/bin/tsc -p tsconfig.json",
+    "artifacts": [
+      {
+        "file": "packages/registry/dist/evidence.js",
+        "sha256": "8649855df879de6b2b103d6a47ec87d59449b6ef5659caf55aa70dc484473274"
+      },
+      {
+        "file": "packages/registry/dist/fingerprint.js",
+        "sha256": "65feae3ccd8ffe70550723a3f7d4837fbc8716870053439bb1bb11a8ddd780ce"
+      },
+      {
+        "file": "packages/registry/dist/index.js",
+        "sha256": "95bbd9e7ddb62b5e84bb931b57614187248520cea5f97043e261fb013cd45c4f"
+      },
+      {
+        "file": "packages/registry/dist/loader.js",
+        "sha256": "65ea7c2aade6a5a415e8c49ff7d9f34a32e87ab65db47baaf0eb0d254d8ba9b3"
+      },
+      {
+        "file": "packages/registry/dist/manifest.js",
+        "sha256": "79b14cf48a710d64851079850600ddbb738d6a19e5cc96a204a3e43c59eb1652"
+      },
+      {
+        "file": "packages/registry/dist/reservationKernelV2.js",
+        "sha256": "29276d90f7a6ada58129042bfa030b3543b50628b44b11da32c4a5a7386a665e"
+      },
+      {
+        "file": "packages/registry/dist/runner.js",
+        "sha256": "44122ca78bfd5b39ec158feb27cd8d617dbde642ede994ad5882b2bcb58e532c"
+      },
+      {
+        "file": "packages/registry/dist/schema.js",
+        "sha256": "c85b17a2f353fdfc8b4562bc428e8ae0744359ddb353b8d2a6364c0e0fd89de9"
+      },
+      {
+        "file": "packages/registry/dist/slotGuard.js",
+        "sha256": "42a1196eb5096f5f2c328984278c594600655322c00983a5426f49ec1e2c0b33"
+      },
+      {
+        "file": "packages/registry/dist/validate.js",
+        "sha256": "6f949d61506b4ab6ee08f84bc7012d3cc42b0b7df194a08719635744c0358500"
+      },
+      {
+        "file": "packages/registry/dist/validation.js",
+        "sha256": "a65d0f26d662a7ad3d8c5623ae29170f3f69a3433cc1e3d0c0f88a370d23a962"
+      }
+    ]
+  },
+  "exitCode": 0,
+  "outcome": "pass",
+  "nodeVersion": "v24.15.0",
+  "sqliteVersion": "3.51.3",
+  "executedAt": "2026-10-29T17:31:33.881Z"
+}
