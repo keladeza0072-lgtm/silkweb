@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "componentId": "registry-loader",
   "componentVersion": "0.1.0",
-  "artifactFingerprint": "a7213d40e47ab29879bb1fa28226017f8e6fd00e67755a676ba55a1cbe70e8e5",
+  "artifactFingerprint": "a9a7cc1742dd55afd83c512cb6d59df83437fffa9574fba57cd07f35a841ee9f",
   "sections": {
     "manifest": "f6fcccd55c40e6866083b0cfdf7f3e108e5148ea0d96844f96a3163513175cd9",
     "sources": "e9d1978b676090d3c90939eaab0651fc8d3d3b4c2b2ed58e2ddc02e4fc9aaa86",
-    "tests": "ede40ee43c47861ecad6498ff269500c327f54b23dd91c33b14b46dc7474159c",
+    "tests": "092b4fd9aa8226ff8c52d181cfb0a84e73f36d436ec9fd15b1b72cc14c1d725d",
     "lockfile": "4e58b27b1f1f654648bbc4bdd7c8537f2d80cc73fa1ccce1e0384fbe019a92b5",
     "environment": "22dce1acb581bd6f3e245e3c63c28f987684fef4c9f3b98c6208d4c2d22ab455",
     "build": "78511663927828507ec2123e5ff82a1405628a74422366d6036e70691a52eaad"
@@ -68,5 +68,5 @@
   "outcome": "pass",
   "nodeVersion": "v24.15.0",
   "sqliteVersion": "3.51.3",
-  "executedAt": "2026-10-29T17:31:25.896Z"
+  "executedAt": "2026-10-29T19:40:19.358Z"
 }
