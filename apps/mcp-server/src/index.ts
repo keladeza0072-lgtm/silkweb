@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import * as z from 'zod/v4';
+import { auditEvent, sourceDigest } from './audit.js';
 import {
   LibrarianError,
   SEARCH_DEFAULT_LIMIT,
@@ -121,6 +122,14 @@ function createServer(): McpServer {
       try {
         const selection = await selectTrustedComponents();
         const output = searchTrusted(selection, args);
+        auditEvent({
+          tool: 'search_verified_components',
+          status: 'success',
+          query: args.query?.slice(0, 160),
+          capabilities: args.capabilities,
+          totalTrusted: output.totalTrusted,
+          resultIds: output.components.map(item => item.id + '@' + item.version),
+        });
         return {
           content: [{ type: 'text', text: JSON.stringify(output) }],
           structuredContent: output,
@@ -150,6 +159,12 @@ function createServer(): McpServer {
       try {
         const selection = await selectTrustedComponents();
         const output = inspectTrustedComponent(selection, args.id, args.version);
+        auditEvent({
+          tool: 'inspect_verified_component',
+          status: 'success',
+          component: args.id + '@' + args.version,
+          verificationSourceHash: output.verification.sourceHash,
+        });
         return {
           content: [{ type: 'text', text: JSON.stringify(output) }],
           structuredContent: output,
@@ -191,6 +206,18 @@ function createServer(): McpServer {
       try {
         const selection = await selectTrustedComponents();
         const output = sourceTrustedComponent(selection, args.id, args.version, args);
+        auditEvent({
+          tool: 'get_verified_component_source',
+          status: 'success',
+          component: args.id + '@' + args.version,
+          truncated: output.truncated,
+          files: output.files.map(file => ({
+            path: file.path,
+            chars: file.bytes,
+            sha256: sourceDigest(file.content),
+            truncated: file.truncated,
+          })),
+        });
         return {
           content: [{ type: 'text', text: JSON.stringify(output) }],
           structuredContent: output,
