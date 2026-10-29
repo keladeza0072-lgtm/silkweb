@@ -40,6 +40,7 @@ export interface DiscoveryHit<T extends DiscoveryComponent> {
 const ALIASES: Record<string, string> = {
   appointment:'booking', appointments:'booking',
   reservation:'booking', reservations:'booking', bookings:'booking',
+  reserve:'booking', reserving:'booking',
   cancel:'cancellation', cancels:'cancellation', cancelled:'cancellation',
   canceled:'cancellation', cancelling:'cancellation', canceling:'cancellation',
   validators:'validation', validator:'validation', validate:'validation',
@@ -66,6 +67,7 @@ const STOP = new Set([
   'request','requests','when','while','where','who','how',
   'two','multiple','same','different','customer','customers','user','users',
   'system','service','services','function','functions','solution',
+  'prevent','avoiding','avoid','double','duplicate','exactly','once','time',
 ]);
 
 function words(value: string): string[] {
