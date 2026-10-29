@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import {
   existsSync, lstatSync, mkdirSync, readFileSync, openSync, writeFileSync, closeSync,
@@ -20,18 +20,18 @@ import { InstallError, planInstall } from './install.mjs';
  *
  * An unspecified or unexecuted test NEVER earns an integration-verified claim.
  */
-const SHA = b => createHash('sha256').update(b).digest('hex');
 const BAD = new Set(['.git','.silkweb','node_modules','experiments']);
 const now = () => new Date().toISOString();
 
-function checkedRelative(projectRoot, raw, kind, {allowNodeModules=false}={}) {
+function checkedRelative(projectRoot, raw, kind, {allowNodeModules=false,allowInternalAudit=false}={}) {
   if (typeof raw !== 'string' || !raw || raw.includes('\0') || isAbsolute(raw)) {
     throw new InstallError('UNSAFE_PATH', 'Invalid '+kind+': '+JSON.stringify(raw));
   }
   const rel = raw.replace(/\\/g,'/');
   const parts = rel.split('/');
   if (/^[A-Za-z]:/.test(rel) || parts.some(part=>!part||part==='.'||part==='..') ||
-      parts.some(part=>BAD.has(part) && !(allowNodeModules && part==='node_modules'))) {
+      parts.some(part=>BAD.has(part) && !(allowNodeModules && part==='node_modules') &&
+        !(allowInternalAudit && part==='.silkweb'))) {
     throw new InstallError('UNSAFE_PATH', 'Unsafe '+kind+': '+JSON.stringify(raw));
   }
   const root = resolve(projectRoot);
@@ -166,9 +166,9 @@ function buildReport({projectRoot,spec,plan,entry,tests}) {
 
 function recordResult(projectRoot,result) {
   const relDir='.silkweb/validations';
-  const base=checkedRelative(projectRoot,relDir,'verification record parent');
+  const base=checkedRelative(projectRoot,relDir,'verification record parent',{allowInternalAudit:true});
   const reportRel=relDir+'/'+randomUUID()+'.json';
-  const file=checkedRelative(projectRoot,reportRel,'verification record');
+  const file=checkedRelative(projectRoot,reportRel,'verification record',{allowInternalAudit:true});
   if(!existsSync(base.absolute)) mkdirSync(base.absolute,{recursive:true});
   // Exclusive creation: never overwrite existing evidence. The operator's
   // explicitly selected target is the only place this command writes reports.
