@@ -82,3 +82,12 @@ export {
   type ComponentValidation,
   type VerifiedSelection,
 } from './validate.js';
+export {
+  initializeReservationKernel,
+  createIdempotentBooking,
+  cancelReservation,
+  InvalidIdempotencyKeyError,
+  IdempotencyKeyConflictError,
+  ReservationBusyError,
+  type IdempotentBookingResult,
+} from './reservationKernelV2.js';
