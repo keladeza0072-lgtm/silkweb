@@ -45,7 +45,7 @@ foreach ($path in @($recordPath,$stdoutPath,$stderrPath,$buildOutPath,$buildErrP
 $settingsPath = Join-Path $configRoot "muse/settings.json"
 if (-not (Test-Path $settingsPath)) { Refuse "Muse settings absent." }
 foreach ($entry in $preflight.filesSha256.PSObject.Properties) {
-  $path = Join-Path $repo ($entry.Name.Replace("/", [IO.Path]::DirectorySeparatorChar))
+  $path = Join-Path $repo ($entry.Name.Replace("/", "\"))
   if (-not (Test-Path $path)) { Refuse ("missing frozen source " + $entry.Name) }
   $observed = (Get-FileHash -Algorithm SHA256 $path).Hash.ToLowerInvariant()
   if ($observed -ne $entry.Value) { Refuse ("frozen source changed: " + $entry.Name) }
@@ -111,6 +111,7 @@ $flags = @(
   "--prompt-file",$promptPath
 )
 $previousXdg = $env:XDG_CONFIG_HOME
+$previousErrorPreference = $ErrorActionPreference
 $clock = [Diagnostics.Stopwatch]::StartNew()
 $museExit = $null
 Write-Host ("PAID RUN: " + $Condition + " / muse-spark-1.3 / high / max " + $MaxModelSteps + " steps")
@@ -120,10 +121,14 @@ try {
   $env:XDG_CONFIG_HOME = $configRoot
   Push-Location $workspace
   try {
+    # Windows PowerShell 5.1 may surface native stderr as PowerShell
+    # errors even when redirected. Do not abort the evidence recording.
+    $ErrorActionPreference = "Continue"
     & muse.cmd @flags 1> $stdoutPath 2> $stderrPath
     $museExit = $LASTEXITCODE
   } finally { Pop-Location }
 } finally {
+  $ErrorActionPreference = $previousErrorPreference
   $clock.Stop()
   if ($null -eq $previousXdg) {
     Remove-Item Env:XDG_CONFIG_HOME -ErrorAction SilentlyContinue
