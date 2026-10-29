@@ -22,6 +22,11 @@ const componentSummarySchema = z.object({
   capabilities: z.array(z.string()),
   stack: z.string(),
   summary: z.string(),
+  match: z.object({
+    score: z.number().int().nonnegative(),
+    matchedTerms: z.array(z.string()),
+    signals: z.array(z.string()),
+  }).optional(),
 });
 
 const searchOutputSchema = z.object({
@@ -105,16 +110,19 @@ function createServer(): McpServer {
     'search_verified_components',
     {
       description:
-        'Find reusable, certified code before implementing booking or reservation functionality. ' +
-        'Search accepts natural language (e.g. "reservation booking appointment API"). ' +
-        'Results contain metadata ONLY, not code. For a relevant result, NEXT call ' +
-        'inspect_verified_component with its id/version, THEN call ' +
-        'get_verified_component_source to obtain complete verified source for reuse. ' +
-        'This search is read-only, deterministic and has no AI inference cost.',
+        'Discover certified, reusable implementations from task intent without an AI inference call. ' +
+        'Ranked results explain their metadata matches; unfiltered inventory is stable. ' +
+        'Optional exact capability/stack and target Node/dependency filters enforce compatibility. ' +
+        'Unverified or stale components are never returned as trusted. ' +
+        'NEXT inspect_verified_component for contract and limitations, then use the Silk Web ' +
+        'verified installer for local source delivery, or get_verified_component_source when needed. ' +
+        'This tool returns metadata ONLY, not source text.',
       inputSchema: z.object({
         capabilities: z.array(z.string().min(1)).optional(),
         stack: z.string().min(1).optional(),
-        query: z.string().optional(),
+        query: z.string().max(500).optional(),
+        nodeVersion: z.string().regex(/^v?\\d+(?:\\.\\d+){0,2}$/).optional(),
+        installedDependencies: z.record(z.string().min(1), z.string().min(1)).optional(),
         limit: z.number().int().min(1).max(SEARCH_MAX_LIMIT).default(SEARCH_DEFAULT_LIMIT),
       }),
       outputSchema: searchOutputSchema,
