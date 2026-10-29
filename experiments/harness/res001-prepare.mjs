@@ -46,6 +46,7 @@ if (branch !== 'reservation-kernel-v2') {
   fail('expected reservation-kernel-v2 branch; currently ' + branch);
 }
 const relFiles = [
+  '.gitignore',
   'package.json',
   'package-lock.json',
   'tsconfig.json',
@@ -89,6 +90,38 @@ for (const file of relFiles) {
   const b = readFileSync(join(targetRoot, 'C', ...file.split('/')));
   if (!a.equals(b)) fail('B/C starter files unexpectedly differ: ' + file);
 }
+// Each agent gets a separate Git repo, but the exact SAME starter
+// tree and commit object. Git history and changes stay isolated.
+function initWorkspace(kind) {
+  const cwd = join(targetRoot, kind);
+  const run = (args, extra = {}) =>
+    execFileSync('git', args, {
+      cwd,
+      encoding: 'utf8',
+      env: { ...process.env, ...extra },
+    }).trim();
+  run(['init', '--quiet', '--initial-branch=main']);
+  run(['add', '--all']);
+  const committedAt = {
+    GIT_AUTHOR_DATE: '2026-10-29T00:00:00Z',
+    GIT_COMMITTER_DATE: '2026-10-29T00:00:00Z',
+  };
+  run([
+    '-c', 'user.name=RES-001 Benchmark',
+    '-c', 'user.email=benchmark@example.invalid',
+    'commit', '--quiet', '--message=RES-001 identical starter',
+  ], committedAt);
+  if (run(['status', '--porcelain'])) fail(kind + ' starter repo is dirty');
+  return {
+    initialCommit: run(['rev-parse', 'HEAD']),
+    initialTree: run(['rev-parse', 'HEAD^{tree}']),
+  };
+}
+const B = initWorkspace('B');
+const C = initWorkspace('C');
+if (B.initialTree !== C.initialTree || B.initialCommit !== C.initialCommit) {
+  fail('B and C have different initial Git commits/trees');
+}
 const operator = join(targetRoot, 'operator');
 mkdirSync(operator, { recursive: true });
 mkdirSync(join(targetRoot, 'reports'), { recursive: true });
@@ -104,8 +137,8 @@ const record = {
   taskPromptSha256: digest(prompt),
   filesSha256: hashes,
   conditions: {
-    B: { workspace: join(targetRoot, 'B'), silkWebMcp: false },
-    C: { workspace: join(targetRoot, 'C'), silkWebMcp: true },
+    B: { workspace: join(targetRoot, 'B'), silkWebMcp: false, ...B },
+    C: { workspace: join(targetRoot, 'C'), silkWebMcp: true, ...C },
   },
   agentPromptFile: join(operator, 'PROMPT.md'),
   evaluatorFile: evaluatorPath,
@@ -117,7 +150,7 @@ process.stdout.write(
   'RES-001 PREPARATION PASS\n' +
   'Source commit: ' + head + '\n' +
   'Prompt SHA-256: ' + record.taskPromptSha256 + '\n' +
-  'B/C starter copies: IDENTICAL\n' +
+  'B/C starter copies and initial Git commit: IDENTICAL (' + B.initialCommit.slice(0, 12) + ')\\n' +
   'Workspace B: ' + record.conditions.B.workspace + '\n' +
   'Workspace C: ' + record.conditions.C.workspace + '\n' +
   'Operator evidence: ' + operator + '\n' +
