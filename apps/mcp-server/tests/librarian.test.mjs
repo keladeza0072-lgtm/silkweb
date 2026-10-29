@@ -579,7 +579,7 @@ describe('Phase 2 ranked discovery (live MCP verification gate)', () => {
       assert.equal(oldNode.totalTrusted, REAL_COMPONENTS.length);
 
       const badVersion = await callOk(client,'search_verified_components',{
-        query:'reservation booking appointment API',
+        query:'concurrent bookings with retries API',
         nodeVersion:'24.15.0',
         installedDependencies:{zod:'4.6.6'},
       });
@@ -588,7 +588,8 @@ describe('Phase 2 ranked discovery (live MCP verification gate)', () => {
       const noDependencies = await callOk(client,'search_verified_components',{
         installedDependencies:{},
       });
-      assert.deepEqual(noDependencies.components, []);
+      assert.deepEqual(noDependencies.components.map(c=>c.id), ['booking-schema'],
+        'The schema requires no npm dependencies; it remains compatible');
 
       const queryWithoutDeps = await callOk(client,'search_verified_components',{
         query:'booking schema', nodeVersion:'24.15.0',
