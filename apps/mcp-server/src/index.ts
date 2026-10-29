@@ -121,7 +121,7 @@ function createServer(): McpServer {
         capabilities: z.array(z.string().min(1)).optional(),
         stack: z.string().min(1).optional(),
         query: z.string().max(500).optional(),
-        nodeVersion: z.string().regex(/^v?\\d+(?:\\.\\d+){0,2}$/).optional(),
+        nodeVersion: z.string().regex(/^v?\d+(?:\.\d+){0,2}$/).optional(),
         installedDependencies: z.record(z.string().min(1), z.string().min(1)).optional(),
         limit: z.number().int().min(1).max(SEARCH_MAX_LIMIT).default(SEARCH_DEFAULT_LIMIT),
       }),
