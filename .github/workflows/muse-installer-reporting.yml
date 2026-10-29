@@ -1,0 +1,29 @@
+name: Muse installer reporting correction (offline)
+
+on:
+  push:
+    branches:
+      - fix/muse-installer-reporting
+    paths:
+      - '.github/workflows/muse-installer-reporting.yml'
+      - 'experiments/installer-trial/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reporting-unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax-check corrected scripts
+        run: |
+          node --check experiments/installer-trial/reconcile.mjs
+          node --check experiments/installer-trial/evaluate.mjs
+      - name: Reconciliation unit tests (no Muse)
+        run: node --test experiments/installer-trial/reconcile.test.mjs
