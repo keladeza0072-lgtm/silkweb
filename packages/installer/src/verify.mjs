@@ -104,9 +104,25 @@ function outcome(kind, proc) {
  * checkable TAP counts proving tests really executed.
  */
 function selectedTestResult(proc) {
-  const text=String(proc.stdout??'');
-  const counts=Object.fromEntries(['tests','pass','fail','cancelled','skipped'].map(name=>{
-    const hits=[...text.matchAll(new RegExp('^# '+name+' (\\\\d+)\\\\r?
+  const output=String(proc.stdout??'');
+  const counts={tests:null,pass:null,fail:null,cancelled:null,skipped:null};
+  for (const match of output.matchAll(/^# (tests|pass|fail|cancelled|skipped) (\d+)\r?$/gm)) {
+    counts[match[1]]=Number(match[2]);
+  }
+  const executed=counts.tests!==null && counts.tests>0 &&
+    counts.pass!==null && counts.pass>0 &&
+    counts.fail===0 && counts.cancelled===0 &&
+    counts.skipped!==null &&
+    counts.pass+counts.skipped===counts.tests;
+  return {
+    ...outcome('selected_application_tests',proc),
+    passed:proc.status===0 && !proc.error && executed,
+    testCounts:counts,
+    completedRealTests:executed,
+  };
+}
+
+/** Resolve only local static ESM import edges; no evaluation or file execution. */
 function importReachability(projectRoot, entryRel, targetPaths) {
   const root=resolve(projectRoot);
   const start=requiredFile(root,entryRel,'entry');
