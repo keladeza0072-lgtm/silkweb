@@ -419,15 +419,18 @@ describe('component-to-test mapping and shared sources', () => {
       );
     const before = snapshotRealEvidence();
     const manifests = loadRegistry(REAL_MANIFEST_DIR);
-    assert.deepEqual(
-      manifests.map((m) => `${m.id}@${m.version}`).sort(),
-      [
-        'booking-schema@0.1.0',
-        'booking-slot-guard@0.1.0',
-        'booking-validation@0.1.0',
-        'registry-loader@0.1.0',
-      ],
-    );
+    const expected = [
+      'booking-schema@0.1.0',
+      'booking-slot-guard@0.1.0',
+      'booking-validation@0.1.0',
+      'registry-loader@0.1.0',
+    ];
+    // The new candidate remains outside the active manifests until
+    // real V2 evidence is promoted; both pre/post promotion are valid.
+    if (existsSync(join(REAL_MANIFEST_DIR, 'booking-reservation-kernel-0.2.0.json'))) {
+      expected.push('booking-reservation-kernel@0.2.0');
+    }
+    assert.deepEqual(manifests.map((m) => `${m.id}@${m.version}`).sort(), expected.sort());
     const byId = new Map(manifests.map((m) => [m.id, m]));
 
     const loaderFilesReal = sourceFilesForComponent(
