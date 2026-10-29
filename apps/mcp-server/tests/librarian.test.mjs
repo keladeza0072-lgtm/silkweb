@@ -552,3 +552,65 @@ describe('librarian fail-closed fixtures (isolated, real records untouched)', ()
   });
 });
 
+
+describe('Phase 2 ranked discovery (live MCP verification gate)', () => {
+  it('ranks Muse task intent with grounded compact match explanations', async () => {
+    await withClient({}, async client => {
+      const found = await callOk(client, 'search_verified_components', {
+        query:'reservation booking appointment API',
+        nodeVersion:'v24.15.0',
+        installedDependencies:{zod:'4.6.7'},
+      });
+      assert.equal(found.totalTrusted, REAL_COMPONENTS.length);
+      assert.equal(found.components[0].id, 'booking-reservation-kernel');
+      assert.equal(found.components[0].version, '0.2.0');
+      assert.ok(found.components[0].match.score > 0);
+      assert.ok(found.components[0].match.matchedTerms.includes('booking'));
+      assert.ok(found.components[0].match.signals.length > 0);
+      assert.ok(!JSON.stringify(found).includes('function createIdempotentBooking('));
+      assert.deepEqual(found.rejected, []);
+    });
+  });
+
+  it('filters incompatible runtime versions and dependencies without claiming certification', async () => {
+    await withClient({}, async client => {
+      const oldNode = await callOk(client,'search_verified_components',{nodeVersion:'23.9.1'});
+      assert.deepEqual(oldNode.components, []);
+      assert.equal(oldNode.totalTrusted, REAL_COMPONENTS.length);
+
+      const badVersion = await callOk(client,'search_verified_components',{
+        query:'reservation booking appointment API',
+        nodeVersion:'24.15.0',
+        installedDependencies:{zod:'4.6.6'},
+      });
+      assert.deepEqual(badVersion.components, []);
+
+      const noDependencies = await callOk(client,'search_verified_components',{
+        installedDependencies:{},
+      });
+      assert.deepEqual(noDependencies.components, []);
+
+      const queryWithoutDeps = await callOk(client,'search_verified_components',{
+        query:'booking schema', nodeVersion:'24.15.0',
+      });
+      assert.equal(queryWithoutDeps.components[0].id,'booking-schema');
+    });
+  });
+
+  it('never promotes stale or forged registry entries through ranking', async () => {
+    const valid = readManifest('booking-schema','0.1.0');
+    const forged = readManifest('booking-validation','0.1.0');
+    forged.invariants = [...forged.invariants, 'Forged search relevance invariant'];
+    const dir = fixtureManifestDir({
+      'booking-schema-0.1.0.json':valid,
+      'booking-validation-0.1.0.json':forged,
+    });
+    await withClient({ SILKWEB_MANIFEST_DIR:dir }, async client => {
+      const found = await callOk(client,'search_verified_components',{query:'booking validation'});
+      assert.deepEqual(found.components,[]);
+      assert.deepEqual(found.rejected.map(x=>x.code),['STALE_EVIDENCE']);
+      const all=await callOk(client,'search_verified_components',{});
+      assert.deepEqual(all.components.map(x=>x.id),['booking-schema']);
+    });
+  });
+});
