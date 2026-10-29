@@ -1,0 +1,31 @@
+name: Phase 3 integration verification (offline)
+
+on:
+  push:
+    branches:
+      - feature/integration-validation-phase3
+    paths:
+      - '.github/workflows/phase3-integration.yml'
+      - 'packages/installer/**'
+      - 'packages/registry/**'
+      - 'registry-data/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certified-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build and validate original registry evidence
+        working-directory: packages/registry
+        run: npm ci && npm run check
+      - name: Check installer and run real independent target integration tests
+        working-directory: packages/installer
+        run: npm run check
