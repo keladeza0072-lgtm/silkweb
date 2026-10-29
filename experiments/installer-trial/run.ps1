@@ -122,6 +122,9 @@ try {
   } finally { $ErrorActionPreference = $previousBuildErrorPreference }
 } finally { Pop-Location }
 $record.buildExitCode = $buildExit
+# Persist the observed build result BEFORE the evaluator reads run.json.
+$record.stage = "build-completed"
+$record | ConvertTo-Json -Depth 10 | Set-Content -Encoding UTF8 $recordPath
 Write-Host ("LOCAL BUILD: exit=" + $buildExit)
 & node (Join-Path $PSScriptRoot "evaluate.mjs")
 $record.evaluatorExitCode = $LASTEXITCODE
