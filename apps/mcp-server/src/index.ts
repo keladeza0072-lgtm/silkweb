@@ -105,10 +105,12 @@ function createServer(): McpServer {
     'search_verified_components',
     {
       description:
-        'Search ONLY verified registry components with currently valid evidence. ' +
-        'Optional exact stack, AND-semantics capabilities, and conservative natural-language aliases ' +
-        'for booking, reservation and appointment queries. ' +
-        'Deterministic (id, version) order. Never executes code or AI calls.',
+        'Find reusable, certified code before implementing booking or reservation functionality. ' +
+        'Search accepts natural language (e.g. "reservation booking appointment API"). ' +
+        'Results contain metadata ONLY, not code. For a relevant result, NEXT call ' +
+        'inspect_verified_component with its id/version, THEN call ' +
+        'get_verified_component_source to obtain complete verified source for reuse. ' +
+        'This search is read-only, deterministic and has no AI inference cost.',
       inputSchema: z.object({
         capabilities: z.array(z.string().min(1)).optional(),
         stack: z.string().min(1).optional(),
