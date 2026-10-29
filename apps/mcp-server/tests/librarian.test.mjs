@@ -381,7 +381,7 @@ describe('librarian MCP tools against the certified registry', () => {
     });
     const raw = readFileSync(auditPath, 'utf8');
     assert.ok(!raw.includes('createIdempotentBooking('), 'source bodies must not be recorded');
-    const events = raw.trim().split(/\\r?\\n/).map(line => JSON.parse(line));
+    const events = raw.trim().split(/\r?\n/).map(line => JSON.parse(line));
     assert.deepEqual(events.map(event => event.tool), [
       'search_verified_components',
       'inspect_verified_component',
