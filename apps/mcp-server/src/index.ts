@@ -135,6 +135,12 @@ function createServer(): McpServer {
           structuredContent: output,
         };
       } catch (error: unknown) {
+        auditEvent({
+          tool: 'search_verified_components',
+          status: 'failure',
+          query: args.query?.slice(0, 160),
+          errorCode: error instanceof LibrarianError ? error.code : 'LIBRARIAN_ERROR',
+        });
         throw toToolError(error);
       }
     },
@@ -170,6 +176,12 @@ function createServer(): McpServer {
           structuredContent: output,
         };
       } catch (error: unknown) {
+        auditEvent({
+          tool: 'inspect_verified_component',
+          status: 'failure',
+          component: args.id + '@' + args.version,
+          errorCode: error instanceof LibrarianError ? error.code : 'LIBRARIAN_ERROR',
+        });
         throw toToolError(error);
       }
     },
@@ -223,6 +235,12 @@ function createServer(): McpServer {
           structuredContent: output,
         };
       } catch (error: unknown) {
+        auditEvent({
+          tool: 'get_verified_component_source',
+          status: 'failure',
+          component: args.id + '@' + args.version,
+          errorCode: error instanceof LibrarianError ? error.code : 'LIBRARIAN_ERROR',
+        });
         throw toToolError(error);
       }
     },
