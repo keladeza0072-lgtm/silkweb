@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -176,6 +176,10 @@ const REAL_COMPONENTS = [
   'booking-validation@0.1.0',
   'registry-loader@0.1.0',
 ];
+if (existsSync(join(realManifestDir, 'booking-reservation-kernel-0.2.0.json'))) {
+  REAL_COMPONENTS.push('booking-reservation-kernel@0.2.0');
+}
+REAL_COMPONENTS.sort();
 
 describe('librarian MCP tools against the certified registry', () => {
   it('lists ping plus the three librarian tools', async () => {
@@ -191,10 +195,10 @@ describe('librarian MCP tools against the certified registry', () => {
     });
   });
 
-  it('discovers all four certified components with exact id/version', async () => {
+  it('discovers all currently certified components with exact id/version', async () => {
     await withClient({}, async (client) => {
       const result = await callOk(client, 'search_verified_components', {});
-      assert.equal(result.totalTrusted, 4);
+      assert.equal(result.totalTrusted, REAL_COMPONENTS.length);
       assert.deepEqual(result.components.map((c) => `${c.id}@${c.version}`), REAL_COMPONENTS);
       for (const component of result.components) {
         assert.ok(component.capabilities.length > 0);
@@ -218,7 +222,7 @@ describe('librarian MCP tools against the certified registry', () => {
       assert.equal(andSemantics.components.length, 0);
 
       const byStack = await callOk(client, 'search_verified_components', { stack: 'node24+sqlite' });
-      assert.equal(byStack.components.length, 4);
+      assert.equal(byStack.components.length, REAL_COMPONENTS.length);
       const wrongStack = await callOk(client, 'search_verified_components', { stack: 'node20+postgres' });
       assert.equal(wrongStack.components.length, 0);
 
@@ -227,7 +231,7 @@ describe('librarian MCP tools against the certified registry', () => {
 
       const limited = await callOk(client, 'search_verified_components', { limit: 2 });
       assert.equal(limited.components.length, 2);
-      assert.equal(limited.totalTrusted, 4);
+      assert.equal(limited.totalTrusted, REAL_COMPONENTS.length);
     });
   });
 
