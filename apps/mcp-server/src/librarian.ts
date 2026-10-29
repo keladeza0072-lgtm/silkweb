@@ -305,11 +305,62 @@ function summarizeManifest(manifest: RegistryManifestView): ComponentSummary {
   };
 }
 
+const SEARCH_ALIASES: Record<string, string> = {
+  appointment: 'booking',
+  appointments: 'booking',
+  bookings: 'booking',
+  reservation: 'booking',
+  reservations: 'booking',
+  validators: 'validation',
+  validator: 'validation',
+  validate: 'validation',
+  validating: 'validation',
+  schemas: 'schema',
+  slots: 'slot',
+  mins: 'minute',
+  minutes: 'minute',
+  schedules: 'schedule',
+  scheduling: 'schedule',
+  guards: 'guard',
+};
+
+const SEARCH_STOP_WORDS = new Set([
+  'a', 'an', 'the', 'for', 'of', 'and', 'or', 'to', 'with', 'that',
+  'which', 'find', 'me', 'need', 'component', 'components',
+]);
+
+function searchTokens(value: string): string[] {
+  return [...new Set(
+    (value.toLowerCase().match(/[a-z0-9]+/g) ?? [])
+      .map(word => SEARCH_ALIASES[word] ?? word)
+      .filter(word => !SEARCH_STOP_WORDS.has(word))
+  )];
+}
+
+function matchesNaturalLanguageSearch(manifest: RegistryManifestView, query: string): boolean {
+  const haystack =
+    `${manifest.id} ${manifest.version} ${manifest.capabilities.join(' ')} ${manifest.invariants.join(' ')}`.toLowerCase();
+  const normalized = query.trim().toLowerCase();
+
+  // Preserve pre-existing literal substring search behavior.
+  if (haystack.includes(normalized)) return true;
+
+  const tokens = searchTokens(normalized);
+  if (tokens.length === 0) return false;
+
+  const available = new Set(searchTokens(haystack));
+  const matched = tokens.filter(term => available.has(term)).length;
+
+  // Conservative: all words in a short query; >=70% for longer queries.
+  // No broad component-name fallback that accepts mostly unrelated prose.
+  return matched >= (tokens.length <= 2 ? tokens.length : Math.ceil(tokens.length * 0.7));
+}
+
 /**
- * Deterministic search over trusted components only. Filters use exact
- * stack equality, AND semantics for capabilities, and a
- * case-insensitive substring text query over id, version,
- * capabilities, and invariants. Output order is always (id, version).
+ * Deterministic search over trusted components only. Exact stack and AND
+ * capability filters stay unchanged; free-text search supports exact
+ * substrings plus conservative token/alias matching. No additional LLM
+ * inference and no unverified component exposure.
  */
 export function searchTrusted(
   selection: TrustedSelection,
@@ -328,11 +379,7 @@ export function searchTrusted(
         if (!manifest.capabilities.includes(capability)) return false;
       }
     }
-    if (query) {
-      const haystack =
-        `${manifest.id} ${manifest.version} ${manifest.capabilities.join(' ')} ${manifest.invariants.join(' ')}`.toLowerCase();
-      if (!haystack.includes(query)) return false;
-    }
+    if (query && !matchesNaturalLanguageSearch(manifest, query)) return false;
     return true;
   });
   return {
