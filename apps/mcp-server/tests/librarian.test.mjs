@@ -291,6 +291,57 @@ describe('librarian MCP tools against the certified registry', () => {
     });
   });
 
+  it('MCP discovers, inspects and retrieves the complete verified V2 kernel', async () => {
+    await withClient({}, async (client) => {
+      const discovered = await callOk(client, 'search_verified_components', {
+        capabilities: ['idempotent-booking', 'multi-process-sqlite'],
+      });
+      assert.deepEqual(
+        discovered.components.map((component) => component.id + '@' + component.version),
+        ['booking-reservation-kernel@0.2.0'],
+        'V2 must be discoverable by its certified capabilities'
+      );
+      assert.equal(discovered.totalTrusted, REAL_COMPONENTS.length);
+
+      const contract = await callOk(client, 'inspect_verified_component', {
+        id: 'booking-reservation-kernel', version: '0.2.0',
+      });
+      assert.equal(contract.verification.status, 'verified');
+      assert.equal(contract.evidence.outcome, 'pass');
+      assert.equal(contract.evidence.exitCode, 0);
+      assert.equal(contract.verification.sourceHash, contract.evidence.sections.sources);
+      assert.equal(contract.testScope.commandKey, 'registry:reservation-v2-tests');
+      assert.ok(contract.testScope.files.includes(
+        'packages/registry/tests/booking-reservation-kernel.test.mjs'
+      ));
+      assert.deepEqual(contract.dependencies, [{ id: 'booking-slot-guard', version: '0.1.0' }]);
+
+      const retrieved = await callOk(client, 'get_verified_component_source', {
+        id: 'booking-reservation-kernel', version: '0.2.0',
+        maxBytesPerFile: 20000, maxTotalBytes: 100000,
+      });
+      const actualPaths = retrieved.files.map(file => file.path).sort();
+      assert.deepEqual(actualPaths, [
+        'packages/registry/src/reservationKernelV2.ts',
+        'packages/registry/src/schema.ts',
+        'packages/registry/src/slotGuard.ts',
+        'packages/registry/src/validation.ts',
+      ].sort());
+      assert.equal(retrieved.truncated, false, 'entire V2 component closure must be available');
+      assert.ok(retrieved.files.every(file => file.truncated === false));
+      for (const file of retrieved.files) {
+        const diskContent = readFileSync(join(repoRoot, ...file.path.split('/')), 'utf8');
+        assert.equal(file.content, diskContent, 'MCP source bytes must match checkout: ' + file.path);
+        assert.equal(file.bytes, diskContent.length, 'MCP source length must match checkout: ' + file.path);
+      }
+      assert.ok(
+        retrieved.files.find(file => file.path.endsWith('/reservationKernelV2.ts'))
+          ?.content.includes('createIdempotentBooking'),
+        'retrieved V2 source must contain the actual new implementation'
+      );
+    });
+  });
+
   it('fails closed for wrong id/version without leaking source', async () => {
     await withClient({}, async (client) => {
       for (const args of [
