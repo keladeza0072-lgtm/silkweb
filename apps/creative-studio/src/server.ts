@@ -15,7 +15,11 @@ import {
 } from './config.js';
 import { validateBrief, type BriefInput } from './validate.js';
 import { validateCampaignContext } from './campaign.js';
+import { initializeApprovedCreativeLibrary } from './library.js';
 import { isLiveProviderConfigured } from './provider.js';
+
+/** Approved V1 creative library is active from startup; unknown ids stay rejected. */
+initializeApprovedCreativeLibrary();
 import {
   analyzeBrief,
   POLICY_CHECKS,
