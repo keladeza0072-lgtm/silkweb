@@ -47,7 +47,7 @@ const components=[
   ['registry-loader','0.1.0','registry:loader-tests'],
   ['inventory-reservation','0.1.0','registry:inventory-tests'],
 ];
-function main(){
+async function main(){
   assert(process.argv.length===2,'No args accepted; run in inventory certification checkout');
   assert(Number(process.versions.node.split('.')[0])>=24,'Node.js >=24 required');
   assert(git('branch','--show-current')==='feature/multidomain-inventory-certification',
