@@ -242,14 +242,31 @@ async function answerQuestion(value) {
   await advance();
 }
 
+function questionBudget() {
+  return Math.max(0, Math.min(3, state.maxQuestions));
+}
+
 async function advance() {
   state.qIndex += 1;
+  // Lifetime cap: answered questions consume the same budget, so the
+  // total asked across the whole interaction never exceeds three.
+  const remaining = Math.max(0, questionBudget() - state.qIndex);
+  if (remaining <= 0) {
+    try {
+      state.plan = await analyze(state.description, state.answers, undefined, 0);
+    } catch { /* review renders from the last good plan */ }
+    seedBriefFromPlan();
+    go('review');
+    return;
+  }
   if (state.qIndex < state.plan.questions.length) {
     // Merge the fresh answer into the visible plan without re-asking.
     try {
       const next = await analyze(state.description, state.answers, undefined, state.maxQuestions);
       const seen = new Set(state.plan.questions.slice(0, state.qIndex).map((q) => q.field));
-      next.questions = next.questions.filter((q) => !seen.has(q.field));
+      next.questions = next.questions
+        .filter((q) => !seen.has(q.field) && !(q.field in state.answers))
+        .slice(0, remaining);
       state.plan.values = next.values;
       state.plan.sources = next.sources;
       state.plan.questions = [...state.plan.questions.slice(0, state.qIndex), ...next.questions];

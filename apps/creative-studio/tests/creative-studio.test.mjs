@@ -144,10 +144,13 @@ test('elicitation asks at most three questions and never repeats settled ones', 
   const { analyzeBrief } = await import('../dist/elicit.js');
   const first = analyzeBrief({ description: 'I want ads for my bakery' });
   assert.ok(first.questions.length <= 3 && first.questions.length > 0);
-  assert.deepEqual(first.questions.map((q) => q.field), ['product', 'audience', 'objective']);
+  assert.deepEqual(first.questions.map((q) => q.field), ['product', 'objective', 'audience']);
   for (const q of first.questions) {
-    assert.ok(Array.isArray(q.suggestions) && q.suggestions.length > 0);
+    assert.ok(Array.isArray(q.suggestions));
     assert.equal(q.skippable, true);
+    for (const s of q.suggestions) {
+      assert.ok(!/coffee|fitness|ceramic mug|farmers market/i.test(s), `suggestion must be grounded: ${s}`);
+    }
   }
   const second = analyzeBrief({
     description: 'I want ads for my bakery',
@@ -156,7 +159,97 @@ test('elicitation asks at most three questions and never repeats settled ones', 
   assert.ok(!second.questions.some((q) => q.field === 'product'));
   assert.ok(!second.questions.some((q) => q.field === 'audience'));
   assert.equal(second.values.audience, 'Neighbors near the shop');
-  assert.deepEqual(second.questions.map((q) => q.field), ['objective', 'brand', 'offer']);
+  assert.deepEqual(second.questions.map((q) => q.field), ['objective']);
+});
+
+test('question budget holds across the whole interaction', async () => {
+  const { analyzeBrief } = await import('../dist/elicit.js');
+  const turn2 = analyzeBrief({
+    description: 'Help me advertise my business.',
+    answers: { product: 'Handmade soap' },
+  });
+  assert.ok(turn2.questions.length <= 2, 'one settled answer leaves at most two questions');
+  const turn3 = analyzeBrief({
+    description: 'Help me advertise my business.',
+    answers: { product: 'Handmade soap', objective: 'Attract new customers' },
+  });
+  assert.ok(turn3.questions.length <= 1, 'two settled answers leave at most one question');
+  const turn4 = analyzeBrief({
+    description: 'Help me advertise my business.',
+    answers: { product: 'Handmade soap', objective: 'Attract new customers', audience: 'Neighbors' },
+  });
+  assert.deepEqual(turn4.questions, []);
+});
+
+test('suggestions reuse campaign context or are omitted', async () => {
+  const { analyzeBrief, suggestionsFor } = await import('../dist/elicit.js');
+  assert.deepEqual(suggestionsFor('product', {}, 'Help me advertise my business.'), []);
+  assert.deepEqual(suggestionsFor('objective', {}, 'Help me advertise my business.'), []);
+  const plan = analyzeBrief({
+    description: 'Help me advertise my business.',
+    answers: { product: 'Handmade soap' },
+  });
+  for (const q of plan.questions) {
+    for (const s of q.suggestions) {
+      assert.ok(s.includes('Handmade soap'), `suggestion must reuse campaign wording: ${s}`);
+    }
+  }
+  const objective = plan.questions.find((q) => q.field === 'objective');
+  assert.ok(objective && objective.suggestions.length > 0);
+});
+
+test('scenario A: skincare brief is recognized with no repeat questions', async () => {
+  const { analyzeBrief, extractFromDescription } = await import('../dist/elicit.js');
+  const description =
+    'I sell premium handmade skincare products and want to create Instagram ads that attract new customers. ' +
+    'I want the campaign to feel luxurious, natural, and trustworthy.';
+  const ext = extractFromDescription(description);
+  assert.equal(ext.values.product, 'premium handmade skincare products');
+  assert.ok(ext.values.objective.toLowerCase().includes('attract new customers'));
+  assert.ok(ext.values.audience.toLowerCase().includes('customer'));
+  assert.ok(ext.values.creativeDirection.toLowerCase().includes('luxurious'));
+  const plan = analyzeBrief({ description });
+  assert.ok(!plan.questions.some((q) => q.field === 'product'), 'must not re-ask the product');
+  assert.ok(!plan.questions.some((q) => q.field === 'objective'), 'must not re-ask the objective');
+  assert.deepEqual(plan.questions, []);
+  for (const q of plan.questions) {
+    for (const s of q.suggestions) {
+      assert.ok(!/coffee|fitness|ceramic mug/i.test(s));
+    }
+  }
+  const followUp = analyzeBrief({
+    description,
+    answers: { product: 'The entire skincare collection.' },
+  });
+  assert.equal(followUp.values.product, 'The entire skincare collection.');
+  assert.ok(!followUp.questions.some((q) => q.field === 'product'));
+});
+
+test('scenario B: fully specified launch needs no follow-up', async () => {
+  const { analyzeBrief, extractFromDescription } = await import('../dist/elicit.js');
+  const description =
+    'Acme Coffee is launching cold-brew cans for commuters aged 25-40 to drive launch-week trials.';
+  const ext = extractFromDescription(description);
+  assert.equal(ext.values.brand, 'Acme Coffee');
+  assert.equal(ext.values.product, 'cold-brew cans');
+  assert.ok(ext.values.audience.includes('commuters aged 25-40'));
+  assert.ok(ext.values.objective.toLowerCase().includes('launch-week trial'));
+  const plan = analyzeBrief({ description });
+  assert.deepEqual(plan.questions, []);
+});
+
+test('scenario C: vague brief asks blocking questions, at most three', async () => {
+  const { analyzeBrief, extractFromDescription } = await import('../dist/elicit.js');
+  const description = 'Help me advertise my business.';
+  const ext = extractFromDescription(description);
+  assert.equal(ext.values.product ?? '', '', 'generic "business" is not a product fact');
+  assert.equal(ext.values.objective ?? '', '');
+  const plan = analyzeBrief({ description });
+  assert.ok(plan.questions.length > 0 && plan.questions.length <= 3);
+  assert.equal(plan.questions[0].field, 'product');
+  assert.deepEqual(plan.questions.map((q) => q.field), ['product', 'objective', 'audience']);
+  assert.ok(!plan.questions.some((q) => q.field === 'brand'));
+  assert.ok(!plan.questions.some((q) => q.field === 'offer'));
 });
 
 test('rich descriptions skip straight to review with assumptions marked', async () => {
