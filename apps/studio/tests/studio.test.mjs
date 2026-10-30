@@ -199,9 +199,9 @@ test('8. invalid or missing evidence never appears as valid certification', asyn
 });
 
 test('9. existing registry/MCP/booking-app functionality remains unchanged', async () => {
-  // The trust gate serves all five currently certified components, including V2.
+  // The trust gate serves all six currently certified components, including inventory.
   const result = await searchComponents({});
-  assert.equal(result.totalTrusted, 5);
+  assert.equal(result.totalTrusted, 6);
   assert.deepEqual(result.rejected, []);
   const ids = result.components.map((c) => `${c.id}@${c.version}`).sort();
   assert.deepEqual(ids, [
@@ -209,6 +209,7 @@ test('9. existing registry/MCP/booking-app functionality remains unchanged', asy
     'booking-schema@0.1.0',
     'booking-slot-guard@0.1.0',
     'booking-validation@0.1.0',
+    'inventory-reservation@0.1.0',
     'registry-loader@0.1.0',
   ]);
 
@@ -352,8 +353,8 @@ test('11. Studio v2 serves the read-only three-screen dashboard while preserving
   assert.equal(status,200);
   const d=JSON.parse(body);
   assert.equal(d.schemaVersion,1);
-  assert.equal(d.registry.totalTrusted,5);
-  assert.equal(d.registry.components.length,5);
+  assert.equal(d.registry.totalTrusted,6);
+  assert.equal(d.registry.components.length,6);
   assert.equal(d.registry.components.every(c=>c.certificationEligible),true);
   assert.equal(d.source,'local-read-only-evidence');
   assert(Array.isArray(d.activity.events));
