@@ -1,0 +1,36 @@
+name: INV-BENCH-001 — offline paired benchmark calibration
+on:
+  push:
+    branches: [experiment/inv-bench-001]
+    paths:
+      - 'experiments/inv-bench-001/**'
+      - '.github/workflows/inv-bench-001.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  frozen-preflight-and-calibration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build registry and validate six published certificates without mutation
+        working-directory: packages/registry
+        run: npm ci && npm run check
+      - name: Read-only verification of all six published certificates
+        run: node experiments/multidomain/certification/validate-published-inventory.mjs
+      - name: Build certified-only MCP Librarian
+        working-directory: apps/mcp-server
+        run: npm ci && npm run check
+      - name: Syntax-check entire new paired benchmark
+        run: |
+          node --check experiments/inv-bench-001/prepare.mjs
+          node --check experiments/inv-bench-001/evaluate.mjs
+          node --check experiments/inv-bench-001/analyze.mjs
+          node --check experiments/inv-bench-001/tests/reference-server.mjs
+          node --check experiments/inv-bench-001/tests/offline.test.mjs
+      - name: Verify identical starters, C-only MCP, no-overwrite and reference 20/20
+        run: node --test experiments/inv-bench-001/tests/offline.test.mjs
