@@ -1,3 +1,51 @@
+# Silk Web Studio — INV-INSTALL-002 verified delivery evidence
+
+This branch extends the existing **three-screen read-only Studio dashboard**;
+it does not replace the Registry or Agent Activity screens.
+
+The Performance screen now places the **INV-INSTALL-002** delivery-method
+comparison above the older RES-002 benchmark. These are different designs:
+both INV-INSTALL-002 conditions use the same Silk Web MCP Librarian;
+only I additionally exposes the operator-approved deterministic installer.
+The existing RES-002 section remains separately labeled.
+
+The new panel reads ONLY these local paths under
+`$HOME/Projects/inv-install-002-20261030`:
+
+- `operator/INV-INSTALL-002-final-evidence.json` (preserved snapshot);
+- its nine explicitly named original preflight, run, evaluator, MCP audit
+  and Muse log files;
+- `I/src/silkweb/inventory.ts` and
+  `I/.silkweb/installations/inventory-reservation@0.1.0.json`.
+
+It verifies all nine preserved raw-byte hashes, frozen task/evaluator
+identities, matched R/I configuration, 20/20 original held-out evaluations,
+logged source retrieval vs installer invocation, installed source SHA-256,
+and the exact source audit. Any missing or changed evidence results in
+**Unavailable**; no simulated scores are displayed.
+
+Only sanitized metrics (time, quality, token counts, user-recorded credit
+balance changes), tool names and success statuses go to the browser. No
+private prompts, complete MCP payloads, source bodies, auth material, raw Muse
+events or absolute operator paths are ever returned. The UI states that
+one paired comparison does not establish generalized improvement and
+observed credit balance changes are not provider billing records.
+
+To run locally after building the registry and MCP in this branch:
+
+```powershell
+cd "$HOME\Projects\silkweb-studio-delivery\apps\studio"
+npm.cmd ci
+npm.cmd test
+npm.cmd start
+```
+
+Then open `http://127.0.0.1:3001/` and choose **Performance**.
+No paid model calls are made. If the operator evidence is not on this
+machine, the new comparison must show **Unavailable**.
+
+---
+
 # Silk Web Studio v2 — Evidence Dashboard
 
 **Default landing page:** `http://127.0.0.1:3001/`
