@@ -1,3 +1,75 @@
+# Silk Web Studio v2 — Evidence Dashboard
+
+**Default landing page:** `http://127.0.0.1:3001/`
+
+Silk Web Studio now opens a responsive, read-only three-screen dashboard:
+
+1. **Registry** — live certified component count, conservative task-intent search,
+   explainable match signals, capability and runtime metadata; all populated
+   through the same authoritative MCP Librarian certification trust gate.
+2. **Agent Activity** — sanitized local Muse Spark trial status and MCP audit
+   metadata, without exposing prompts, credentials, source text or raw Muse logs.
+3. **Performance** — only the actual RES-002 paired records when present,
+   with exact coding times, weighted scores and final usage fields. Explicit
+   caveats and missing-evidence states prevent invented improvements.
+
+The **original Requirements / Contract / Verification workflow** is preserved
+and available at `http://127.0.0.1:3001/legacy` (also `/index.html`).
+Contract approvals still operate as documented below.
+
+## Start the new dashboard (Windows PowerShell)
+
+Build the existing certification dependency chain before Studio:
+
+```powershell
+$repo = "$HOME\Projects\silkweb-studio-v2"
+
+cd "$repo\packages\registry"
+npm.cmd ci
+npm.cmd run build
+if ($LASTEXITCODE -ne 0) { throw "Registry build failed" }
+
+cd "$repo\apps\mcp-server"
+npm.cmd ci
+npm.cmd run build
+if ($LASTEXITCODE -ne 0) { throw "MCP build failed" }
+
+cd "$repo\apps\studio"
+npm.cmd ci
+npm.cmd test
+if ($LASTEXITCODE -ne 0) { throw "Studio tests failed" }
+
+npm.cmd start
+```
+
+Open `http://127.0.0.1:3001/`. The server binds only to
+`127.0.0.1`, and no paid Muse/Meta/Baseten/Modal model calls are made.
+
+## Evidence rules
+
+The dashboard reads **only predefined local paths** under
+`$HOME/Projects` for the earlier RES-002 and MUSE-INSTALL-001 operator
+artifacts and the installation demo's Phase 3 validation reports. It does
+not accept arbitrary filesystem paths from a browser, run any benchmark,
+rewrite old trial results, reveal credentials, or execute model code.
+
+If those prior artifacts are not available on the current machine, the
+appropriate screen shows **Unavailable** rather than a sample score,
+invented activity, or a false zero.
+
+`GET /api/dashboard` is read-only and sanitized; `GET /api/search`
+still performs real live certified-only discovery. The existing contract
+review and approval API is unchanged.
+
+**Assurance levels:** Certification confirms trusted registry source;
+`build-only` confirms target compilation; only Phase 3 validations that
+also pass named application-entry reachability and selected behavioral
+tests claim `integration-verified`. A single RES-002 pair does not prove
+general speed/quality improvement and is never represented as statistically
+conclusive.
+
+---
+
 # Silk Web Studio — three-screen contract approval (Day 5 MVP)
 
 Local-only prototype with exactly three screens: **Requirements**,
