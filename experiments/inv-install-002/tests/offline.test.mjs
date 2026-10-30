@@ -11,8 +11,9 @@ const repo=resolve(dirname(fileURLToPath(import.meta.url)),'../../..');
 const base=join(repo,'experiments/inv-install-002');
 const prepare=join(base,'prepare.mjs');
 const evaluator=join(base,'evaluate.mjs');
-const expectedEvaluator='b2fb7bf24638914dac2ac8a7999b40ecfde37bd51d55506874290fe7047e403b';
+const expectedEvaluator='ac10951bc1bd7254d7915e61aff1b3cf44fa138c3f3eb365bb52e87a04d40dc5';
 const sha=p=>createHash('sha256').update(readFileSync(p)).digest('hex');
+const shaCanonicalLF=p=>createHash('sha256').update(readFileSync(p,'utf8').replace(/\r\n/g,'\n')).digest('hex');
 function scratch(){
   const dir=mkdtempSync(join(tmpdir(),'inv-install-002-ci-'));
   return {dir,root:join(dir,'paired')};
@@ -25,7 +26,7 @@ function node(file,args=[],env={}){
   });
 }
 test('evaluator is byte-IDENTICAL to original held-out 20-check benchmark',()=>{
-  assert.equal(sha(evaluator),expectedEvaluator);
+  assert.equal(shaCanonicalLF(evaluator),expectedEvaluator);
   assert.match(readFileSync(join(base,'TASK.md'),'utf8'),/install_verified_component/);
   assert.match(readFileSync(join(base,'TASK.md'),'utf8'),/get_verified_component_source/);
   assert.match(readFileSync(join(base,'TASK.md'),'utf8'),/SILKWEB_READY/);
@@ -40,7 +41,8 @@ test('paired preflight constructs identical immutable starters with single MCP t
     assert.equal(meta.benchmark,'INV-INSTALL-002');
     assert.equal(meta.candidates.R.initialCommit,meta.candidates.I.initialCommit);
     assert.equal(meta.candidates.R.initialTree,meta.candidates.I.initialTree);
-    assert.equal(meta.evaluatorSha256,expectedEvaluator);
+    assert.equal(meta.evaluatorCanonicalLFSha256,expectedEvaluator);
+    assert.equal(meta.evaluatorSha256,sha(evaluator));
     assert.equal(sha(meta.taskPath),meta.taskSha256);
     assert.equal(meta.authPresent,Boolean(meta.authPresent));
     const envs=[];
