@@ -121,8 +121,15 @@ function main(){
   const run=json(runnerPath).data;
   const original=json(originalPath).data;
   const cli=json(stdoutPath);
-  assert(meta.trial==='SILKWEB-DEMO-001'&&resolve(meta.sourceRepo)===repo,
-    'Wrong original demo source checkout');
+  assert(meta.trial==='SILKWEB-DEMO-001' &&
+    typeof meta.sourceRepo==='string' &&
+    existsSync(join(resolve(meta.sourceRepo),'packages/installer/src/verify.mjs')),
+    'Missing original frozen demo source checkout');
+  // The correction deliberately runs in a NEW worktree. Never require its
+  // source checkout to equal the immutable original Muse trial checkout.
+  assert(typeof meta.sourceCommit==='string' &&
+    run.sourceCommit===meta.sourceCommit,
+    'Original demo source commit provenance drift');
   assert(resolve(meta.root)===root && resolve(meta.candidate)===join(root,'candidate'),
     'Original candidate path mismatch');
   assert(run.trial==='SILKWEB-DEMO-001'&&run.stage==='evaluated' &&
