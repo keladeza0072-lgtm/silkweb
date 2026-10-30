@@ -91,3 +91,18 @@ export {
   ReservationBusyError,
   type IdempotentBookingResult,
 } from './reservationKernelV2.js';
+
+// Inventory reservation — independently held-out-tested Muse source.
+// Public exports do not imply a certification claim. Trust is derived from
+// validated registry manifests/evidence, never from this barrel file alone.
+export {
+  initializeInventory,
+  seedStock,
+  availableStock,
+  reserveStock,
+  releaseStock,
+  type InventoryErrorCode,
+  type ReserveRequest,
+  type ReserveResult,
+  type ReleaseResult,
+} from './inventory.js';
