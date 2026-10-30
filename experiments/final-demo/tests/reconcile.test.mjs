@@ -48,10 +48,10 @@ function fixture(){
   const originalChecks=Array.from({length:18},(_,i)=>({id:'other-'+i,passed:true}));
   originalChecks.push({id:'phase3_integration',passed:false});
   save(root,op+'preflight.json',{
-    trial:'SILKWEB-DEMO-001',sourceRepo:repo,root,candidate,
+    trial:'SILKWEB-DEMO-001',sourceRepo:repo,sourceCommit:'d'.repeat(40),root,candidate,
   });
   save(root,op+'run.json',{
-    trial:'SILKWEB-DEMO-001',stage:'evaluated',
+    trial:'SILKWEB-DEMO-001',sourceCommit:'d'.repeat(40),stage:'evaluated',
     museExitCode:0,buildExitCode:0,phase3ExitCode:0,evaluationExitCode:1,
   });
   save(root,op+'evaluation.json',{
