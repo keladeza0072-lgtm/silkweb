@@ -9,7 +9,7 @@ import { dirname, isAbsolute, resolve } from 'node:path';
  * comparison with actual integrated source and Muse session traces.
  */
 export interface AuditEvent {
-  tool: 'search_verified_components' | 'inspect_verified_component' | 'get_verified_component_source';
+  tool: 'search_verified_components' | 'inspect_verified_component' | 'get_verified_component_source' | 'install_verified_component';
   status: 'success' | 'failure';
   component?: string;
   query?: string;
@@ -19,6 +19,8 @@ export interface AuditEvent {
   verificationSourceHash?: string;
   truncated?: boolean;
   files?: Array<{ path: string; chars: number; sha256: string; truncated: boolean }>;
+  installStatus?: 'dry-run' | 'installed-source';
+  installedFileCount?: number;
   errorCode?: string;
 }
 
