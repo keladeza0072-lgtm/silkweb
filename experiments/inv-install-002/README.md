@@ -38,7 +38,12 @@ not prove causality or statistical generalization.
   instructions for both runs.
 - `evaluate.mjs`: **byte-identical** to the original INV-BENCH-001
   independent HTTP evaluator; expected SHA-256
-  `b2fb7bf24638914dac2ac8a7999b40ecfde37bd51d55506874290fe7047e403b`.
+  `ac10951bc1bd7254d7915e61aff1b3cf44fa138c3f3eb365bb52e87a04d40dc5`
+  after normalizing checkout line endings to LF. The previously recorded
+  Windows raw-byte evaluator SHA-256 was
+  `b2fb7bf24638914dac2ac8a7999b40ecfde37bd51d55506874290fe7047e403b`;
+  Git blob SHA-1 matches the original evaluator on both branches. Run
+  records also preserve the actual local evaluator SHA-256.
 - `tests/reference-server.mjs`: operator-only known-good adapter, used only
   to calibrate the original scorer to 20/20. Never copied into candidates.
 - Original inventory module SHA-256:
