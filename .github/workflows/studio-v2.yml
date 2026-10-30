@@ -1,0 +1,33 @@
+name: Silk Web Studio v2 (read-only evidence)
+on:
+  push:
+    branches: [feature/studio-v2-evidence]
+    paths:
+      - '.github/workflows/studio-v2.yml'
+      - 'apps/studio/**'
+      - 'apps/mcp-server/**'
+      - 'packages/registry/**'
+      - 'registry-data/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  studio-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Compile and verify certified registry
+        working-directory: packages/registry
+        run: npm ci && npm run check
+      - name: Compile and verify certified-only MCP search
+        working-directory: apps/mcp-server
+        run: npm ci && npm run check
+      - name: Build and test Studio (no model calls)
+        working-directory: apps/studio
+        run: npm ci && npm test
+      - name: Lint dashboard JavaScript syntax
+        run: node --check apps/studio/public/dashboard.js
