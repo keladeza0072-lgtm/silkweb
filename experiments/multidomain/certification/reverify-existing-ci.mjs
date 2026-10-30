@@ -20,8 +20,11 @@ const list=[
   ['registry-loader','0.1.0','registry:loader-tests'],
 ];
 const all=loadRegistry(join(repo,'registry-data/manifests'));
-if(all.length!==6||all.filter(x=>x.verification.status==='verified').length!==5||
-   all.find(x=>x.id==='inventory-reservation')?.verification.status!=='unverified'){
+const inventory=all.find(x=>x.id==='inventory-reservation');
+const verifiedCount=all.filter(x=>x.verification.status==='verified').length;
+if(all.length!==6|| !inventory ||
+  !['unverified','verified'].includes(inventory.verification.status) ||
+  verifiedCount!==(inventory.verification.status==='verified'?6:5)){
   throw new Error('CI trust preflight refused unexpected manifest inventory/status');
 }
 for(const [id,version,commandKey] of list){
@@ -36,4 +39,12 @@ for(const [id,version,commandKey] of list){
     'Invalid CI evidence for '+id+': '+checked.code+' '+checked.reason);
   process.stdout.write('CI-ONLY REVERIFIED: '+id+'\n');
 }
-process.stdout.write('CI-ONLY: Five existing components really reverified; inventory UNVERIFIED; ZERO MODEL CALLS\n');
+if(inventory.verification.status==='verified'){
+  const checked=validateComponent(repo,inventory,all,{evidenceDir:'registry-data/evidence'});
+  if(!checked.valid||checked.code!=='OK')throw new Error(
+    'Certified inventory rejected by CI: '+checked.code+' '+checked.reason);
+  process.stdout.write('CI VERIFIED: inventory certificate is valid; no inference\n');
+}else{
+  process.stdout.write('CI VERIFIED: inventory remains UNVERIFIED and unservable\n');
+}
+process.stdout.write('CI-ONLY: Original five really reverified; ZERO MODEL CALLS\n');
