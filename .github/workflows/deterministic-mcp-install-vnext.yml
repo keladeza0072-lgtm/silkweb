@@ -1,0 +1,33 @@
+name: Silk Web vNext — bounded deterministic MCP installation
+on:
+  push:
+    branches: [feature/deterministic-mcp-install-vnext]
+    paths:
+      - '.github/workflows/deterministic-mcp-install-vnext.yml'
+      - 'apps/mcp-server/**'
+      - 'packages/installer/**'
+      - 'packages/registry/**'
+      - 'registry-data/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verified-install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build and test unchanged six-component certified registry
+        working-directory: packages/registry
+        run: npm ci && npm run check
+      - name: Verify six original Windows-origin certificates on Linux without rewrite
+        run: node experiments/multidomain/certification/validate-published-inventory.mjs
+      - name: Check preexisting deterministic CLI and application integration
+        working-directory: packages/installer
+        run: npm run check
+      - name: Check old MCP tools plus new opt-in installer safety
+        working-directory: apps/mcp-server
+        run: npm ci && npm run check
