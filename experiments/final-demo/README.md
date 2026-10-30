@@ -65,3 +65,37 @@ comparison with its documented single-pair limitations.
 
 Neither the demo runner nor this documentation should be read as permission
 to spend credits: the operator launches the paid session separately.
+
+## Windows PowerShell 5.1 reporting correction (offline)
+
+The original frozen runner uses PowerShell native stdout redirection (1>).
+Under Windows PowerShell 5.1 this may write verifier JSON as UTF-16LE with a
+BOM. The original evaluator incorrectly reads this file as UTF-8. It may
+report 18/19 even when Muse, the build, and Phase 3 all exited successfully.
+
+Do not rerun Muse or overwrite the original run.json, evaluation.json,
+phase3-verification.json, or immutable target-side validation report.
+
+Use a separate checkout of fix/final-demo-report-reconciliation and run:
+
+    node experiments/final-demo/reconcile.mjs
+
+The script locates prior artifacts at:
+
+    $HOME/Projects/silkweb-final-demo-20261030
+
+Before creating an additive reconciliation record, it checks:
+
+- The one original completed guided trial and exact 18/19 evaluation failure.
+- The reason is exclusively a UTF-16LE CLI stdout decoding mismatch.
+- Actual Phase 3 status integration-verified, correct app entry and named tests.
+- Exact certification, installed source hashes and passing test counts.
+- Matching CLI output and the immutable target-side Phase 3 report.
+
+Only then it exclusively creates operator/evaluation-reconciliation.json.
+It never invokes Muse, reruns tests, overwrites the original, or modifies
+application files. A mismatch fails closed without asserting success.
+
+Studio shows offline-reconciled results only when source-report digests still
+match. The original 18/19 result remains visible in the explanatory note.
+This is a reporting correction, NOT a second benchmark or paid model call.
