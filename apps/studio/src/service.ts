@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { get } from 'node:http';
+import { collectEvidence } from './evidence.js';
 
 /**
  * Silk Web Studio service layer (socket-free).
@@ -76,7 +77,7 @@ interface LibrarianApi {
     selection: LibrarianSelection,
     options: { capabilities?: string[]; stack?: string; query?: string; limit?: number },
   ): {
-    components: Array<{ id: string; version: string; capabilities: string[]; stack: string; summary: string }>;
+    components: Array<{ id: string; version: string; capabilities: string[]; stack: string; summary: string; match?: {score:number;matchedTerms:string[];signals:string[]} }>;
     totalTrusted: number;
     rejected: Array<{ id: string; version: string; code: string }>;
   };
@@ -166,6 +167,7 @@ export interface MatchedComponent {
   summary: string;
   /** Always true here: results come only from the trust gate's trusted set. */
   certificationEligible: boolean;
+  match?: {score:number;matchedTerms:string[];signals:string[]};
 }
 
 export interface SearchOutcome {
@@ -177,9 +179,9 @@ export interface SearchOutcome {
 
 /**
  * Deterministic capability search over trusted components only.
- * Capability filters use exact AND matching; the text query is a
- * case-insensitive substring over id/version/capabilities/invariants.
- * This is NOT semantic AI search.
+ * Exact capability filters use AND matching. Natural-language task text
+ * uses the certified-only deterministic metadata ranking from Phase 2.
+ * This is NOT an LLM/embedding semantic search.
  */
 export async function searchComponents(options: SearchOptions = {}): Promise<SearchOutcome> {
   const { api, selection } = await selectTrusted();
@@ -195,8 +197,8 @@ export async function searchComponents(options: SearchOptions = {}): Promise<Sea
     totalTrusted: result.totalTrusted,
     rejected: result.rejected,
     deterministicNote:
-      'Capability matching is deterministic (exact capability tags, AND semantics; ' +
-      'substring text filter only). It is not semantic AI search.',
+      'Deterministic metadata ranking with conservative task-intent aliases; exact capability tags use AND semantics. ' +
+      'This is not semantic AI search.',
   };
 }
 
@@ -610,4 +612,27 @@ export async function checkBookingApp(
 /** Short integrity digest of an approvals file (for tests and debugging). */
 export function approvalsDigest(records: ApprovalRecord[]): string {
   return createHash('sha256').update(JSON.stringify(records)).digest('hex');
+}
+
+/**
+ * Studio v2 read-only dashboard. The registry still uses the existing
+ * authoritative compiled Librarian trust gate. Historical operator evidence
+ * is sanitized by collectEvidence and may be entirely absent.
+ */
+export async function getStudioDashboard() {
+  const [catalog, caps] = await Promise.all([
+    searchComponents({limit:25}),
+    listCapabilities(),
+  ]);
+  return {
+    schemaVersion:1,
+    registry:{
+      components:catalog.components,
+      totalTrusted:catalog.totalTrusted,
+      rejected:catalog.rejected,
+      capabilities:caps.capabilities,
+      searchNote:catalog.deterministicNote,
+    },
+    ...collectEvidence(),
+  };
 }
