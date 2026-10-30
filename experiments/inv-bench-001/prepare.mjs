@@ -13,7 +13,10 @@ import {dirname,join,relative,resolve,sep} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 
 const repo=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
-const root=join(homedir(),'Projects','inv-bench-001-20261030');
+const args=process.argv.slice(2);
+const root=args.length===0?join(homedir(),'Projects','inv-bench-001-20261030'):
+  args.length===2&&args[0]==='--root'?resolve(args[1]):null;
+if(!root)throw new Error('Usage: node prepare.mjs [--root <new outside directory>]');
 const op=join(root,'operator');
 const base='experiments/inv-bench-001/';
 const task=base+'TASK.md';
@@ -34,14 +37,14 @@ const fail=reason=>{throw new Error('INV-BENCH-001 PREFLIGHT REFUSED: '+reason)}
 const sha=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
 const git=(dir,...args)=>execFileSync('git',['-C',dir,...args],{encoding:'utf8'}).trim();
 const rel=relative(repo,root);
-if(rel==='' || (!rel.startsWith('..'+sep)&&rel!=='..'&&!resolve(root).startsWith(resolve(repo)+'\\'))){
+if(rel===''||(!rel.startsWith('..'+sep)&&rel!=='..')){
   fail('Output must be outside source repository');
 }
 if(existsSync(root))fail('Root already exists, refusing overwrite: '+root);
 if(git(repo,'status','--porcelain'))fail('Source worktree dirty');
 const freeze=git(repo,'rev-parse','inventory-cert-6-freeze^{}');
-const child=execFileSync('git',['-C',repo,'merge-base','--is-ancestor',freeze,'HEAD']);
-if(!freeze||child===null){} // command exits nonzero on divergence
+// Fails closed if certification freeze is not an ancestor of experiment source.
+execFileSync('git',['-C',repo,'merge-base','--is-ancestor',freeze,'HEAD']);
 const sourceCommit=git(repo,'rev-parse','HEAD');
 for(const file of pinned)if(!existsSync(join(repo,file)))fail('Missing frozen input '+file);
 const registry=join(repo,'packages/registry/dist/index.js');
