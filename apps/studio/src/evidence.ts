@@ -2,6 +2,7 @@ import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
+import { readDeliveryEvidence } from './deliveryEvidence.js';
 
 /**
  * Studio evidence reader.
@@ -185,6 +186,7 @@ function historicComparison(projectsRoot: string) {
 
 const ALLOWED_MCP = new Set([
   'search_verified_components','inspect_verified_component','get_verified_component_source',
+  'install_verified_component',
 ]);
 
 function activityEvents(path: string, origin: string) {
@@ -248,10 +250,16 @@ export function collectEvidence(options: DashboardOptions = {}) {
   const finalRun = json(join(finalDemo,'run.json'));
   const finalEvaluation = json(join(finalDemo,'evaluation.json'));
   const finalReconciled = verifiedDemoReconciliation(projectsRoot,finalDemo,finalEvaluation);
+  const delivery = readDeliveryEvidence(projectsRoot);
+  const deliveryOperator = join(projectsRoot,'inv-install-002-20261030','operator');
   const timeline = [
     ...activityEvents(join(adoption,'mcp-audit.jsonl'),'MUSE-INSTALL-001'),
     ...activityEvents(join(res002,'C-mcp-audit.jsonl'),'RES-002 / Silk Web'),
     ...activityEvents(join(finalDemo,'mcp-audit.jsonl'),'SILKWEB-DEMO-001'),
+    ...(delivery.available ? [
+      ...activityEvents(join(deliveryOperator,'mcp-audit-R.jsonl'),'INV-INSTALL-002 / Retrieval'),
+      ...activityEvents(join(deliveryOperator,'mcp-audit-I.jsonl'),'INV-INSTALL-002 / Verified install'),
+    ] : []),
   ].sort((a,b)=>String(b.timestamp??'').localeCompare(String(a.timestamp??''))).slice(0,100);
 
   const sessions = [
@@ -287,6 +295,24 @@ export function collectEvidence(options: DashboardOptions = {}) {
         ? 'Original 18/19 evaluation preserved. Offline UTF-16LE report reconciliation separately validated 19/19 against immutable Phase 3 evidence. No extra Muse run.'
         : 'Guided demonstration; independent HTTP + Phase 3 evaluation. Not a new performance A/B comparison.',
     },
+    ...(delivery.available ? [
+      {
+        id:'INV-INSTALL-002 R',
+        title:'Certified source retrieval',available:true,
+        model:'muse-spark-1.3',codingSeconds:delivery.coding.R,
+        checksPassed:delivery.quality.R === 100 ? 20 : null,
+        checksTotal:20,status:'both-evaluated',
+        note:'Manual source delivery; independent 20/20 API checks. Source bytes differ from certified original.',
+      },
+      {
+        id:'INV-INSTALL-002 I',
+        title:'Deterministic certified install',available:true,
+        model:'muse-spark-1.3',codingSeconds:delivery.coding.I,
+        checksPassed:delivery.quality.I === 100 ? 20 : null,
+        checksTotal:20,status:'both-evaluated',
+        note:'Installer audit, exact original source SHA-256 and independent 20/20 API checks validated.',
+      },
+    ] : []),
     {
       id:'RES-002',
       title:'Controlled Muse coding comparison',
@@ -310,6 +336,7 @@ export function collectEvidence(options: DashboardOptions = {}) {
       note:'Only whitelisted MCP audit metadata is shown. No prompt, source, token trace or authentication files are exposed.',
     },
     performance:historicComparison(projectsRoot),
+    deliveryComparison:delivery,
     installation:latestVerification(projectsRoot),
   };
 }
