@@ -207,3 +207,100 @@ test('live outcome: unavailable without config; invalid input never reaches prov
   const invalid = await conceptsGenerateOutcomeLive({ description: 'Sell soap' });
   assert.equal(invalid.status, 422);
 });
+
+
+test('network diagnostics expose safe codes without leaking secrets', async () => {
+  setupApproved();
+
+  const secret = 'private-network-details-xyz';
+  const underlying = Object.assign(
+    new Error(secret),
+    { code: 'ECONNRESET' },
+  );
+
+  const networkError = Object.assign(
+    new TypeError('fetch failed'),
+    { cause: underlying },
+  );
+
+  let calls = 0;
+
+  const provider = new MetaMuseConceptProvider({
+    apiKey: 'secret-key-xyz',
+    fetchImpl: async () => {
+      calls += 1;
+      throw networkError;
+    },
+  });
+
+  const result = await generateConcepts(campaign(), provider);
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error.code, 'PROVIDER_ERROR');
+  assert.match(result.error.message, /ECONNRESET/);
+  assert.ok(!result.error.message.includes(secret));
+  assert.ok(!result.error.message.includes('secret-key-xyz'));
+  assert.equal(calls, 1);
+});
+
+test('unknown network errors are sanitized and never retried', async () => {
+  setupApproved();
+
+  let calls = 0;
+
+  const provider = new MetaMuseConceptProvider({
+    apiKey: 'secret-key-xyz',
+    fetchImpl: async () => {
+      calls += 1;
+      throw new Error('sensitive-host-and-token-details');
+    },
+  });
+
+  const result = await generateConcepts(campaign(), provider);
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error.code, 'PROVIDER_ERROR');
+  assert.match(result.error.message, /UNKNOWN_NETWORK_ERROR/);
+  assert.ok(!result.error.message.includes('sensitive-host-and-token-details'));
+  assert.equal(calls, 1);
+});
+
+test('live provider owns timeout, aborts request, and never retries', async () => {
+  setupApproved();
+
+  let calls = 0;
+  let observedSignal;
+
+  const hanging = async (_url, init) => {
+    calls += 1;
+    observedSignal = init.signal;
+
+    return new Promise((_resolve, reject) => {
+      if (init.signal.aborted) {
+        reject(new Error('aborted'));
+        return;
+      }
+      init.signal.addEventListener(
+        'abort',
+        () => reject(new Error('aborted')),
+        { once: true },
+      );
+    });
+  };
+
+  const provider = new MetaMuseConceptProvider({
+    apiKey: 'test-key',
+    fetchImpl: hanging,
+    timeoutMs: 25,
+  });
+
+  const startedAt = Date.now();
+
+  const result = await generateConcepts(campaign(), provider);
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error.code, 'PROVIDER_TIMEOUT');
+  assert.equal(observedSignal?.aborted, true);
+  assert.equal(calls, 1);
+  assert.ok(Date.now() - startedAt < 2000);
+});

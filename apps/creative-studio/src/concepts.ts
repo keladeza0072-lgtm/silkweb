@@ -148,15 +148,30 @@ export async function generateConcepts(
   const timeoutMs = options.timeoutMs ?? DEFAULT_GENERATION_TIMEOUT_MS;
   let output: unknown;
   try {
-    output = await Promise.race([
-      provider.generate(context),
-      new Promise<never>((_resolve, reject) => {
-        setTimeout(() => reject(new Error('__creative_generation_timeout__')), timeoutMs);
-      }),
-    ]);
+    // Live provider owns its abortable timeout.
+    // Preserve the legacy timeout for other providers.
+    if (
+      (provider as ConceptProvider & { timeoutControlled?: boolean })
+        .timeoutControlled === true
+    ) {
+      output = await provider.generate(context);
+    } else {
+      output = await Promise.race([
+        provider.generate(context),
+        new Promise<never>((_resolve, reject) => {
+          setTimeout(() => reject(new Error('__creative_generation_timeout__')), timeoutMs);
+        }),
+      ]);
+    }
   } catch (error) {
     if (error instanceof Error && error.message === '__creative_generation_timeout__') {
       return fail('PROVIDER_TIMEOUT', `Provider did not respond within ${timeoutMs}ms.`);
+    }
+    if (
+      error instanceof Error &&
+      /^Meta Muse request timed out after \d+ms\.$/.test(error.message)
+    ) {
+      return fail('PROVIDER_TIMEOUT', error.message);
     }
     const detail = error instanceof Error ? error.message : 'Unknown provider failure.';
     return fail('PROVIDER_ERROR', `Concept provider failed: ${detail}`.slice(0, 500));

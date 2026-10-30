@@ -252,6 +252,7 @@ export function buildLiveConceptPrompt(context: CampaignContext): string {
  * This class never logs credentials or authorization headers.
  */
 export class MetaMuseConceptProvider implements ConceptProvider {
+  readonly timeoutControlled = true;
   readonly name = LIVE_PROVIDER_NAME;
   private readonly apiKey: string;
   private readonly endpoint: string;
@@ -293,8 +294,24 @@ export class MetaMuseConceptProvider implements ConceptProvider {
       if (controller.signal.aborted) {
         throw new Error(`Meta Muse request timed out after ${this.timeoutMs}ms.`);
       }
-      const detail = error instanceof Error ? error.message : 'Unknown request failure.';
-      throw new Error(`Meta Muse request failed: ${detail}`.slice(0, 500));
+      // Expose only known-safe transport codes, never raw error details.
+      const cause = error instanceof Error
+        ? (error as Error & { cause?: unknown }).cause
+        : undefined;
+      const rawCode = cause && typeof cause === 'object' && 'code' in cause
+        ? cause.code
+        : undefined;
+      const safeCodes = new Set([
+        'ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED',
+        'ENOTFOUND', 'EAI_AGAIN', 'ENETUNREACH',
+        'EHOSTUNREACH', 'UND_ERR_CONNECT_TIMEOUT',
+        'UND_ERR_HEADERS_TIMEOUT', 'CERT_HAS_EXPIRED',
+        'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+      ]);
+      const code = typeof rawCode === 'string' && safeCodes.has(rawCode)
+        ? rawCode
+        : 'UNKNOWN_NETWORK_ERROR';
+      throw new Error(`Meta Muse network request failed (${code}).`);
     } finally {
       clearTimeout(timer);
     }
