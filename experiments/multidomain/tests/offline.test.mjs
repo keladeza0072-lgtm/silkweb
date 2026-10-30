@@ -98,9 +98,12 @@ test('held-out acceptance requires actual compiled source and never accepts star
   assert.equal(run(prep,['--root',root]).status,0);
   for(const [key,file] of [['inventory','inventory.test.mjs'],['webhooks','webhooks.test.mjs']]){
     const testFile=join(rootScript,'heldout',file);
+    // Node's parent test context can mask nested node --test exit codes.
+    // Remove internal NODE_TEST_* keys so failures remain failures.
+    const env={...process.env,SILKWEB_CANDIDATE:join(root,key)};
+    for(const name of Object.keys(env))if(name.startsWith('NODE_TEST_'))delete env[name];
     const result=spawnSync(process.execPath,['--test',testFile],{
-      encoding:'utf8',timeout:15000,
-      env:{...process.env,SILKWEB_CANDIDATE:join(root,key)},
+      encoding:'utf8',timeout:15000,env,
     });
     assert.notEqual(result.status,0,'Blank candidates must not pass held-out suites');
   }
