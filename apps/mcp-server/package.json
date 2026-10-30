@@ -3,13 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Silk Web local MCP server: ping plus read-only verified-registry librarian tools",
-  "engines": { "node": ">=20" },
+  "description": "Silk Web MCP Librarian with opt-in scoped, verified-byte source installer",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "smoke": "node scripts/smoke.mjs",
     "discovery:demo": "node scripts/discovery-demo.mjs",
-    "test": "node --test tests/librarian.test.mjs tests/discovery.test.mjs",
+    "test": "node --test tests/librarian.test.mjs tests/discovery.test.mjs tests/install.test.mjs",
     "check": "npm run build && npm run smoke && npm run test"
   },
   "dependencies": {
