@@ -109,3 +109,32 @@ test('latest install record is presented as build-only without claiming integrat
   assert.equal(proof.checks.length,2);
   assert(!JSON.stringify(proof).includes('integration-verified'));
 });
+
+test('final demo appears as independently evaluated only when an actual report exists',()=>{
+  const root=fixture();
+  const folder='silkweb-final-demo-20261030/operator/';
+  save(root,folder+'run.json',{
+    trial:'SILKWEB-DEMO-001',model:'muse-spark-1.3',codingSeconds:267.1,stage:'evaluated',
+  });
+  let output=collectEvidence({projectsRoot:root});
+  let demo=output.activity.sessions.find(s=>s.id==='SILKWEB-DEMO-001');
+  assert.equal(demo.status,'recorded-not-evaluated');
+  assert.equal(demo.checksPassed,null);
+  save(root,folder+'evaluation.json',{
+    trial:'SILKWEB-DEMO-001',classification:'GUIDED_FINAL_DEMO_INDEPENDENT_EVALUATION',
+    success:true,checksPassed:12,checksTotal:12,
+  });
+  const sensitive='not-for-browser-demo-prompt-secret';
+  save(root,folder+'mcp-audit.jsonl',JSON.stringify({
+    timestamp:'2026-10-30T00:35:00.000Z',
+    tool:'inspect_verified_component',component:'booking-reservation-kernel@0.2.0',
+    status:'success',query:sensitive,content:sensitive,
+  })+'\n');
+  output=collectEvidence({projectsRoot:root});
+  demo=output.activity.sessions.find(s=>s.id==='SILKWEB-DEMO-001');
+  assert.equal(demo.status,'independently-evaluated');
+  assert.equal(demo.checksPassed,12);
+  assert.equal(demo.checksTotal,12);
+  assert(output.activity.events.some(e=>e.origin==='SILKWEB-DEMO-001'));
+  assert(!JSON.stringify(output).includes(sensitive));
+});
