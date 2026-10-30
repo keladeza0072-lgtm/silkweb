@@ -1,0 +1,32 @@
+name: Studio verified delivery-evidence dashboard
+on:
+  push:
+    branches: [feature/studio-inv-install-evidence]
+    paths:
+      - 'apps/studio/**'
+      - 'apps/mcp-server/**'
+      - 'packages/registry/**'
+      - '.github/workflows/studio-delivery-evidence.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify original certified registry
+        working-directory: packages/registry
+        run: npm ci && npm run check
+      - name: Build MCP trust gate
+        working-directory: apps/mcp-server
+        run: npm ci && npm run build
+      - name: Verify Studio with missing, valid, stale and forged evidence
+        working-directory: apps/studio
+        run: npm ci && npm test
+      - name: Static dashboard script syntax check
+        run: node --check apps/studio/public/dashboard.js
