@@ -14,6 +14,8 @@ import {
   STYLE_SLOTS,
 } from './config.js';
 import { validateBrief, type BriefInput } from './validate.js';
+import { validateCampaignContext } from './campaign.js';
+import { isLiveProviderConfigured } from './provider.js';
 import {
   analyzeBrief,
   POLICY_CHECKS,
@@ -103,6 +105,40 @@ export function configPayload(): {
   };
 }
 
+export function conceptsGenerateOutcome(parsedBody: unknown): { status: number; payload: unknown } {
+  const checked = validateCampaignContext(parsedBody ?? {});
+  if (!checked.ok) {
+    return {
+      status: 422,
+      payload: { ok: false, issues: checked.issues, generationConnected: GENERATION_CONNECTED },
+    };
+  }
+  if (!isLiveProviderConfigured()) {
+    return {
+      status: 503,
+      payload: {
+        ok: false,
+        error: {
+          code: 'PROVIDER_UNAVAILABLE',
+          message: 'Live concept generation is not configured. Set SILKWEB_CREATIVE_PROVIDER=live with credentials to enable it.',
+        },
+        generationConnected: GENERATION_CONNECTED,
+      },
+    };
+  }
+  return {
+    status: 503,
+    payload: {
+      ok: false,
+      error: {
+        code: 'PROVIDER_NOT_IMPLEMENTED',
+        message: 'Live provider configuration is present but live inference is not implemented in this milestone.',
+      },
+      generationConnected: GENERATION_CONNECTED,
+    },
+  };
+}
+
 export async function handleApi(
   req: IncomingMessage,
   res: ServerResponse,
@@ -153,6 +189,27 @@ export async function handleApi(
       generationConnected: GENERATION_CONNECTED,
       note: 'Deterministic local analysis only. No AI service was called and nothing was generated.',
     });
+    return true;
+  }
+
+  /**
+   * Pure concept-generation gate, exported for socket-free tests.
+   * Validates the campaign context, then refuses: no live provider
+   * implementation ships in this milestone, so a valid request still
+   * gets an explicit PROVIDER_UNAVAILABLE — never test output
+   * presented as AI generation.
+   */
+  if (pathname === '/api/concepts/generate' && method === 'POST') {
+    const text = await readBody(req);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text || '{}');
+    } catch {
+      sendJson(res, 400, { ok: false, issues: [{ field: 'body', message: 'Request body must be valid JSON.' }] });
+      return true;
+    }
+    const outcome = conceptsGenerateOutcome(parsed);
+    sendJson(res, outcome.status, outcome.payload);
     return true;
   }
 
