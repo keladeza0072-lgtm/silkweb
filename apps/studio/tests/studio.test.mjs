@@ -199,12 +199,13 @@ test('8. invalid or missing evidence never appears as valid certification', asyn
 });
 
 test('9. existing registry/MCP/booking-app functionality remains unchanged', async () => {
-  // The trust gate still serves exactly the four certified components.
+  // The trust gate serves all five currently certified components, including V2.
   const result = await searchComponents({});
-  assert.equal(result.totalTrusted, 4);
+  assert.equal(result.totalTrusted, 5);
   assert.deepEqual(result.rejected, []);
   const ids = result.components.map((c) => `${c.id}@${c.version}`).sort();
   assert.deepEqual(ids, [
+    'booking-reservation-kernel@0.2.0',
     'booking-schema@0.1.0',
     'booking-slot-guard@0.1.0',
     'booking-validation@0.1.0',
