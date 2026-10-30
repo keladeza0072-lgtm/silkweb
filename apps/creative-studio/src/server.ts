@@ -6,12 +6,20 @@ import {
   BRIEF_FIELDS,
   CREATIVE_STUDIO_DEFAULT_PORT,
   CREATIVE_STUDIO_VERSION,
+  ELICITATION_DEFAULT_MAX_QUESTIONS,
+  EXAMPLE_PROMPTS,
   GENERATION_CONNECTED,
   MAX_BODY_BYTES,
   PHOTOGRAPHY_MODES,
   STYLE_SLOTS,
 } from './config.js';
 import { validateBrief, type BriefInput } from './validate.js';
+import {
+  analyzeBrief,
+  POLICY_CHECKS,
+  QUESTION_ORDER,
+  validateAnalyzeInput,
+} from './elicit.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = join(here, '..', 'public');
@@ -79,6 +87,9 @@ export function configPayload(): {
   styles: typeof STYLE_SLOTS;
   photographyModes: typeof PHOTOGRAPHY_MODES;
   briefFields: typeof BRIEF_FIELDS;
+  examplePrompts: typeof EXAMPLE_PROMPTS;
+  elicitation: { maxQuestions: number; questionOrder: typeof QUESTION_ORDER };
+  policyChecks: typeof POLICY_CHECKS;
 } {
   return {
     version: CREATIVE_STUDIO_VERSION,
@@ -86,6 +97,9 @@ export function configPayload(): {
     styles: STYLE_SLOTS,
     photographyModes: PHOTOGRAPHY_MODES,
     briefFields: BRIEF_FIELDS,
+    examplePrompts: EXAMPLE_PROMPTS,
+    elicitation: { maxQuestions: ELICITATION_DEFAULT_MAX_QUESTIONS, questionOrder: QUESTION_ORDER },
+    policyChecks: POLICY_CHECKS,
   };
 }
 
@@ -104,6 +118,41 @@ export async function handleApi(
 
   if (pathname === '/api/config' && method === 'GET') {
     sendJson(res, 200, configPayload());
+    return true;
+  }
+
+  if (pathname === '/api/elicit/analyze' && method === 'POST') {
+    const text = await readBody(req);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text || '{}');
+    } catch {
+      sendJson(res, 400, { ok: false, issues: [{ field: 'body', message: 'Request body must be valid JSON.' }] });
+      return true;
+    }
+    const checked = validateAnalyzeInput(parsed);
+    if (!checked.ok) {
+      sendJson(res, 422, { ...checked, generationConnected: GENERATION_CONNECTED });
+      return true;
+    }
+    const body = parsed as {
+      description: string;
+      answers?: Record<string, string | null>;
+      overrides?: Record<string, string>;
+      maxQuestions?: number;
+    };
+    const plan = analyzeBrief({
+      description: body.description,
+      answers: body.answers,
+      overrides: body.overrides,
+      maxQuestions: body.maxQuestions ?? ELICITATION_DEFAULT_MAX_QUESTIONS,
+    });
+    sendJson(res, 200, {
+      ok: true,
+      ...plan,
+      generationConnected: GENERATION_CONNECTED,
+      note: 'Deterministic local analysis only. No AI service was called and nothing was generated.',
+    });
     return true;
   }
 

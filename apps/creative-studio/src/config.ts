@@ -60,6 +60,18 @@ export const BRIEF_FIELDS: readonly BriefField[] = [
 
 export const MAX_BODY_BYTES = 64 * 1024;
 
+/** Default cap on clarification questions per campaign (user-adjustable 0–5). */
+export const ELICITATION_DEFAULT_MAX_QUESTIONS = 3;
+export const ELICITATION_MAX_DESCRIPTION_LENGTH = 2000;
+export const ELICITATION_MAX_ANSWER_LENGTH = 500;
+
+/** One-tap starters for the Welcome stage. Plain examples — never sent anywhere. */
+export const EXAMPLE_PROMPTS: readonly string[] = [
+  'Acme Coffee is launching cold-brew cans for commuters aged 25–40 to drive launch-week trial with 2-for-1 opening weekend.',
+  'Northwind Outfitters is introducing a waterproof trail jacket for weekend hikers; goal is to boost holiday sales with free shipping over $50.',
+  'Brightline Studio sells handmade ceramic mugs for cozy home offices and wants to grow newsletter signups with a warm, minimal vibe.',
+];
+
 export function styleSlotIds(): string[] {
   return STYLE_SLOTS.map((slot) => slot.id);
 }
