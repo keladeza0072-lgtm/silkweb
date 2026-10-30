@@ -10,6 +10,7 @@ import {
   checkBookingApp,
   createApproval,
   getContract,
+  getStudioDashboard,
   getVerification,
   listApprovals,
   listCapabilities,
@@ -25,7 +26,8 @@ const CONTENT_TYPES: Record<string, string> = {
   '.css': 'text/css; charset=utf-8',
 };
 
-const STATIC_ALLOWLIST = new Set(['/index.html', '/app.js', '/styles.css']);
+const STATIC_ALLOWLIST = new Set(['/index.html', '/app.js', '/styles.css',
+  '/dashboard.html', '/dashboard.js', '/dashboard.css']);
 const MAX_BODY_BYTES = 64 * 1024;
 
 function sendJson(res: ServerResponse, status: number, payload: unknown): void {
@@ -43,7 +45,7 @@ function sendError(res: ServerResponse, error: unknown): void {
 }
 
 export function serveStatic(pathname: string): { status: number; type: string; body: Buffer } | null {
-  const file = pathname === '/' ? '/index.html' : pathname;
+  const file = pathname === '/' ? '/dashboard.html' : pathname === '/legacy' ? '/index.html' : pathname;
   if (!STATIC_ALLOWLIST.has(file)) return null;
   const abs = normalize(join(PUBLIC_DIR, file));
   if (!abs.startsWith(PUBLIC_DIR) || !existsSync(abs)) return null;
@@ -92,6 +94,15 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, url: 
 
   if (pathname === '/api/health' && method === 'GET') {
     sendJson(res, 200, { ok: true, service: 'studio' });
+    return true;
+  }
+
+  if (pathname === '/api/dashboard' && method === 'GET') {
+    try {
+      sendJson(res, 200, await getStudioDashboard());
+    } catch (error: unknown) {
+      sendError(res, error);
+    }
     return true;
   }
 
@@ -221,7 +232,7 @@ const server = createServer((req, res) => {
       res.end(staticFile.body);
       return;
     }
-    if (STATIC_ALLOWLIST.has(url.pathname) || url.pathname === '/') {
+    if (STATIC_ALLOWLIST.has(url.pathname) || url.pathname === '/' || url.pathname === '/legacy') {
       res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
       res.end('Not found');
       return;
