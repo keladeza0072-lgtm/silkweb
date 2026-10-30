@@ -430,6 +430,11 @@ describe('component-to-test mapping and shared sources', () => {
     if (existsSync(join(REAL_MANIFEST_DIR, 'booking-reservation-kernel-0.2.0.json'))) {
       expected.push('booking-reservation-kernel@0.2.0');
     }
+    // Inventory joins the full registry while initially remaining unverified.
+    // Counting a manifest is NOT counting a certified/trusted component.
+    if (existsSync(join(REAL_MANIFEST_DIR, 'inventory-reservation-0.1.0.json'))) {
+      expected.push('inventory-reservation@0.1.0');
+    }
     assert.deepEqual(manifests.map((m) => `${m.id}@${m.version}`).sort(), expected.sort());
     const byId = new Map(manifests.map((m) => [m.id, m]));
 
@@ -470,6 +475,17 @@ describe('component-to-test mapping and shared sources', () => {
     assert.deepEqual(allowedCommandsFor('booking-schema'), ['registry:booking-tests', 'registry:all-tests']);
     assert.deepEqual(allowedCommandsFor('registry-loader'), ['registry:loader-tests', 'registry:all-tests']);
     assert.ok(!allowedCommandsFor('booking-slot-guard').includes('registry:loader-tests'));
+
+    if (byId.has('inventory-reservation')) {
+      assert.deepEqual(allowedCommandsFor('inventory-reservation'), ['registry:inventory-tests']);
+      assert.deepEqual(closureTestFiles(byId.get('inventory-reservation'), manifests), [
+        'packages/registry/tests/inventory-race-worker.mjs',
+        'packages/registry/tests/inventory-reservation.test.mjs',
+      ]);
+      assert.deepEqual(sourceFilesForComponent(
+        REAL_ROOT, byId.get('inventory-reservation'), manifests,
+      ), ['packages/registry/src/inventory.ts']);
+    }
 
     assert.deepEqual(
       snapshotRealEvidence(),
