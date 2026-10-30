@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/final-demo-preflight.yml'
       - 'experiments/final-demo/**'
+      - 'apps/studio/**'
       - 'experiments/tasks/res-001-starter/**'
       - 'apps/mcp-server/**'
       - 'packages/installer/**'
@@ -29,6 +30,9 @@ jobs:
       - name: Verify MCP discovery and real trust gate
         working-directory: apps/mcp-server
         run: npm ci && npm run check
+      - name: Build and test linked Studio evidence dashboard
+        working-directory: apps/studio
+        run: npm ci && npm test
       - name: Validate demo harness syntax
         run: |
           node --check experiments/final-demo/prepare.mjs
