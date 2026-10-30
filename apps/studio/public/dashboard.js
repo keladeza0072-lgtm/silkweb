@@ -64,7 +64,44 @@ function comparison(title,a,b,suffix){
     barRow('Without Silk Web',a,max,suffix,false)+barRow('With Silk Web',b,max,suffix,true)+
     '<div class="compare-key"><span class="key-old"></span> Control <span class="key-new"></span> Treatment</div></div>';
 }
+function deliveryComparison(title,R,I,suffix=''){
+  const max=Math.max(numeric(R)?R:0,numeric(I)?I:0,1);
+  return '<div class="compare-card"><div class="compare-title">'+esc(title)+'</div>'+
+    barRow('Manual retrieval (R)',R,max,suffix,false)+
+    barRow('Verified install (I)',I,max,suffix,true)+
+    '<div class="compare-key"><span class="key-old"></span> Retrieval <span class="key-new"></span> Install</div></div>';
+}
+function renderDelivery(){
+  const p=state.data.deliveryComparison;
+  if(!p?.available){
+    $('delivery-stats').innerHTML=stat('DELIVERY BENCHMARK','Unavailable','INV-INSTALL-002 evidence not connected')+
+      stat('PROVENANCE','Unavailable','No verified installation claims')+
+      stat('COST','Not inferred','No simulated credit changes');
+    $('delivery-comparison').innerHTML=empty('Installer study not connected',
+      p?.reason||'Preserved operator evidence not available on this machine.');
+    return;
+  }
+  $('delivery-stats').innerHTML=
+    stat('CODING-TIME REDUCTION',dec(p.coding.reductionPercent)+'%','Observed pair, identical task')+
+    stat('QUALITY',fmt(p.quality.I)+'/100','20/20 independent HTTP checks in both')+
+    stat('CERTIFIED SOURCE','BYTE-IDENTICAL','SHA-256 and installer audit match');
+  const metrics=[
+    deliveryComparison('Coding time',p.coding.R,p.coding.I,'s'),
+    deliveryComparison('Uncached input tokens',p.uncached?.R,p.uncached?.I),
+    deliveryComparison('Output tokens',p.output?.R,p.output?.I),
+    deliveryComparison('Reasoning tokens',p.reasoning?.R,p.reasoning?.I),
+    deliveryComparison('Held-out quality',p.quality.R,p.quality.I,'/100'),
+  ];
+  if(p.credits)metrics.push(deliveryComparison('Observed credit balance decrease (USD)',
+    p.credits.R,p.credits.I,' USD'));
+  $('delivery-comparison').innerHTML=metrics.join('')+
+    '<div class="comparison-disclaimer"><strong>Integrity evidence / INV-INSTALL-002</strong>'+
+    '<p>Installer executed successfully. The target source exactly matches the certified SHA-256 and the installation audit; independent application checks passed 20/20. R used retrieved source, but its copied bytes differ.</p>'+
+    '<strong>Experimental scope</strong><p>'+esc(p.design)+'</p><ul>'+
+      p.caveats.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>';
+}
 function renderPerformance(){
+  renderDelivery();
   const p=state.data.performance;
   if(!p.available){
     $('perf-stats').innerHTML=stat('BENCHMARK','Unavailable','RES-002 local run records absent')+
@@ -102,7 +139,7 @@ async function load(){
     state.data=data;state.results=null;
     renderRegistry();renderActivity();renderPerformance();
   }catch(error){
-    for(const id of ['catalog-results','sessions','activity-timeline','performance-comparison','integration-proof']){
+    for(const id of ['catalog-results','sessions','activity-timeline','delivery-comparison','performance-comparison','integration-proof']){
       $(id).innerHTML=empty('Live evidence unavailable','Unable to load Studio data ('+error.message+'). Check registry and MCP builds.');
     }
   }finally{$('refresh-btn').disabled=false;}
