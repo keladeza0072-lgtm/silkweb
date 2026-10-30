@@ -248,12 +248,15 @@ async function run(){
   });
   await stopServer(server);
 }
+let watchdog;
 try{await Promise.race([
-  run(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('EVALUATOR_TIMEOUT')),timeoutMs)),
+  run(),new Promise((_,reject)=>{watchdog=setTimeout(
+    ()=>reject(new Error('EVALUATOR_TIMEOUT')),timeoutMs);}),
 ]);}
 catch(e){checks.push({id:'EVALUATOR_ERROR',title:'Evaluator operation',passed:false,
  error:errMessage(e),durationMs:0});}
-finally{for(const child of services){if(child.exitCode===null)child.kill();}
+finally{clearTimeout(watchdog);
+  for(const child of services){if(child.exitCode===null)child.kill();}
   rmSync(temp,{recursive:true,force:true});}
 const passed=checks.filter(x=>x.passed).length;
 const allExpected=checks.length===total&&checks.every((x,i)=>x.id==='API'+String(i+1).padStart(2,'0'));
