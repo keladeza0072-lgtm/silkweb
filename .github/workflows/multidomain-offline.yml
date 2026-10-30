@@ -1,0 +1,37 @@
+name: Silk Web multi-domain offline acceptance
+on:
+  push:
+    branches:
+      - feature/multidomain-phase1
+    paths:
+      - '.github/workflows/multidomain-offline.yml'
+      - 'experiments/multidomain/**'
+      - 'packages/registry/**'
+      - 'apps/mcp-server/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prepare-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Existing registry trust invariants and tests
+        working-directory: packages/registry
+        run: npm ci && npm run check
+      - name: Existing certified-only MCP tests
+        working-directory: apps/mcp-server
+        run: npm ci && npm run check
+      - name: Syntax-check frozen authoring harness and held-out acceptance
+        run: |
+          node --check experiments/multidomain/prepare.mjs
+          node --check experiments/multidomain/evaluate.mjs
+          node --check experiments/multidomain/heldout/inventory.test.mjs
+          node --check experiments/multidomain/heldout/webhooks.test.mjs
+          node --check experiments/multidomain/workers/inventory-race.mjs
+      - name: Offline-preparation, provenance and no-fake-success checks (NO MUSE)
+        run: node --test experiments/multidomain/tests/offline.test.mjs
