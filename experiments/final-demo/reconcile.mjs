@@ -126,8 +126,9 @@ function main(){
   assert(resolve(meta.root)===root && resolve(meta.candidate)===join(root,'candidate'),
     'Original candidate path mismatch');
   assert(run.trial==='SILKWEB-DEMO-001'&&run.stage==='evaluated' &&
-    run.museExitCode===0 && run.buildExitCode===0 && run.phase3ExitCode===0,
-    'Muse, build, evaluator, or Phase 3 command not recorded as completed successfully');
+    run.museExitCode===0 && run.buildExitCode===0 && run.phase3ExitCode===0 &&
+    run.evaluationExitCode===1,
+    'Expected exactly one completed Muse run, passing Phase 3 and a failed original evaluator');
   assert(original.trial==='SILKWEB-DEMO-001'&&original.success===false &&
     original.checksPassed===18&&original.checksTotal===19,
     'Original evaluation was not the exact preserved 18/19 result');
@@ -137,6 +138,8 @@ function main(){
     'Original evaluation has additional failures; cannot reconcile');
   assert(original.checks.every(c=>c.id==='phase3_integration'||c.passed===true),
     'Original independent HTTP/source checks are not all passing');
+  assert(cli.encoding==='utf16le-bom',
+    'CLI output is not PowerShell UTF-16LE; this encoding-specific correction cannot apply');
   const phase3=cli.data;
   checkScope(phase3,'CLI Phase 3 evidence',true);
   assert(resolve(phase3.projectRoot)===resolve(meta.candidate),
