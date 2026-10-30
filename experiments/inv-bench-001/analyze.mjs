@@ -109,7 +109,8 @@ function adoption(){
   const approved='3bc564618668ccfccebccff9cd8507ced3e8b445f09708fd12d8c2b11126bcf0';
   const matchingRetrieval=fetched.some(x=>x.files.some(f=>f.sha256===approved));
   const files=sourceFiles(join(root,'C'));
-  const matches=files.filter(x=>x.sha256===approved);
+  const matches=files.filter(x=>x.sha256===approved &&
+    x.path==='src/silkweb/inventory.ts');
   const server=join(root,'C','src/server.ts');
   let staticReference=false;
   if(existsSync(server)){
@@ -134,7 +135,9 @@ const delta=(a,b)=>numeric(a)&&numeric(b)?Number((b-a).toFixed(4)):null;
 const reduction=(a,b)=>numeric(a)&&numeric(b)&&a>0?Number(((a-b)/a*100).toFixed(2)):null;
 const paired=B.stage==='evaluated'&&C.stage==='evaluated'&&
   B.taskSha256===C.taskSha256&&B.initialCommit===C.initialCommit&&
-  B.sourceCommit===C.sourceCommit&&B.mcpEnabled===false&&C.mcpEnabled===true;
+  B.sourceCommit===C.sourceCommit&&B.mcpEnabled===false&&C.mcpEnabled===true&&
+  B.maxModelSteps===C.maxModelSteps&&
+  B.model===C.model&&B.reasoningEffort===C.reasoningEffort;
 const result={
   benchmark:'INV-BENCH-001',classification:paired?
     'OBSERVED_SINGLE_PAIR_WITH_HELDOUT_BLACKBOX_EVALUATION':
