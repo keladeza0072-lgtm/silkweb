@@ -1,0 +1,32 @@
+{
+  "id": "inventory-reservation",
+  "version": "0.1.0",
+  "sourcePath": "packages/registry/src/inventory.ts",
+  "dependencies": [],
+  "capabilities": [
+    "inventory-reservation",
+    "atomic-stock-decrement",
+    "idempotent-stock-reservation",
+    "atomic-stock-release",
+    "sqlite-multiprocess-race-protection"
+  ],
+  "invariants": [
+    "Nonnegative safe-integer starting stock is valid, including zero; every reserved quantity is a positive safe integer.",
+    "Reservation keys are permanently bound to one exact SKU and quantity; retries cannot subtract stock again, even after a release.",
+    "Insufficient stock fails without creating a reservation or consuming an idempotency key.",
+    "Two independent SQLite processes competing to reserve the last unit cannot both succeed.",
+    "Release restores stock exactly once; repeated releases do not restore twice.",
+    "SKU, retry key, reservation IDs, and numeric inputs are validated with explicit error codes.",
+    "SQLite single-file transactional correctness under covered tests is not a guarantee of distributed inventory correctness, ledger reconciliation, or arbitrary contention."
+  ],
+  "runtime": {
+    "stack": "node24+sqlite",
+    "node": ">=24",
+    "dependencies": {}
+  },
+  "verification": {
+    "status": "unverified",
+    "testCommand": "node --test tests/inventory-reservation.test.mjs",
+    "evidence": "Awaiting registry-owned real verification; 11/11 held-out authoring acceptance is not formal certification."
+  }
+}
