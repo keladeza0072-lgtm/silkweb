@@ -95,8 +95,12 @@ function main(){
   assert(existsSync(source)&&existsSync(compiled)&&
     hash(compiled)===original.candidateCompiledSourceSha256,
     'Candidate compiled source changed after original evaluation');
-  const v1=requireFile(join(originalRepo,v1Rel)).toString('utf8');
-  const v2=requireFile(join(repo,v2Rel)).toString('utf8');
+  // Original trial may be on Windows where Git checkout uses CRLF.
+  // Keep the ORIGINAL raw SHA-256 verification above; normalize only for
+  // the narrow semantic source comparison. Any other change still fails.
+  const asLf=buffer=>buffer.toString('utf8').replace(/\r\n/g,'\n');
+  const v1=asLf(requireFile(join(originalRepo,v1Rel)));
+  const v2=asLf(requireFile(join(repo,v2Rel)));
   const before=[
     '    for(const value of [-1,0,1.2,Number.MAX_SAFE_INTEGER+1,Number.NaN]){',
     "      assert.throws(()=>seedStock(db,'BAD',value),code('INVALID_INPUT'));",
