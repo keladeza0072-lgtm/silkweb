@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test tests/studio.test.mjs",
+    "test": "npm run build && node --test tests/*.test.mjs",
     "start": "npm run build && node dist/server.js"
   },
   "devDependencies": {
