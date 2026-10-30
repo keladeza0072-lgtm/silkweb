@@ -25,8 +25,9 @@
     "dependencies": {}
   },
   "verification": {
-    "status": "unverified",
+    "status": "verified",
     "testCommand": "node --test tests/inventory-reservation.test.mjs",
-    "evidence": "Awaiting registry-owned real verification; 11/11 held-out authoring acceptance is not formal certification."
+    "sourceHash": "d3fb569a111d1856ad5031e1271cd7059d4eb7d3432d0692cc3756c6c889f5cf",
+    "evidence": "registry-data/evidence/inventory-reservation-0.1.0.json"
   }
 }

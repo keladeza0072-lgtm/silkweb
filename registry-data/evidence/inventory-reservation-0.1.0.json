@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "componentId": "inventory-reservation",
+  "componentVersion": "0.1.0",
+  "artifactFingerprint": "62dde2f54cb8fe4cb50572c99c25d66db9af4914ef0d1b2960b007a40ec73edf",
+  "sections": {
+    "manifest": "b450fded4c8269e17deb221964f42f64dcf40c2a41344f85f0726df3000cbfd2",
+    "sources": "d3fb569a111d1856ad5031e1271cd7059d4eb7d3432d0692cc3756c6c889f5cf",
+    "tests": "0bc1e7006d446893718e3002d907b0861a02e3d2b316eb62cfdacd1892a13118",
+    "lockfile": "4e58b27b1f1f654648bbc4bdd7c8537f2d80cc73fa1ccce1e0384fbe019a92b5",
+    "environment": "d2c5c7eb0ea20fd3e5752f44f59e74785a57111c73a6194a0aeeea610be17ed9",
+    "build": "78511663927828507ec2123e5ff82a1405628a74422366d6036e70691a52eaad"
+  },
+  "testScope": {
+    "command": "node --test tests/inventory-reservation.test.mjs",
+    "commandKey": "registry:inventory-tests",
+    "files": [
+      "packages/registry/tests/inventory-race-worker.mjs",
+      "packages/registry/tests/inventory-reservation.test.mjs"
+    ],
+    "limitations": "Runs 11 registry-owned inventory contract tests including an independently spawned competing-process SQLite race. Allows zero starting stock. Proves local SQLite behavior under covered conditions, not arbitrary load or cross-host transactions."
+  },
+  "build": {
+    "command": "node node_modules/typescript/bin/tsc -p tsconfig.json",
+    "artifacts": [
+      {
+        "file": "packages/registry/dist/evidence.js",
+        "sha256": "8649855df879de6b2b103d6a47ec87d59449b6ef5659caf55aa70dc484473274"
+      },
+      {
+        "file": "packages/registry/dist/fingerprint.js",
+        "sha256": "c596b68c37a77a9a7db837331caf7e17e23c9325f938c3dd2c2aecd0757279e6"
+      },
+      {
+        "file": "packages/registry/dist/index.js",
+        "sha256": "0f7874d99b33702b14a90105070a2426ec40de1874e4740dd30e118b7c8fba6f"
+      },
+      {
+        "file": "packages/registry/dist/inventory.js",
+        "sha256": "1ea75a06c0866704ce3beb6964682dd19f47d98243efe59fcefa60e3c61c9361"
+      },
+      {
+        "file": "packages/registry/dist/loader.js",
+        "sha256": "65ea7c2aade6a5a415e8c49ff7d9f34a32e87ab65db47baaf0eb0d254d8ba9b3"
+      },
+      {
+        "file": "packages/registry/dist/manifest.js",
+        "sha256": "79b14cf48a710d64851079850600ddbb738d6a19e5cc96a204a3e43c59eb1652"
+      },
+      {
+        "file": "packages/registry/dist/reservationKernelV2.js",
+        "sha256": "29276d90f7a6ada58129042bfa030b3543b50628b44b11da32c4a5a7386a665e"
+      },
+      {
+        "file": "packages/registry/dist/runner.js",
+        "sha256": "65ac284cdde255d1aabfd39eda27a753b7db8a34a242fd59bc8324deae8bb0f2"
+      },
+      {
+        "file": "packages/registry/dist/schema.js",
+        "sha256": "c85b17a2f353fdfc8b4562bc428e8ae0744359ddb353b8d2a6364c0e0fd89de9"
+      },
+      {
+        "file": "packages/registry/dist/slotGuard.js",
+        "sha256": "42a1196eb5096f5f2c328984278c594600655322c00983a5426f49ec1e2c0b33"
+      },
+      {
+        "file": "packages/registry/dist/validate.js",
+        "sha256": "6f949d61506b4ab6ee08f84bc7012d3cc42b0b7df194a08719635744c0358500"
+      },
+      {
+        "file": "packages/registry/dist/validation.js",
+        "sha256": "a65d0f26d662a7ad3d8c5623ae29170f3f69a3433cc1e3d0c0f88a370d23a962"
+      }
+    ]
+  },
+  "exitCode": 0,
+  "outcome": "pass",
+  "nodeVersion": "v24.15.0",
+  "sqliteVersion": "3.51.3",
+  "executedAt": "2026-10-30T03:17:12.084Z"
+}

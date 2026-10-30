@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "componentId": "booking-reservation-kernel",
   "componentVersion": "0.2.0",
-  "artifactFingerprint": "5f61a8064c4c91508c193abc8ea5080849815d88fccd76c2f24ac480e2ce301d",
+  "artifactFingerprint": "4808fc8d24ca75b2340eb6e6369f9fac9a1391a75b5d00a6e2ca1ab8545f00e0",
   "sections": {
     "manifest": "722535572ab2cf79106b2c4ad962f50a7e65f9376cb27637a0ec47a9c0367a34",
     "sources": "592cb05ebdda504e2b2069a89fc497d76a2b0a734c6fbfbbe2ac274266b963c0",
     "tests": "090e315e508dfb7c8645fbcc65ff8677e9744a9bd1e149c25af8532284945db1",
     "lockfile": "4e58b27b1f1f654648bbc4bdd7c8537f2d80cc73fa1ccce1e0384fbe019a92b5",
-    "environment": "22dce1acb581bd6f3e245e3c63c28f987684fef4c9f3b98c6208d4c2d22ab455",
+    "environment": "d2c5c7eb0ea20fd3e5752f44f59e74785a57111c73a6194a0aeeea610be17ed9",
     "build": "78511663927828507ec2123e5ff82a1405628a74422366d6036e70691a52eaad"
   },
   "testScope": {
@@ -31,11 +31,11 @@
       },
       {
         "file": "packages/registry/dist/fingerprint.js",
-        "sha256": "65feae3ccd8ffe70550723a3f7d4837fbc8716870053439bb1bb11a8ddd780ce"
+        "sha256": "c596b68c37a77a9a7db837331caf7e17e23c9325f938c3dd2c2aecd0757279e6"
       },
       {
         "file": "packages/registry/dist/index.js",
-        "sha256": "95bbd9e7ddb62b5e84bb931b57614187248520cea5f97043e261fb013cd45c4f"
+        "sha256": "0f7874d99b33702b14a90105070a2426ec40de1874e4740dd30e118b7c8fba6f"
       },
       {
         "file": "packages/registry/dist/loader.js",
@@ -51,7 +51,7 @@
       },
       {
         "file": "packages/registry/dist/runner.js",
-        "sha256": "44122ca78bfd5b39ec158feb27cd8d617dbde642ede994ad5882b2bcb58e532c"
+        "sha256": "65ac284cdde255d1aabfd39eda27a753b7db8a34a242fd59bc8324deae8bb0f2"
       },
       {
         "file": "packages/registry/dist/schema.js",
@@ -75,5 +75,5 @@
   "outcome": "pass",
   "nodeVersion": "v24.15.0",
   "sqliteVersion": "3.51.3",
-  "executedAt": "2026-10-29T17:31:33.881Z"
+  "executedAt": "2026-10-30T03:17:00.441Z"
 }
