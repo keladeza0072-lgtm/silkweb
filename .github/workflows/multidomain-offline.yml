@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feature/multidomain-phase1
+      - fix/multidomain-inventory-inv07-v2
     paths:
       - '.github/workflows/multidomain-offline.yml'
       - 'experiments/multidomain/**'
@@ -31,7 +32,9 @@ jobs:
           node --check experiments/multidomain/prepare.mjs
           node --check experiments/multidomain/evaluate.mjs
           node --check experiments/multidomain/heldout/inventory.test.mjs
+          node --check experiments/multidomain/heldout/inventory-v2.test.mjs
+          node --check experiments/multidomain/reconcile-inventory-v2.mjs
           node --check experiments/multidomain/heldout/webhooks.test.mjs
           node --check experiments/multidomain/workers/inventory-race.mjs
       - name: Offline-preparation, provenance and no-fake-success checks (NO MUSE)
-        run: node --test experiments/multidomain/tests/offline.test.mjs
+        run: node --test experiments/multidomain/tests/*.test.mjs
