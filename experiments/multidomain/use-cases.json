@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "suite": "SW-MULTI-001",
+  "baseline": "hackathon-demo-freeze",
+  "principle": "Six independent application domains; no scoring until held-out tests and same-task B/C matched pairs actually execute.",
+  "domains": [
+    {
+      "id": "inventory-reservation",
+      "candidate": "src/inventory.ts",
+      "level": "phase1",
+      "capabilities": [
+        "atomic-stock-reservation",
+        "idempotent-retry",
+        "release"
+      ],
+      "proof": [
+        "no-oversell",
+        "replay",
+        "conflict",
+        "multi-process-writers"
+      ],
+      "knownLimits": "SQLite single-file transactions; not distributed inventory; no payment"
+    },
+    {
+      "id": "signed-webhook-inbox",
+      "candidate": "src/webhooks.ts",
+      "level": "phase1",
+      "capabilities": [
+        "hmac-authentication",
+        "deduplication",
+        "processing-state"
+      ],
+      "proof": [
+        "invalid-signature",
+        "duplicate-event",
+        "payload-conflict",
+        "durable-inbox"
+      ],
+      "knownLimits": "Synchronous local inbox; not a distributed event bus or external delivery"
+    },
+    {
+      "id": "leased-job-queue",
+      "candidate": "src/jobs.ts",
+      "level": "phase2",
+      "capabilities": [
+        "claim-lease",
+        "retry",
+        "dead-letter"
+      ],
+      "proof": [
+        "expired-lease",
+        "at-most-one-valid-claim",
+        "max-retries"
+      ],
+      "knownLimits": "SQLite queue, polling workers; not multi-region scheduling"
+    },
+    {
+      "id": "api-rate-limiter",
+      "candidate": "src/rateLimit.ts",
+      "level": "phase2",
+      "capabilities": [
+        "fixed-window-limiting",
+        "atomic-admission",
+        "per-key-quota"
+      ],
+      "proof": [
+        "quota-enforced",
+        "separate-tenants",
+        "race-safety",
+        "window-rollover"
+      ],
+      "knownLimits": "SQLite-based fixed window; not a globally distributed edge rate limiter"
+    },
+    {
+      "id": "workflow-state-machine",
+      "candidate": "src/workflow.ts",
+      "level": "phase2",
+      "capabilities": [
+        "transition-guards",
+        "idempotent-transition",
+        "revision-conflict"
+      ],
+      "proof": [
+        "invalid-transitions",
+        "replay",
+        "optimistic-concurrency"
+      ],
+      "knownLimits": "Predefined local state graph; no arbitrary workflow DSL or remote orchestration"
+    },
+    {
+      "id": "tamper-evident-audit-log",
+      "candidate": "src/auditLog.ts",
+      "level": "phase2",
+      "capabilities": [
+        "append-only-chain",
+        "hash-verification",
+        "sequence-integrity"
+      ],
+      "proof": [
+        "modified-event",
+        "missing-record",
+        "reordered-event"
+      ],
+      "knownLimits": "Hash-chain integrity detects tampering only against independently retained anchor; not immutable storage"
+    }
+  ],
+  "states": {
+    "planned": "Not implemented or tested; NEVER part of trusted registry.",
+    "implemented": "Code exists but not certified; not offered to coding agents.",
+    "certified": "Recorded real execution and source/dependency fingerprint; then trusted.",
+    "benchmarked": "Frozen independent paired Muse run plus evaluator; cost only when explicitly measured."
+  }
+}
