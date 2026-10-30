@@ -123,7 +123,12 @@ test('collision and modified destination fail closed; never overwrite',async()=>
 });
 test('missing target opt-in and source-repository targets refuse all writes',async()=>{
   const outside=project();
-  await withClient(repo,{enabled:true},async client=>{
+  // Keep MCP audit output OUTSIDE the source checkout even while
+  // deliberately attempting a protected-root installation.
+  await withClient(repo,{
+    enabled:true,
+    audit:join(outside,'protected-target-audit.jsonl'),
+  },async client=>{
     const r=await call(client,{});
     assert.equal(r.error,true);
     assert.match(r.raw,/PROTECTED_TARGET/);
