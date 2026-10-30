@@ -112,6 +112,20 @@ const V2_TSC_BUILD: AllowedBuild = {
   outputs: [...BUILD_OUTPUTS, 'packages/registry/dist/reservationKernelV2.js'],
 };
 
+/**
+ * Inventory certification adds its own executable source artifact, while
+ * keeping the prior explicit V1/V2 build inventory definitions intact.
+ */
+const INVENTORY_TSC_BUILD: AllowedBuild = {
+  ...V2_TSC_BUILD,
+  outputs: [...V2_TSC_BUILD.outputs, 'packages/registry/dist/inventory.js'],
+};
+
+const INVENTORY_TEST_FILES: readonly string[] = [
+  'packages/registry/tests/inventory-reservation.test.mjs',
+  'packages/registry/tests/inventory-race-worker.mjs',
+];
+
 const V2_TEST_FILES: readonly string[] = [
   'packages/registry/tests/schema.test.mjs',
   'packages/registry/tests/validation.test.mjs',
@@ -120,6 +134,18 @@ const V2_TEST_FILES: readonly string[] = [
 ];
 
 export const TEST_COMMAND_ALLOWLIST: Record<string, AllowedTestCommand> = {
+  'registry:inventory-tests': {
+    command: 'node --test tests/inventory-reservation.test.mjs',
+    cwdRel: 'packages/registry',
+    argv: [NODE, '--test', 'tests/inventory-reservation.test.mjs'],
+    limitations:
+      'Runs 11 registry-owned inventory contract tests including an independently ' +
+      'spawned competing-process SQLite race. Allows zero starting stock. ' +
+      'Proves local SQLite behavior under covered conditions, not arbitrary ' +
+      'load or cross-host transactions.',
+    testFiles: INVENTORY_TEST_FILES,
+    build: INVENTORY_TSC_BUILD,
+  },
   'registry:loader-tests': {
     command: 'node --test tests/loader.test.mjs',
     cwdRel: 'packages/registry',
@@ -195,6 +221,7 @@ export const TEST_COMMAND_ALLOWLIST: Record<string, AllowedTestCommand> = {
  * mapping and rely on the executed-tests coverage check instead.
  */
 export const COMPONENT_ALLOWED_COMMANDS: Record<string, readonly string[]> = {
+  'inventory-reservation': ['registry:inventory-tests'],
   'booking-schema': ['registry:booking-tests', 'registry:all-tests'],
   'booking-validation': ['registry:booking-tests', 'registry:all-tests'],
   'booking-slot-guard': ['registry:booking-tests', 'registry:all-tests'],
