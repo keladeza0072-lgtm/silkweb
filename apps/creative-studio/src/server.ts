@@ -15,8 +15,9 @@ import {
 } from './config.js';
 import { validateBrief, type BriefInput } from './validate.js';
 import { validateCampaignContext } from './campaign.js';
+import { generateConcepts } from './concepts.js';
 import { initializeApprovedCreativeLibrary } from './library.js';
-import { isLiveProviderConfigured } from './provider.js';
+import { isLiveProviderConfigured, MetaMuseConceptProvider } from './provider.js';
 
 /** Approved V1 creative library is active from startup; unknown ids stay rejected. */
 initializeApprovedCreativeLibrary();
@@ -143,6 +144,71 @@ export function conceptsGenerateOutcome(parsedBody: unknown): { status: number; 
   };
 }
 
+/**
+ * Live concept-generation outcome: validates the campaign, refuses
+ * when paid inference is not explicitly enabled (both
+ * SILKWEB_CREATIVE_PROVIDER=live AND MODEL_API_KEY required), and
+ * otherwise makes exactly one Meta Muse Spark 1.3 request with no
+ * retries. Returned concepts pass through the existing
+ * orchestrator validation. Never throws — failures map to
+ * explicit error payloads.
+ */
+export async function conceptsGenerateOutcomeLive(
+  parsedBody: unknown,
+  options: { timeoutMs?: number } = {},
+): Promise<{ status: number; payload: unknown }> {
+  const checked = validateCampaignContext(parsedBody ?? {});
+  if (!checked.ok) {
+    return {
+      status: 422,
+      payload: { ok: false, issues: checked.issues, generationConnected: GENERATION_CONNECTED },
+    };
+  }
+  if (!isLiveProviderConfigured()) {
+    return {
+      status: 503,
+      payload: {
+        ok: false,
+        error: {
+          code: 'PROVIDER_UNAVAILABLE',
+          message:
+            'Live concept generation is not configured. Set SILKWEB_CREATIVE_PROVIDER=live with credentials to enable it.',
+        },
+        generationConnected: GENERATION_CONNECTED,
+      },
+    };
+  }
+  const result = await generateConcepts(
+    checked.context,
+    new MetaMuseConceptProvider(),
+    options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs },
+  );
+  if (result.ok) {
+    return {
+      status: 200,
+      payload: {
+        ok: true,
+        concepts: result.concepts,
+        provider: result.provider,
+        generationConnected: GENERATION_CONNECTED,
+      },
+    };
+  }
+  const statusByCode: Record<string, number> = {
+    INVALID_CONTEXT: 422,
+    PROVIDER_TIMEOUT: 504,
+    RESPONSE_TOO_LARGE: 502,
+    INVALID_PROVIDER_OUTPUT: 502,
+    DUPLICATE_CONCEPTS: 502,
+    PROVIDER_ERROR: 502,
+    TEST_PROVIDER_NOT_ALLOWED: 500,
+  };
+  return {
+    status: statusByCode[result.error.code] ?? 502,
+    payload: { ok: false, error: result.error, generationConnected: GENERATION_CONNECTED },
+  };
+}
+
 export async function handleApi(
   req: IncomingMessage,
   res: ServerResponse,
@@ -212,7 +278,7 @@ export async function handleApi(
       sendJson(res, 400, { ok: false, issues: [{ field: 'body', message: 'Request body must be valid JSON.' }] });
       return true;
     }
-    const outcome = conceptsGenerateOutcome(parsed);
+    const outcome = await conceptsGenerateOutcomeLive(parsed);
     sendJson(res, outcome.status, outcome.payload);
     return true;
   }
