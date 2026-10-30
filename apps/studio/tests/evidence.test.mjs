@@ -32,9 +32,11 @@ test('paired RES-002 evidence yields computed quality, time and token difference
   const folder='res002-fair-20261029/operator/';
   for(const [side,time,quality] of [['B',410,98.5],['C',347,100]]){
     save(root,folder+'run-'+side+'.json',{
-      benchmark:'RES-002',stage:'evaluated',museExitCode:0,
+      benchmark:'RES-002',condition:side,mcpEnabled:side==='C',
+      stage:'evaluated',museExitCode:0,model:'muse-spark-1.3',reasoningEffort:'high',
+      sourceCommit:'c'.repeat(40),evaluatorSha256:'d'.repeat(64),
       taskPromptSha256:'a'.repeat(64),startingGitCommit:'b'.repeat(40),
-      model:'muse-spark-1.3',codingSeconds:time,weightedScore:quality,
+      codingSeconds:time,weightedScore:quality,
       passedChecks:side==='B'?40:41,totalChecks:41,
     });
   }
@@ -61,7 +63,9 @@ test('nonmatching B/C task or incomplete score prevents comparison',()=>{
   const folder='res002-fair-20261029/operator/';
   for(const [side,prompt] of [['B','alpha'],['C','bravo']]){
     save(root,folder+'run-'+side+'.json',{
-      benchmark:'RES-002',stage:'evaluated',museExitCode:0,
+      benchmark:'RES-002',condition:side,mcpEnabled:side==='C',
+      stage:'evaluated',museExitCode:0,model:'muse-spark-1.3',reasoningEffort:'high',
+      sourceCommit:'source',evaluatorSha256:'eval',
       taskPromptSha256:prompt,startingGitCommit:'start',
       codingSeconds:100,weightedScore:99,
     });
