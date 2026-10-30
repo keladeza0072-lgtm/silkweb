@@ -30,6 +30,7 @@ describe('registry-loader@0.1.0', () => {
         'booking-schema@0.1.0',
         'booking-slot-guard@0.1.0',
         'booking-validation@0.1.0',
+        'inventory-reservation@0.1.0',
         'registry-loader@0.1.0',
       ],
     );
@@ -48,7 +49,7 @@ describe('registry-loader@0.1.0', () => {
 
   it('filters by exact stack', () => {
     const manifests = loadRegistry(MANIFEST_DIR);
-    assert.equal(filterRegistry(manifests, { stack: 'node24+sqlite' }).length, 5);
+    assert.equal(filterRegistry(manifests, { stack: 'node24+sqlite' }).length, 6);
     assert.equal(filterRegistry(manifests, { stack: 'node20+sqlite' }).length, 0);
     assert.equal(filterRegistry(manifests, { stack: 'node24' }).length, 0);
   });
@@ -60,7 +61,7 @@ describe('registry-loader@0.1.0', () => {
     const multi = filterRegistry(manifests, { capabilities: ['booking-creation', 'booking-cancellation'] });
     assert.deepEqual(multi.map((m) => m.id), ['booking-slot-guard']);
     assert.equal(filterRegistry(manifests, { capabilities: ['slot-guard', 'nope'] }).length, 0);
-    assert.equal(filterRegistry(manifests, { capabilities: [] }).length, 5);
+    assert.equal(filterRegistry(manifests, { capabilities: [] }).length, 6);
   });
 
   it('filters by exact dependencies', () => {
@@ -84,7 +85,7 @@ describe('registry-loader@0.1.0', () => {
     const reversed = filterRegistry([...manifests].reverse(), {});
     assert.deepEqual(
       reversed.map((m) => m.id),
-      ['booking-reservation-kernel', 'booking-schema', 'booking-slot-guard', 'booking-validation', 'registry-loader'],
+      ['booking-reservation-kernel', 'booking-schema', 'booking-slot-guard', 'booking-validation', 'inventory-reservation', 'registry-loader'],
     );
   });
 
