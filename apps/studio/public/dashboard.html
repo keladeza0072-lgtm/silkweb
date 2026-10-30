@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111a23">
+  <title>Silk Web Studio · Verified implementation memory</title>
+  <link rel="stylesheet" href="/dashboard.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <a class="brand" href="/">
+        <span class="brand-logo" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="brand-words"><strong>SILK WEB</strong><small>STUDIO / LOCAL</small></span>
+      </a>
+      <div class="nav-section">WORKSPACE</div>
+      <nav class="navigation" aria-label="Studio sections">
+        <button class="nav-item active" data-tab="registry" type="button"><span class="nav-icon">▦</span> Registry <span class="nav-index">01</span></button>
+        <button class="nav-item" data-tab="activity" type="button"><span class="nav-icon">≋</span> Agent Activity <span class="nav-index">02</span></button>
+        <button class="nav-item" data-tab="performance" type="button"><span class="nav-icon">◫</span> Performance <span class="nav-index">03</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="trust-block"><span class="pulse-dot"></span> CERTIFICATION GATE <strong>Fail-closed</strong><small>Live registry validation</small></div>
+        <a class="legacy-link" href="/legacy">Contract review <span aria-hidden="true">↗</span></a>
+        <span class="sidebar-version">Silk Web / Hackathon build</span>
+      </div>
+    </aside>
+    <div class="main-wrap">
+      <header class="topbar">
+        <div class="breadcrumbs"><span>PROJECTS</span><span class="slash">/</span><strong>SILK WEB STUDIO</strong></div>
+        <div class="topbar-right"><span class="local-pill"><span class="pulse-dot"></span> LOCAL READ-ONLY</span><button type="button" class="refresh-btn" id="refresh-btn" title="Refresh verified data">↻ <span>Refresh evidence</span></button></div>
+      </header>
+      <main class="page">
+        <section class="tab-panel visible" id="panel-registry" aria-label="Registry">
+          <div class="eyebrow">01 / COMPONENT INTELLIGENCE</div>
+          <div class="hero-heading"><div><h1>Verified implementations<span class="teal">.</span></h1><p>Discover proven code. Inspect its contract. Reuse with confidence.</p></div><div class="hero-annotation">ENGINEERING MEMORY <span>→</span> AGENT CONTEXT</div></div>
+          <div class="stats">
+            <div class="stat"><span>TRUSTED COMPONENTS</span><strong id="stat-trusted">—</strong><small>Certification currently valid</small></div>
+            <div class="stat"><span>REJECTED RECORDS</span><strong id="stat-rejected">—</strong><small>Never served as trusted</small></div>
+            <div class="stat"><span>DELIVERY METHOD</span><strong class="word-stat">Verified install</strong><small>SHA-256 + dependency closure</small></div>
+          </div>
+          <div class="section-header"><div><span class="section-overline">REGISTRY / LIVE TRUST GATE</span><h2>Component catalog</h2></div><span class="right-tag">SOURCE: CURRENT CHECKOUT</span></div>
+          <div class="searchbar"><span class="search-symbol">⌕</span><input id="catalog-query" placeholder="Describe what your agent needs to build..." aria-label="Search verified components"><button id="catalog-search" type="button">Find components <span aria-hidden="true">→</span></button></div>
+          <p id="catalog-summary" class="microcopy">Search uses deterministic, explainable metadata ranking. No model inference.</p>
+          <div id="catalog-results" class="catalog-grid"><div class="skeleton">Loading live certified components…</div></div>
+          <div class="info-rail"><span class="rail-icon">i</span><p>Every catalog result passes the current registry trust gate. <strong>Certified source</strong> is not the same as <strong>verified application integration</strong>; source-install and target tests are evaluated separately.</p></div>
+        </section>
+        <section class="tab-panel" id="panel-activity" aria-label="Agent activity">
+          <div class="eyebrow">02 / AGENT OPERATIONS</div>
+          <div class="hero-heading"><div><h1>See the agent think less<span class="teal">.</span></h1><p>Trace Muse Spark's verified component discovery and adoption, without exposing prompts or source bodies.</p></div><div class="hero-annotation">META MUSE SPARK 1.3 <span>↗</span></div></div>
+          <div id="activity-stats" class="stats"></div>
+          <div class="section-header"><div><span class="section-overline">EVIDENCE / LOCAL OPERATOR LOGS</span><h2>Recorded sessions</h2></div><span class="right-tag">READ-ONLY AUDIT TRAIL</span></div>
+          <div id="sessions" class="session-grid"></div>
+          <div class="section-header"><div><span class="section-overline">TOOLS / PROVENANCE</span><h2>MCP activity</h2></div><span class="right-tag">RECENT EVENTS</span></div>
+          <div id="activity-timeline" class="timeline"></div>
+          <p class="microcopy">An audit event proves an MCP action was recorded. It does not, by itself, prove that application behavior is correct.</p>
+        </section>
+        <section class="tab-panel" id="panel-performance" aria-label="Performance">
+          <div class="eyebrow">03 / MEASURED EVIDENCE</div>
+          <div class="hero-heading"><div><h1>Results, not promises<span class="teal">.</span></h1><p>One independent paired coding evaluation. Exact measurements, visible limitations.</p></div><div class="hero-annotation">RES-002 / CONTROLLED PAIR <span>↗</span></div></div>
+          <div class="stats" id="perf-stats"></div>
+          <div class="section-header"><div><span class="section-overline">B / CONTROL — C / TREATMENT</span><h2>Side-by-side performance</h2></div><span class="right-tag">ONE PAIR · NOT STATISTICAL PROOF</span></div>
+          <div id="performance-comparison" class="perf-grid"></div>
+          <div class="section-header"><div><span class="section-overline">APPLICATION INTEGRATION</span><h2>Latest local verification</h2></div></div>
+          <div id="integration-proof" class="integration-proof"></div>
+          <div class="info-rail"><span class="rail-icon">!</span><p><strong>Evidence standard:</strong> One trial is descriptive, not a general performance guarantee. Dollar savings are never inferred from token totals. Missing evidence displays as unavailable, not as a zero or a fabricated success.</p></div>
+        </section>
+      </main>
+      <footer class="footer"><span>Silk Web Studio / trusted implementation memory</span><span>Local-only · Read-only evidence · No paid inference</span></footer>
+    </div>
+  </div>
+  <script src="/dashboard.js"></script>
+</body>
+</html>
