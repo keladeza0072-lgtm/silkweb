@@ -100,8 +100,13 @@ function historicComparison(projectsRoot: string) {
   const cQuality = num(c?.['weightedScore']);
   const comparable = !!b && !!c &&
     b['benchmark'] === 'RES-002' && c['benchmark'] === 'RES-002' &&
+    b['condition'] === 'B' && c['condition'] === 'C' &&
+    b['mcpEnabled'] === false && c['mcpEnabled'] === true &&
     b['stage'] === 'evaluated' && c['stage'] === 'evaluated' &&
     b['museExitCode'] === 0 && c['museExitCode'] === 0 &&
+    b['model'] === c['model'] && b['reasoningEffort'] === c['reasoningEffort'] &&
+    b['sourceCommit'] === c['sourceCommit'] &&
+    b['evaluatorSha256'] === c['evaluatorSha256'] &&
     b['taskPromptSha256'] === c['taskPromptSha256'] &&
     b['startingGitCommit'] === c['startingGitCommit'] &&
     bTime !== null && cTime !== null && bQuality !== null && cQuality !== null;
