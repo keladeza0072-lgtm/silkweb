@@ -8,7 +8,8 @@
 import {createHash} from 'node:crypto';
 import {existsSync,readFileSync} from 'node:fs';
 import {homedir} from 'node:os';
-import {join} from 'node:path';
+import {dirname,join,resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
 const root=join(homedir(),'Projects','inv-install-002-20261030');
 const op=join(root,'operator');
 const json=p=>JSON.parse(readFileSync(p,'utf8').replace(/^\uFEFF/,''));
@@ -45,7 +46,8 @@ function usage(kind){
     outputTokens:sum('outputTokens'),reasoningTokens:sum('reasoningTokens'),
     explicitCostUsd:sum('explicitCostUsd')};
 }
-const certified=join(homedir(),'Projects','silkweb-vnext-install','packages/registry/src/inventory.ts');
+const repo=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
+const certified=join(repo,'packages/registry/src/inventory.ts');
 const expected='3bc564618668ccfccebccff9cd8507ced3e8b445f09708fd12d8c2b11126bcf0';
 const haveCertified=existsSync(certified)&&sha(certified)===expected;
 function candidate(kind){
