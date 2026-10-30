@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="SilkWeb Creative Studio — campaign brief workspace. Milestone 1 shell; model generation not yet connected." />
+  <title>SilkWeb Creative Studio</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="nav">
+    <div class="nav-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">SW</span>
+        <span class="brand-text">
+          <strong>SilkWeb Creative Studio</strong>
+          <small>Milestone 1 · Application shell</small>
+        </span>
+      </div>
+      <nav aria-label="Primary">
+        <ul class="nav-links">
+          <li><a href="#dashboard" class="active">Dashboard</a></li>
+          <li><a href="#brief">Brief</a></li>
+          <li><a href="#workspace">Workspace</a></li>
+        </ul>
+      </nav>
+      <p class="connection" role="status">
+        <span class="dot dot-off" aria-hidden="true"></span>
+        <span id="connection-label">Model: not connected</span>
+      </p>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="dashboard" class="hero glass" aria-labelledby="hero-title">
+      <div class="hero-main">
+        <p class="eyebrow">N°01 — Campaign workspace · model offline</p>
+        <h1 id="hero-title">Dream up the campaign. Direct every pixel.</h1>
+        <p class="lede">
+          Creative Studio turns a short campaign brief into two creative concepts,
+          two original images, a readiness evaluation, a policy review, and a
+          responsive landing page. In this milestone the workspace shell is live,
+          but model generation is <strong>not connected yet</strong> — every
+          generation control below is clearly marked and disabled.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#brief">Start a campaign brief</a>
+          <a class="btn btn-ghost" href="#workspace">Preview the workspace</a>
+        </div>
+      </div>
+      <dl class="hero-stats">
+        <div><dt>Advertising styles</dt><dd>6 slots</dd></div>
+        <div><dt>Photography modes</dt><dd>3</dd></div>
+        <div><dt>Concepts per campaign</dt><dd>2</dd></div>
+        <div><dt>Model connection</dt><dd>Offline</dd></div>
+      </dl>
+    </section>
+
+    <section id="brief" class="panel glass" aria-labelledby="brief-title">
+      <h2 id="brief-title">Campaign brief</h2>
+      <p class="panel-sub">
+        Fill in the brief, pick a style and a photography mode, then validate.
+        Validation runs locally in your browser and on the server — nothing is
+        generated or sent anywhere.
+      </p>
+      <form id="brief-form" novalidate>
+        <div class="field-grid">
+          <div class="field">
+            <label for="brand">Brand <span aria-hidden="true">*</span></label>
+            <input id="brand" name="brand" type="text" maxlength="80" required autocomplete="organization" />
+          </div>
+          <div class="field">
+            <label for="product">Product <span aria-hidden="true">*</span></label>
+            <input id="product" name="product" type="text" maxlength="120" required />
+          </div>
+          <div class="field">
+            <label for="audience">Audience <span aria-hidden="true">*</span></label>
+            <input id="audience" name="audience" type="text" maxlength="200" required placeholder="e.g. busy parents aged 28–45" />
+          </div>
+          <div class="field">
+            <label for="objective">Objective <span aria-hidden="true">*</span></label>
+            <input id="objective" name="objective" type="text" maxlength="200" required placeholder="e.g. drive launch-week signups" />
+          </div>
+          <div class="field">
+            <label for="offer">Offer <span class="optional">(optional)</span></label>
+            <input id="offer" name="offer" type="text" maxlength="200" placeholder="e.g. 20% off launch weekend" />
+          </div>
+          <div class="field field-full">
+            <label for="creativeDirection">Creative direction <span class="optional">(optional)</span></label>
+            <textarea id="creativeDirection" name="creativeDirection" rows="3" maxlength="500" placeholder="Tone, references, things to avoid…"></textarea>
+          </div>
+        </div>
+
+        <fieldset class="choices">
+          <legend>Advertising style <span aria-hidden="true">*</span> <span class="tag">6 temporary slots</span></legend>
+          <div id="style-grid" class="card-grid" role="radiogroup" aria-label="Advertising style"></div>
+        </fieldset>
+
+        <fieldset class="choices">
+          <legend>Photography mode <span aria-hidden="true">*</span></legend>
+          <div id="mode-row" class="mode-row" role="radiogroup" aria-label="Photography mode"></div>
+        </fieldset>
+
+        <p id="form-errors" class="form-errors" role="alert" hidden></p>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Validate brief</button>
+          <button type="reset" class="btn btn-ghost">Clear</button>
+        </div>
+        <p id="form-result" class="form-result" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section id="workspace" class="workspace" aria-labelledby="workspace-title">
+      <div class="workspace-head">
+        <h2 id="workspace-title">Campaign workspace</h2>
+        <p class="status-banner" role="status">
+          <span class="dot dot-off" aria-hidden="true"></span>
+          Generation not connected — placeholders only. No concepts, images,
+          scores, or pages below are real output.
+        </p>
+      </div>
+      <div class="workspace-grid">
+        <article class="panel glass" aria-labelledby="concepts-title">
+          <h3 id="concepts-title">Creative concepts <span class="tag tag-off">2 slots · disabled</span></h3>
+          <ol class="slots">
+            <li class="slot"><h4>Concept 1</h4><p>Awaiting brief + model connection.</p><button type="button" class="btn btn-small" disabled aria-disabled="true" title="Requires model inference (not connected)">Generate concepts</button></li>
+            <li class="slot"><h4>Concept 2</h4><p>Awaiting brief + model connection.</p><button type="button" class="btn btn-small" disabled aria-disabled="true" title="Requires model inference (not connected)">Generate concepts</button></li>
+          </ol>
+        </article>
+        <article class="panel glass" aria-labelledby="images-title">
+          <h3 id="images-title">Generated images <span class="tag tag-off">2 slots · disabled</span></h3>
+          <ol class="slots image-slots">
+            <li class="slot slot-image"><h4>Image 1</h4><div class="image-ph" aria-hidden="true">No image</div><p>Awaiting model connection.</p><button type="button" class="btn btn-small" disabled aria-disabled="true" title="Requires model inference (not connected)">Generate images</button></li>
+            <li class="slot slot-image"><h4>Image 2</h4><div class="image-ph" aria-hidden="true">No image</div><p>Awaiting model connection.</p><button type="button" class="btn btn-small" disabled aria-disabled="true" title="Requires model inference (not connected)">Generate images</button></li>
+          </ol>
+        </article>
+        <article class="panel glass" aria-labelledby="eval-title">
+          <h3 id="eval-title">Creative evaluation <span class="tag tag-off">disabled</span></h3>
+          <p class="panel-sub">Seven weighted creative-readiness criteria will be scored here once inference is connected. No scores exist yet.</p>
+          <button type="button" class="btn btn-small" disabled aria-disabled="true" title="Requires model inference (not connected)">Run evaluation</button>
+        </article>
+        <article class="panel glass" aria-labelledby="policy-title">
+          <h3 id="policy-title">Advertising policy review <span class="tag tag-off">disabled</span></h3>
+          <p class="panel-sub">A separate policy review will appear here once inference is connected. No review exists yet.</p>
+          <button type="button" class="btn btn-small" disabled aria-disabled="true" title="Requires model inference (not connected)">Run policy review</button>
+        </article>
+        <article class="panel glass panel-wide" aria-labelledby="landing-title">
+          <h3 id="landing-title">Landing-page preview <span class="tag tag-off">disabled</span></h3>
+          <div class="landing-ph" aria-hidden="true">
+            <span class="landing-bar"></span>
+            <span class="landing-hero">Landing page preview</span>
+            <span class="landing-line"></span>
+            <span class="landing-line short"></span>
+          </div>
+          <p class="panel-sub">The responsive landing page will preview here once inference is connected.</p>
+          <button type="button" class="btn btn-small" disabled aria-disabled="true" title="Requires model inference (not connected)">Generate landing page</button>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>SilkWeb Creative Studio · Milestone 1 shell · Local only — no external AI calls, no secrets in this page.</p>
+  </footer>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>

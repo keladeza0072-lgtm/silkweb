@@ -1,0 +1,19 @@
+{
+  "name": "@silkweb/creative-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "SilkWeb Creative Studio Milestone 1: local campaign-brief workspace shell. No model inference yet.",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test tests/creative-studio.test.mjs",
+    "start": "npm run build && node dist/server.js"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "typescript": "5.9.3"
+  }
+}
