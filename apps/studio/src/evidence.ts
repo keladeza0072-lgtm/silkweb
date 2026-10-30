@@ -205,9 +205,13 @@ export function collectEvidence(options: DashboardOptions = {}) {
   const res002 = join(projectsRoot,'res002-fair-20261029','operator');
   const B = json(join(res002,'run-B.json'));
   const C = json(join(res002,'run-C.json'));
+  const finalDemo = join(projectsRoot,'silkweb-final-demo-20261030','operator');
+  const finalRun = json(join(finalDemo,'run.json'));
+  const finalEvaluation = json(join(finalDemo,'evaluation.json'));
   const timeline = [
     ...activityEvents(join(adoption,'mcp-audit.jsonl'),'MUSE-INSTALL-001'),
     ...activityEvents(join(res002,'C-mcp-audit.jsonl'),'RES-002 / Silk Web'),
+    ...activityEvents(join(finalDemo,'mcp-audit.jsonl'),'SILKWEB-DEMO-001'),
   ].sort((a,b)=>String(b.timestamp??'').localeCompare(String(a.timestamp??''))).slice(0,100);
 
   const sessions = [
@@ -224,6 +228,21 @@ export function collectEvidence(options: DashboardOptions = {}) {
       note:correction?.['passed'] === true
         ? '16/16 checks after documented offline correction; guided trial, no A/B control.'
         : 'No validated adoption reconciliation loaded. Never assume success.',
+    },
+    {
+      id:'SILKWEB-DEMO-001',
+      title:'End-to-end guided Muse demonstration',
+      available:!!finalRun && finalRun['trial'] === 'SILKWEB-DEMO-001',
+      model:str(finalRun?.['model']),
+      codingSeconds:num(finalRun?.['codingSeconds']),
+      checksPassed:finalEvaluation?.['trial'] === 'SILKWEB-DEMO-001' ?
+        num(finalEvaluation?.['checksPassed']) : null,
+      checksTotal:finalEvaluation?.['trial'] === 'SILKWEB-DEMO-001' ?
+        num(finalEvaluation?.['checksTotal']) : null,
+      status:finalEvaluation?.['trial'] === 'SILKWEB-DEMO-001'
+        ? finalEvaluation['success'] === true ? 'independently-evaluated' : 'evaluation-failed'
+        : finalRun ? 'recorded-not-evaluated' : 'not-connected',
+      note:'Guided demonstration; independent HTTP + Phase 3 evaluation. Not a new performance A/B comparison.',
     },
     {
       id:'RES-002',
