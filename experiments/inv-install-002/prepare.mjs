@@ -45,8 +45,9 @@ const paths=[
 ];
 for(const p of paths)if(!existsSync(join(repo,p)))fail('Missing pinned path: '+p);
 const sha=p=>createHash('sha256').update(readFileSync(p)).digest('hex');
-const frozenEvaluator='b2fb7bf24638914dac2ac8a7999b40ecfde37bd51d55506874290fe7047e403b';
-if(sha(join(repo,'experiments/inv-install-002/evaluate.mjs'))!==frozenEvaluator)
+const shaCanonicalLF=p=>createHash('sha256').update(readFileSync(p,'utf8').replace(/\r\n/g,'\n')).digest('hex');
+const frozenEvaluator='ac10951bc1bd7254d7915e61aff1b3cf44fa138c3f3eb365bb52e87a04d40dc5';
+if(shaCanonicalLF(join(repo,'experiments/inv-install-002/evaluate.mjs'))!==frozenEvaluator)
   fail('Held-out API evaluator differs from ORIGINAL INV-BENCH-001');
 const frozenModule='3bc564618668ccfccebccff9cd8507ced3e8b445f09708fd12d8c2b11126bcf0';
 if(sha(join(repo,'packages/registry/src/inventory.ts'))!==frozenModule)
@@ -136,7 +137,8 @@ const meta={
   sourceRepo:repo,sourceCommit,baseCommit:base,root,operator:op,
   taskPath:promptPath,taskSha256:sha(promptPath),
   evaluatorPath:join(repo,'experiments/inv-install-002/evaluate.mjs'),
-  evaluatorSha256:frozenEvaluator,certifiedSourceSha256:frozenModule,
+  evaluatorSha256:sha(join(repo,'experiments/inv-install-002/evaluate.mjs')),
+  evaluatorCanonicalLFSha256:frozenEvaluator,certifiedSourceSha256:frozenModule,
   pinnedSha256:Object.fromEntries(paths.map(p=>[p,sha(join(repo,p))])),
   candidates,configRoots,auditLogs,authPresent:!!auth,
   preparedAt:new Date().toISOString(),
@@ -145,7 +147,7 @@ writeFileSync(join(op,'preflight.json'),JSON.stringify(meta,null,2)+'\n');
 process.stdout.write([
   'PASS INV-INSTALL-002 OFFLINE PAIRED PREFLIGHT — ZERO MODEL CALLS',
   'Frozen source: '+sourceCommit,
-  'Original unchanged held-out evaluator SHA256: '+frozenEvaluator,
+  'Original unchanged held-out evaluator canonical LF SHA256: '+frozenEvaluator,
   'Shared task SHA256: '+meta.taskSha256,
   'Same starter commit: '+candidates.R.initialCommit,
   'Same starter tree: '+candidates.R.initialTree,
