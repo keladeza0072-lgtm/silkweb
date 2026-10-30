@@ -25,6 +25,8 @@ jobs:
       - name: Existing registry trust invariants and tests
         working-directory: packages/registry
         run: npm ci && npm run check
+      - name: CI-only real recertification of original five after runner changes
+        run: node experiments/multidomain/certification/reverify-existing-ci.mjs
       - name: Existing certified-only MCP tests
         working-directory: apps/mcp-server
         run: npm ci && npm run check
@@ -35,6 +37,8 @@ jobs:
           node --check experiments/multidomain/heldout/inventory.test.mjs
           node --check experiments/multidomain/heldout/inventory-v2.test.mjs
           node --check experiments/multidomain/reconcile-inventory-v2.mjs
+          node --check experiments/multidomain/certification/certify-inventory.mjs
+          node --check experiments/multidomain/certification/reverify-existing-ci.mjs
           node --check experiments/multidomain/heldout/webhooks.test.mjs
           node --check experiments/multidomain/workers/inventory-race.mjs
       - name: Offline-preparation, provenance and no-fake-success checks (NO MUSE)
