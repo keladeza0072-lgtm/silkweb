@@ -1,0 +1,43 @@
+name: INV-INSTALL-002 — offline Muse delivery benchmark preflight
+on:
+  push:
+    branches: [experiment/inv-install-002]
+    paths:
+      - 'experiments/inv-install-002/**'
+      - '.github/workflows/inv-install-002.yml'
+      - 'apps/mcp-server/**'
+      - 'packages/installer/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-paired-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build tested six-component registry
+        working-directory: packages/registry
+        run: npm ci && npm run check
+      - name: Validate six unmodified certification records before new benchmark
+        run: node experiments/multidomain/certification/validate-published-inventory.mjs
+      - name: Run deterministic installer tests
+        working-directory: packages/installer
+        run: npm run check
+      - name: Build and test both MCP source and opt-in installer tools
+        working-directory: apps/mcp-server
+        run: npm ci && npm run check
+      - name: Syntax-check independent harness (no Muse)
+        run: |
+          node --check experiments/inv-install-002/prepare.mjs
+          node --check experiments/inv-install-002/evaluate.mjs
+          node --check experiments/inv-install-002/analyze.mjs
+          node --check experiments/inv-install-002/tests/reference-server.mjs
+          node --check experiments/inv-install-002/tests/offline.test.mjs
+      - name: Verify exact evaluator hash, fair starter and 20/20 reference API
+        run: node --test experiments/inv-install-002/tests/offline.test.mjs
