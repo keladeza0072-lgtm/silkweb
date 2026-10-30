@@ -625,7 +625,6 @@ export async function getStudioDashboard() {
     listCapabilities(),
   ]);
   return {
-    schemaVersion:1,
     registry:{
       components:catalog.components,
       totalTrusted:catalog.totalTrusted,
