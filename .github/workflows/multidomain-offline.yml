@@ -4,6 +4,7 @@ on:
     branches:
       - feature/multidomain-phase1
       - fix/multidomain-inventory-inv07-v2
+      - feature/multidomain-inventory-certification
     paths:
       - '.github/workflows/multidomain-offline.yml'
       - 'experiments/multidomain/**'
