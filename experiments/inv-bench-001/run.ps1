@@ -33,6 +33,10 @@ if($Condition -eq "C"){
     Refuse "Complete B before C"}
   $br=Get-Content (Join-Path $op "run-B.json") -Raw | ConvertFrom-Json
   if($br.stage -ne "evaluated"){Refuse "B run must be fully evaluated before C"}
+  if($br.maxModelSteps -ne $MaxModelSteps){
+    Refuse "C must use the EXACT SAME model-step setting as B"}
+  if($br.model -ne "muse-spark-1.3" -or $br.reasoningEffort -ne "high"){
+    Refuse "B model or reasoning differs from frozen protocol"}
   if(Test-Path $meta.auditLog){Refuse "C MCP audit already exists"}
 }
 $head=(& git -C $repo rev-parse HEAD).Trim()
