@@ -52,7 +52,7 @@ function fixture(){
   });
   save(root,op+'run.json',{
     trial:'SILKWEB-DEMO-001',stage:'evaluated',
-    museExitCode:0,buildExitCode:0,phase3ExitCode:0,
+    museExitCode:0,buildExitCode:0,phase3ExitCode:0,evaluationExitCode:1,
   });
   save(root,op+'evaluation.json',{
     trial:'SILKWEB-DEMO-001',success:false,checksPassed:18,checksTotal:19,
@@ -133,5 +133,15 @@ test('refuses bogus positive Phase 3 CLI report and preserves all artifacts',()=
   const r=reconcile(root);
   assert.notEqual(r.status,0);
   assert.match(r.stderr,/verification not fully passed/);
+  assert(!existsSync(file(root,'operator/evaluation-reconciliation.json')));
+});
+
+test('does not relabel an unexplained UTF-8 report failure as an encoding correction',()=>{
+  const {root,report,immutableRel}=fixture();
+  save(root,'operator/phase3-verification.json',
+    {...report,verificationReportPath:immutableRel},'utf8');
+  const output=reconcile(root);
+  assert.notEqual(output.status,0);
+  assert.match(output.stderr,/not PowerShell UTF-16LE/);
   assert(!existsSync(file(root,'operator/evaluation-reconciliation.json')));
 });
