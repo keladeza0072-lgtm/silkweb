@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import * as z from 'zod/v4';
 import { auditEvent, sourceDigest } from './audit.js';
+import { InstallBridgeError, installIntoPinnedWorkspace } from './install.js';
 import {
   LibrarianError,
   SEARCH_DEFAULT_LIMIT,
@@ -115,7 +116,8 @@ function createServer(): McpServer {
         'Optional exact capability/stack and target Node/dependency filters enforce compatibility. ' +
         'Unverified or stale components are never returned as trusted. ' +
         'NEXT inspect_verified_component for contract and limitations, then use the Silk Web ' +
-        'verified installer for local source delivery, or get_verified_component_source when needed. ' +
+        'install_verified_component for byte-exact local delivery when enabled by the operator, ' +
+        'or get_verified_component_source when only source inspection is required. ' +
         'This tool returns metadata ONLY, not source text.',
       inputSchema: z.object({
         capabilities: z.array(z.string().min(1)).optional(),
@@ -255,6 +257,85 @@ function createServer(): McpServer {
       }
     },
   );
+
+
+  // The writing tool is not even advertised unless the operator explicitly
+  // opts in. This preserves the original four read-only tools by default.
+  if (process.env.SILKWEB_ALLOW_INSTALL === '1') {
+    server.registerTool(
+      'install_verified_component',
+      {
+        description:
+          'Install verified source BYTE-FOR-BYTE into the single operator-pinned ' +
+          'SILKWEB_TARGET_WORKSPACE using the existing certified installer. ' +
+          'The model cannot choose an arbitrary target path. Only src/silkweb/ ' +
+          'and the .silkweb/installations audit may be created; existing modified files ' +
+          'cannot be overwritten. Never returns full source text or executes model code. ' +
+          'Use dryRun:true for a preview; default false performs real installation. ' +
+          'Afterward import the installed .js ESM path, compile and test your application.',
+        inputSchema: z.object({
+          id: z.string().regex(/^[a-z0-9][a-z0-9-]*$/),
+          version: z.string().regex(/^\d+\.\d+\.\d+$/),
+          dryRun: z.boolean().default(false),
+        }),
+        outputSchema: z.object({
+          status: z.enum(['dry-run','installed-source']),
+          component: z.string(),
+          files: z.array(z.object({
+            path:z.string(),
+            sha256:z.string(),
+            bytes:z.number().int().nonnegative(),
+            action:z.enum(['create','unchanged']),
+          })),
+          auditReportPath:z.string(),
+          registryFingerprint:z.string(),
+          certifiedSourceHash:z.string(),
+          assurance:z.string(),
+          integrationGuidance:z.string(),
+        }),
+        annotations: {
+          readOnlyHint:false,
+          destructiveHint:false,
+          idempotentHint:true,
+        },
+      },
+      async (args) => {
+        const spec = args.id + '@' + args.version;
+        try {
+          const output = installIntoPinnedWorkspace(args.id,args.version,args.dryRun);
+          auditEvent({
+            tool:'install_verified_component',
+            status:'success',
+            component:spec,
+            verificationSourceHash:output.certifiedSourceHash,
+            installStatus:output.status,
+            installedFileCount:output.files.length,
+            files:output.files.map(f => ({
+              path:f.path,
+              chars:f.bytes,
+              sha256:f.sha256,
+              truncated:false,
+            })),
+          });
+          return {
+            content: [{type:'text' as const,text:JSON.stringify(output)}],
+            structuredContent:output,
+          };
+        } catch (error:unknown) {
+          auditEvent({
+            tool:'install_verified_component',
+            status:'failure',
+            component:spec,
+            errorCode:error instanceof InstallBridgeError?error.code:'INSTALL_ERROR',
+          });
+          throw new Error(
+            '['+(error instanceof InstallBridgeError?error.code:'INSTALL_ERROR')+'] '+
+            (error instanceof Error?error.message:'Install rejected'),
+          );
+        }
+      },
+    );
+  }
 
   return server;
 }
