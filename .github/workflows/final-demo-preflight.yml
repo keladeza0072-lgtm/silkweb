@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feature/final-muse-demo
+      - fix/final-demo-report-reconciliation
     paths:
       - '.github/workflows/final-demo-preflight.yml'
       - 'experiments/final-demo/**'
@@ -38,4 +39,4 @@ jobs:
           node --check experiments/final-demo/prepare.mjs
           node --check experiments/final-demo/evaluate.mjs
       - name: Exercise disposable demo preparation and fail-closed evaluator (NO Muse calls)
-        run: node --test experiments/final-demo/tests/demo.test.mjs
+        run: node --test experiments/final-demo/tests/*.test.mjs
