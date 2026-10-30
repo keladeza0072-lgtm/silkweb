@@ -25,11 +25,6 @@ jobs:
       - name: Existing registry trust invariants and tests
         working-directory: packages/registry
         run: npm ci && npm run check
-      - name: CI-only real recertification of original five after runner changes
-        run: node experiments/multidomain/certification/reverify-existing-ci.mjs
-      - name: Existing certified-only MCP tests
-        working-directory: apps/mcp-server
-        run: npm ci && npm run check
       - name: Syntax-check frozen authoring harness and held-out acceptance
         run: |
           node --check experiments/multidomain/prepare.mjs
@@ -43,3 +38,8 @@ jobs:
           node --check experiments/multidomain/workers/inventory-race.mjs
       - name: Offline-preparation, provenance and no-fake-success checks (NO MUSE)
         run: node --test experiments/multidomain/tests/*.test.mjs
+      - name: CI-only real recertification of original five after runner changes
+        run: node experiments/multidomain/certification/reverify-existing-ci.mjs
+      - name: Existing certified-only MCP tests
+        working-directory: apps/mcp-server
+        run: npm ci && npm run check
