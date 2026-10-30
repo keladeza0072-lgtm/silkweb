@@ -304,3 +304,34 @@ test('live provider owns timeout, aborts request, and never retries', async () =
   assert.equal(calls, 1);
   assert.ok(Date.now() - startedAt < 2000);
 });
+
+test('response content text format is supported', async () => {
+  setupApproved();
+
+  let calls = 0;
+
+  const fetchImpl = async () => {
+    calls += 1;
+
+    return okResponse(JSON.stringify({
+      output: [{
+        type: 'message',
+        content: [{
+          type: 'output_text',
+          text: JSON.stringify(liveConcepts()),
+        }],
+      }],
+    }));
+  };
+
+  const provider = new MetaMuseConceptProvider({
+    apiKey: 'test-key',
+    fetchImpl,
+  });
+
+  const result = await generateConcepts(campaign(), provider);
+
+  assert.equal(result.ok, true);
+  assert.equal(result.concepts.length, 2);
+  assert.equal(calls, 1);
+});

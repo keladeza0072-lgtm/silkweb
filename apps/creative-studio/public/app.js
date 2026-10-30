@@ -581,7 +581,7 @@ async function init() {
     }
     if (!state.styleId && state.styles.length > 0) state.styleId = state.styles[0].id;
     if (!state.modeId && state.modes.length > 0) state.modeId = state.modes[0].id;
-    setConnection(health && health.generationConnected ? 'Model: connected' : 'Model: not connected');
+    setConnection(health && health.generationConnected ? 'Model: configured (connection unverified)' : 'Model: not configured');
   } catch {
     setConnection('Model: not connected (server unreachable)');
   }

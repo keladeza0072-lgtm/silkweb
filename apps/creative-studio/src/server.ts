@@ -8,7 +8,6 @@ import {
   CREATIVE_STUDIO_VERSION,
   ELICITATION_DEFAULT_MAX_QUESTIONS,
   EXAMPLE_PROMPTS,
-  GENERATION_CONNECTED,
   MAX_BODY_BYTES,
   PHOTOGRAPHY_MODES,
   STYLE_SLOTS,
@@ -85,7 +84,7 @@ export function healthPayload(): {
   version: string;
   generationConnected: boolean;
 } {
-  return { ok: true, service: 'creative-studio', version: CREATIVE_STUDIO_VERSION, generationConnected: GENERATION_CONNECTED };
+  return { ok: true, service: 'creative-studio', version: CREATIVE_STUDIO_VERSION, generationConnected: isLiveProviderConfigured() };
 }
 
 export function configPayload(): {
@@ -100,7 +99,7 @@ export function configPayload(): {
 } {
   return {
     version: CREATIVE_STUDIO_VERSION,
-    generationConnected: GENERATION_CONNECTED,
+    generationConnected: isLiveProviderConfigured(),
     styles: STYLE_SLOTS,
     photographyModes: PHOTOGRAPHY_MODES,
     briefFields: BRIEF_FIELDS,
@@ -115,7 +114,7 @@ export function conceptsGenerateOutcome(parsedBody: unknown): { status: number; 
   if (!checked.ok) {
     return {
       status: 422,
-      payload: { ok: false, issues: checked.issues, generationConnected: GENERATION_CONNECTED },
+      payload: { ok: false, issues: checked.issues, generationConnected: isLiveProviderConfigured() },
     };
   }
   if (!isLiveProviderConfigured()) {
@@ -127,7 +126,7 @@ export function conceptsGenerateOutcome(parsedBody: unknown): { status: number; 
           code: 'PROVIDER_UNAVAILABLE',
           message: 'Live concept generation is not configured. Set SILKWEB_CREATIVE_PROVIDER=live with credentials to enable it.',
         },
-        generationConnected: GENERATION_CONNECTED,
+        generationConnected: isLiveProviderConfigured(),
       },
     };
   }
@@ -139,7 +138,7 @@ export function conceptsGenerateOutcome(parsedBody: unknown): { status: number; 
         code: 'PROVIDER_NOT_IMPLEMENTED',
         message: 'Live provider configuration is present but live inference is not implemented in this milestone.',
       },
-      generationConnected: GENERATION_CONNECTED,
+      generationConnected: isLiveProviderConfigured(),
     },
   };
 }
@@ -161,7 +160,7 @@ export async function conceptsGenerateOutcomeLive(
   if (!checked.ok) {
     return {
       status: 422,
-      payload: { ok: false, issues: checked.issues, generationConnected: GENERATION_CONNECTED },
+      payload: { ok: false, issues: checked.issues, generationConnected: isLiveProviderConfigured() },
     };
   }
   if (!isLiveProviderConfigured()) {
@@ -174,7 +173,7 @@ export async function conceptsGenerateOutcomeLive(
           message:
             'Live concept generation is not configured. Set SILKWEB_CREATIVE_PROVIDER=live with credentials to enable it.',
         },
-        generationConnected: GENERATION_CONNECTED,
+        generationConnected: isLiveProviderConfigured(),
       },
     };
   }
@@ -190,7 +189,7 @@ export async function conceptsGenerateOutcomeLive(
         ok: true,
         concepts: result.concepts,
         provider: result.provider,
-        generationConnected: GENERATION_CONNECTED,
+        generationConnected: isLiveProviderConfigured(),
       },
     };
   }
@@ -205,7 +204,7 @@ export async function conceptsGenerateOutcomeLive(
   };
   return {
     status: statusByCode[result.error.code] ?? 502,
-    payload: { ok: false, error: result.error, generationConnected: GENERATION_CONNECTED },
+    payload: { ok: false, error: result.error, generationConnected: isLiveProviderConfigured() },
   };
 }
 
@@ -238,7 +237,7 @@ export async function handleApi(
     }
     const checked = validateAnalyzeInput(parsed);
     if (!checked.ok) {
-      sendJson(res, 422, { ...checked, generationConnected: GENERATION_CONNECTED });
+      sendJson(res, 422, { ...checked, generationConnected: isLiveProviderConfigured() });
       return true;
     }
     const body = parsed as {
@@ -256,7 +255,7 @@ export async function handleApi(
     sendJson(res, 200, {
       ok: true,
       ...plan,
-      generationConnected: GENERATION_CONNECTED,
+      generationConnected: isLiveProviderConfigured(),
       note: 'Deterministic local analysis only. No AI service was called and nothing was generated.',
     });
     return true;
@@ -295,7 +294,7 @@ export async function handleApi(
     const result = validateBrief((parsed ?? {}) as Partial<BriefInput>);
     sendJson(res, result.ok ? 200 : 422, {
       ...result,
-      generationConnected: GENERATION_CONNECTED,
+      generationConnected: isLiveProviderConfigured(),
       note: 'Brief validated locally. Concept, image, evaluation, and landing-page generation are not connected yet.',
     });
     return true;
