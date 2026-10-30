@@ -94,3 +94,28 @@ Do not infer per-run dollars unless explicitly measured and attributable.
 distinct problem scopes, two clean Git candidates, zero artificial Muse
 success, no overwrites, and rejection of a blank implementation. It does
 not pretend any candidate passes behavioral tests before Muse writes it.
+
+## INV07-v2: original 10/11 inventory acceptance bug
+
+Original INV-001 contract requires **nonnegative** initial stock (zero valid).
+The original held-out `inventory.test.mjs` accidentally treated zero as invalid
+in its INV07 `seedStock` loop. Muse's first inventory attempt produced a
+successful build, 10/11 independent checks, and failed precisely that assertion.
+
+To correct the EVALUATOR without changing original source, candidate, or run:
+
+1. Preserve `operator/evaluation-inventory.json` (original 10/11).
+2. Check out branch `fix/multidomain-inventory-inv07-v2` in a NEW worktree.
+3. Run `node experiments/multidomain/reconcile-inventory-v2.mjs`.
+4. Inspect exclusively created `operator/evaluation-inventory-v2.json`.
+
+The script verifies the original run provenance, original frozen test and
+contract hashes, source revision, precise original INV07 failure, and exact
+compiled output SHA-256. It confirms the corrected held-out test has only
+the approved one-test change; then it executes the 11 tests offline.
+
+**DO NOT claim 11/11 until the script actually reports success.**
+An original 10/11 stays original 10/11; a passing v2 may be described as
+'11/11 on corrected contract-aligned held-out evaluator, after offline
+reconciliation; original 10/11 preserved'. This is not registry certification,
+not a new Muse run and not a controlled B/C cost or quality comparison.
