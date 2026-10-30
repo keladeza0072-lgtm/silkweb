@@ -1,0 +1,37 @@
+name: Final Muse demo offline preflight
+on:
+  push:
+    branches:
+      - feature/final-muse-demo
+    paths:
+      - '.github/workflows/final-demo-preflight.yml'
+      - 'experiments/final-demo/**'
+      - 'experiments/tasks/res-001-starter/**'
+      - 'apps/mcp-server/**'
+      - 'packages/installer/**'
+      - 'packages/registry/**'
+      - 'registry-data/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify certified registry
+        working-directory: packages/registry
+        run: npm ci && npm run check
+      - name: Verify MCP discovery and real trust gate
+        working-directory: apps/mcp-server
+        run: npm ci && npm run check
+      - name: Validate demo harness syntax
+        run: |
+          node --check experiments/final-demo/prepare.mjs
+          node --check experiments/final-demo/evaluate.mjs
+      - name: Exercise disposable demo preparation and fail-closed evaluator (NO Muse calls)
+        run: node --test experiments/final-demo/tests/demo.test.mjs
