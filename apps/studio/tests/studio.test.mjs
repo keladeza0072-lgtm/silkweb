@@ -326,3 +326,36 @@ test('2. requirements search never presents uncertified components as trusted', 
     else process.env.SILKWEB_REPO_ROOT = prevRepoRoot;
   }
 });
+
+test('11. Studio v2 serves the read-only three-screen dashboard while preserving legacy review', async () => {
+  const { handleApi, serveStatic } = await import('../dist/server.js');
+  const home=serveStatic('/');
+  const legacy=serveStatic('/legacy');
+  const js=serveStatic('/dashboard.js');
+  const css=serveStatic('/dashboard.css');
+  assert.ok(home && home.status===200);
+  assert.match(home.body.toString('utf8'),/id="panel-performance"/);
+  assert.match(home.body.toString('utf8'),/id="panel-activity"/);
+  assert.match(home.body.toString('utf8'),/id="panel-registry"/);
+  assert.ok(legacy && legacy.status===200);
+  assert.match(legacy.body.toString('utf8'),/id="screen-contract"/);
+  assert.ok(js && js.status===200 && css && css.status===200);
+
+  let status=0, body='';
+  const req={method:'GET'};
+  const res={
+    writeHead(value){status=value;},
+    end(value){body=Buffer.from(value).toString('utf8');},
+  };
+  const handled=await handleApi(req,res,new URL('http://127.0.0.1/api/dashboard'));
+  assert.equal(handled,true);
+  assert.equal(status,200);
+  const d=JSON.parse(body);
+  assert.equal(d.schemaVersion,1);
+  assert.equal(d.registry.totalTrusted,5);
+  assert.equal(d.registry.components.length,5);
+  assert.equal(d.registry.components.every(c=>c.certificationEligible),true);
+  assert.equal(d.source,'local-read-only-evidence');
+  assert(Array.isArray(d.activity.events));
+  assert(!JSON.stringify(d).includes('apiKey'));
+});
