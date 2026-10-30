@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "node --test tests/schema.test.mjs tests/validation.test.mjs tests/slotGuard.test.mjs tests/loader.test.mjs tests/verify.test.mjs tests/verify-integrity.test.mjs tests/verify-certification.test.mjs tests/booking-reservation-kernel.test.mjs",
+    "test": "node --test tests/schema.test.mjs tests/validation.test.mjs tests/slotGuard.test.mjs tests/loader.test.mjs tests/verify.test.mjs tests/verify-integrity.test.mjs tests/verify-certification.test.mjs tests/booking-reservation-kernel.test.mjs tests/inventory-reservation.test.mjs",
     "check": "npm run build && npm run test"
   },
   "dependencies": {
