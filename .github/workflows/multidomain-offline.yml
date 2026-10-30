@@ -10,6 +10,8 @@ on:
       - 'experiments/multidomain/**'
       - 'packages/registry/**'
       - 'apps/mcp-server/**'
+      - 'registry-data/manifests/**'
+      - 'registry-data/evidence/**'
   workflow_dispatch:
 permissions:
   contents: read
@@ -25,6 +27,8 @@ jobs:
       - name: Existing registry trust invariants and tests
         working-directory: packages/registry
         run: npm ci && npm run check
+      - name: Validate COMMITTED six-component evidence in clean Linux checkout (NO REWRITE)
+        run: node experiments/multidomain/certification/validate-published-inventory.mjs
       - name: Syntax-check frozen authoring harness and held-out acceptance
         run: |
           node --check experiments/multidomain/prepare.mjs
@@ -33,6 +37,7 @@ jobs:
           node --check experiments/multidomain/heldout/inventory-v2.test.mjs
           node --check experiments/multidomain/reconcile-inventory-v2.mjs
           node --check experiments/multidomain/certification/certify-inventory.mjs
+          node --check experiments/multidomain/certification/validate-published-inventory.mjs
           node --check experiments/multidomain/certification/reverify-existing-ci.mjs
           node --check experiments/multidomain/heldout/webhooks.test.mjs
           node --check experiments/multidomain/workers/inventory-race.mjs
