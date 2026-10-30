@@ -1,5 +1,6 @@
 import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { homedir } from 'node:os';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 
 /**
@@ -43,6 +44,39 @@ function json(path: string): AnyRecord | null {
     const obj: unknown = JSON.parse(content);
     return record(obj) ? obj : null;
   } catch { return null; }
+}
+
+/** Raw-byte digest; reconciliation is trusted only if its inputs are unchanged. */
+function fileDigest(path: string, max=MAX_JSON): string | null {
+  if (!existsSync(path)) return null;
+  const stat=lstatSync(path);
+  if (!stat.isFile() || stat.isSymbolicLink() || stat.size>max) return null;
+  return createHash('sha256').update(readFileSync(path)).digest('hex');
+}
+
+function verifiedDemoReconciliation(projectsRoot: string, operator: string, original: AnyRecord | null) {
+  const recon=json(join(operator,'evaluation-reconciliation.json'));
+  if (!recon || !original ||
+      recon['trial'] !== 'SILKWEB-DEMO-001' ||
+      recon['classification'] !== 'OFFLINE_RECONCILED_PHASE3_REPORT_DECODING' ||
+      recon['success'] !== true || recon['isNewMuseRun'] !== false ||
+      recon['paidModelCalls'] !== 0 ||
+      recon['reconciledChecksPassed'] !== 19 ||
+      recon['reconciledChecksTotal'] !== 19 ||
+      original['checksPassed'] !== 18 || original['checksTotal'] !== 19 ||
+      original['success'] !== false) return false;
+  const orig=record(recon['originalEvaluation']) ? recon['originalEvaluation'] : null;
+  const proof=record(recon['sourceEvidence']) ? recon['sourceEvidence'] : null;
+  if (!orig || !proof || orig['preserved'] !== true ||
+      proof['cliOutputEncoding'] !== 'utf16le-bom' ||
+      proof['status'] !== 'integration-verified') return false;
+  const rel=proof['immutableVerificationRelPath'];
+  if (typeof rel!=='string' ||
+      !/^\.silkweb\/validations\/[0-9a-f-]{36}\.json$/i.test(rel)) return false;
+  const candidate=join(projectsRoot,'silkweb-final-demo-20261030','candidate');
+  return fileDigest(join(operator,'evaluation.json')) === orig['sha256'] &&
+    fileDigest(join(operator,'phase3-verification.json')) === proof['cliOutputSha256'] &&
+    fileDigest(join(candidate,rel)) === proof['immutableVerificationSha256'];
 }
 
 function logs(path: string): AnyRecord[] {
@@ -170,16 +204,21 @@ function activityEvents(path: string, origin: string) {
 }
 
 function latestVerification(projectsRoot: string) {
-  const folder = join(projectsRoot,'silkweb-installer-demo','.silkweb','validations');
-  if (!existsSync(folder)) return null;
-  const folderStat = lstatSync(folder);
-  if (!folderStat.isDirectory() || folderStat.isSymbolicLink()) return null;
-  const records = readdirSync(folder)
-    .filter(x => /^[0-9a-f-]{36}\.json$/i.test(x))
-    .slice(0,100)
-    .map(name => json(join(folder,name)))
-    .filter((x): x is AnyRecord => !!x &&
-      x['schemaVersion'] === 1 && x['component'] === COMPONENT);
+  // Historical snapshots only. The current trust gate is checked separately.
+  const folders = [
+    join(projectsRoot,'silkweb-installer-demo','.silkweb','validations'),
+    join(projectsRoot,'silkweb-final-demo-20261030','candidate','.silkweb','validations'),
+  ];
+  const records: AnyRecord[]=[];
+  for (const folder of folders) {
+    if (!existsSync(folder)) continue;
+    const folderStat=lstatSync(folder);
+    if (!folderStat.isDirectory() || folderStat.isSymbolicLink()) continue;
+    for (const name of readdirSync(folder).filter(x => /^[0-9a-f-]{36}\.json$/i.test(x)).slice(0,100)) {
+      const result=json(join(folder,name));
+      if (result && result['schemaVersion']===1 && result['component']===COMPONENT) records.push(result);
+    }
+  }
   records.sort((a,b)=>String(b['verifiedAt']??'').localeCompare(String(a['verifiedAt']??'')));
   const result = records[0];
   if (!result) return null;
@@ -208,6 +247,7 @@ export function collectEvidence(options: DashboardOptions = {}) {
   const finalDemo = join(projectsRoot,'silkweb-final-demo-20261030','operator');
   const finalRun = json(join(finalDemo,'run.json'));
   const finalEvaluation = json(join(finalDemo,'evaluation.json'));
+  const finalReconciled = verifiedDemoReconciliation(projectsRoot,finalDemo,finalEvaluation);
   const timeline = [
     ...activityEvents(join(adoption,'mcp-audit.jsonl'),'MUSE-INSTALL-001'),
     ...activityEvents(join(res002,'C-mcp-audit.jsonl'),'RES-002 / Silk Web'),
@@ -235,14 +275,17 @@ export function collectEvidence(options: DashboardOptions = {}) {
       available:!!finalRun && finalRun['trial'] === 'SILKWEB-DEMO-001',
       model:str(finalRun?.['model']),
       codingSeconds:num(finalRun?.['codingSeconds']),
-      checksPassed:finalEvaluation?.['trial'] === 'SILKWEB-DEMO-001' ?
-        num(finalEvaluation?.['checksPassed']) : null,
-      checksTotal:finalEvaluation?.['trial'] === 'SILKWEB-DEMO-001' ?
-        num(finalEvaluation?.['checksTotal']) : null,
-      status:finalEvaluation?.['trial'] === 'SILKWEB-DEMO-001'
-        ? finalEvaluation['success'] === true ? 'independently-evaluated' : 'evaluation-failed'
-        : finalRun ? 'recorded-not-evaluated' : 'not-connected',
-      note:'Guided demonstration; independent HTTP + Phase 3 evaluation. Not a new performance A/B comparison.',
+      checksPassed:finalReconciled ? 19 : finalEvaluation?.['trial'] === 'SILKWEB-DEMO-001'
+        ? num(finalEvaluation?.['checksPassed']) : null,
+      checksTotal:finalReconciled ? 19 : finalEvaluation?.['trial'] === 'SILKWEB-DEMO-001'
+        ? num(finalEvaluation?.['checksTotal']) : null,
+      status:finalReconciled ? 'offline-reconciled'
+        : finalEvaluation?.['trial'] === 'SILKWEB-DEMO-001'
+          ? finalEvaluation['success'] === true ? 'independently-evaluated' : 'evaluation-failed'
+          : finalRun ? 'recorded-not-evaluated' : 'not-connected',
+      note:finalReconciled
+        ? 'Original 18/19 evaluation preserved. Offline UTF-16LE report reconciliation separately validated 19/19 against immutable Phase 3 evidence. No extra Muse run.'
+        : 'Guided demonstration; independent HTTP + Phase 3 evaluation. Not a new performance A/B comparison.',
     },
     {
       id:'RES-002',
