@@ -50,6 +50,12 @@ const COMPONENT_TEST_FILES: Record<string, readonly string[]> = {
   'booking-validation': ['packages/registry/tests/validation.test.mjs'],
   'booking-slot-guard': ['packages/registry/tests/slotGuard.test.mjs'],
   'registry-loader': ['packages/registry/tests/loader.test.mjs'],
+  // Both the top-level suite and its independently spawned process worker
+  // contribute to certification; either edit invalidates evidence.
+  'inventory-reservation': [
+    'packages/registry/tests/inventory-reservation.test.mjs',
+    'packages/registry/tests/inventory-race-worker.mjs',
+  ],
 };
 
 /**
@@ -72,6 +78,7 @@ export const COMPONENT_EXTRA_SOURCES: Record<string, readonly string[]> = {
   'booking-validation': [],
   'booking-slot-guard': [],
   'registry-loader': ['packages/registry/src/manifest.ts'],
+  'inventory-reservation': [],
 };
 
 const SAFE_ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
