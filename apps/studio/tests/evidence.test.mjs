@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, test } from 'node:test';
+import {createHash} from 'node:crypto';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -137,4 +138,53 @@ test('final demo appears as independently evaluated only when an actual report e
   assert.equal(demo.checksTotal,12);
   assert(output.activity.events.some(e=>e.origin==='SILKWEB-DEMO-001'));
   assert(!JSON.stringify(output).includes(sensitive));
+});
+
+test('Studio trusts final-demo reconciliation only when immutable input digests still match',()=>{
+  const root=fixture();
+  const operator='silkweb-final-demo-20261030/operator/';
+  const relative='.silkweb/validations/6fbec248-be52-4c9a-b030-c57ce13786e1.json';
+  const ev='silkweb-final-demo-20261030/candidate/'+relative;
+  save(root,operator+'run.json',{
+    trial:'SILKWEB-DEMO-001',model:'muse-spark-1.3',codingSeconds:205.291,
+  });
+  save(root,operator+'evaluation.json',{
+    trial:'SILKWEB-DEMO-001',success:false,checksPassed:18,checksTotal:19,
+  });
+  save(root,ev,{
+    schemaVersion:1,component:'booking-reservation-kernel@0.2.0',status:'integration-verified',
+    passed:true,verifiedAt:'2026-10-30T01:00:00.000Z',
+    assurance:'Selected app tests verified',checks:[{id:'target_build',passed:true}],
+  });
+  const p=join(root,operator+'phase3-verification.json');
+  save(root,operator+'phase3-verification.json','');
+  writeFileSync(p,Buffer.concat([
+    Buffer.from([0xff,0xfe]),Buffer.from('{"passed":true}', 'utf16le'),
+  ]));
+  const digest=path=>createHash('sha256').update(readFileSync(join(root,path))).digest('hex');
+  save(root,operator+'evaluation-reconciliation.json',{
+    trial:'SILKWEB-DEMO-001',
+    classification:'OFFLINE_RECONCILED_PHASE3_REPORT_DECODING',
+    success:true,isNewMuseRun:false,paidModelCalls:0,
+    reconciledChecksPassed:19,reconciledChecksTotal:19,
+    originalEvaluation:{preserved:true,sha256:digest(operator+'evaluation.json')},
+    sourceEvidence:{
+      cliOutputEncoding:'utf16le-bom',status:'integration-verified',
+      cliOutputSha256:digest(operator+'phase3-verification.json'),
+      immutableVerificationRelPath:relative,
+      immutableVerificationSha256:digest(ev),
+    },
+  });
+  let data=collectEvidence({projectsRoot:root});
+  let demo=data.activity.sessions.find(s=>s.id==='SILKWEB-DEMO-001');
+  assert.equal(demo.status,'offline-reconciled');
+  assert.equal(demo.checksPassed,19);
+  assert.match(demo.note,/Original 18\/19/);
+  assert.equal(data.installation.status,'integration-verified');
+  // Tampering after reconciliation must remove the success status.
+  writeFileSync(p,'changed');
+  data=collectEvidence({projectsRoot:root});
+  demo=data.activity.sessions.find(s=>s.id==='SILKWEB-DEMO-001');
+  assert.equal(demo.status,'evaluation-failed');
+  assert.equal(demo.checksPassed,18);
 });
