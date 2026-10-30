@@ -180,6 +180,21 @@ const REAL_COMPONENTS = [
 if (existsSync(join(realManifestDir, 'booking-reservation-kernel-0.2.0.json'))) {
   REAL_COMPONENTS.push('booking-reservation-kernel@0.2.0');
 }
+// Registry inventory is discoverable ONLY after branch-local real
+// certification. During staged development, reject with UNVERIFIED.
+const inventoryManifestPath = join(realManifestDir, 'inventory-reservation-0.1.0.json');
+const inventoryManifest = existsSync(inventoryManifestPath)
+  ? readManifest('inventory-reservation', '0.1.0') : null;
+const pendingInventoryRejection = inventoryManifest?.verification.status === 'unverified'
+  ? [{id:'inventory-reservation',version:'0.1.0',code:'UNVERIFIED'}] : [];
+if (inventoryManifest?.verification.status === 'verified') {
+  REAL_COMPONENTS.push('inventory-reservation@0.1.0');
+}
+function assertRegistryRejections(actual) {
+  assert.deepEqual(actual.map(({id,version,code})=>({id,version,code})),
+    pendingInventoryRejection,
+    'only the explicitly unverified inventory candidate may be rejected');
+}
 REAL_COMPONENTS.sort();
 
 describe('librarian MCP tools against the certified registry', () => {
@@ -206,7 +221,7 @@ describe('librarian MCP tools against the certified registry', () => {
         assert.equal(component.stack, 'node24+sqlite');
         assert.ok(component.summary.length > 0);
       }
-      assert.deepEqual(result.rejected, []);
+      assertRegistryRejections(result.rejected);
     });
   });
 
@@ -309,7 +324,7 @@ describe('librarian MCP tools against the certified registry', () => {
       for (const [query, expected] of cases) {
         const found = await callOk(client, 'search_verified_components', { query });
         assert.ok(found.components.some(component => component.id === expected), query);
-        assert.deepEqual(found.rejected, [], 'verified catalog must remain trusted');
+        assertRegistryRejections(found.rejected);
       }
       const exactMuseQuery = await callOk(client, 'search_verified_components', {
         query: 'reservation booking appointment API',
@@ -568,7 +583,7 @@ describe('Phase 2 ranked discovery (live MCP verification gate)', () => {
       assert.ok(found.components[0].match.matchedTerms.includes('booking'));
       assert.ok(found.components[0].match.signals.length > 0);
       assert.ok(!JSON.stringify(found).includes('function createIdempotentBooking('));
-      assert.deepEqual(found.rejected, []);
+      assertRegistryRejections(found.rejected);
     });
   });
 
@@ -583,13 +598,18 @@ describe('Phase 2 ranked discovery (live MCP verification gate)', () => {
         nodeVersion:'24.15.0',
         installedDependencies:{zod:'4.6.6'},
       });
-      assert.deepEqual(badVersion.components, []);
+      assert.ok(badVersion.components.every(c=>![
+        'booking-reservation-kernel','booking-slot-guard','booking-validation',
+      ].includes(c.id)),
+        'Zod-mismatched components may never be advertised as compatible');
 
       const noDependencies = await callOk(client,'search_verified_components',{
         installedDependencies:{},
       });
-      assert.deepEqual(noDependencies.components.map(c=>c.id), ['booking-schema'],
-        'The schema requires no npm dependencies; it remains compatible');
+      const expectedDependencyFree = inventoryManifest?.verification.status === 'verified'
+        ? ['booking-schema','inventory-reservation'] : ['booking-schema'];
+      assert.deepEqual(noDependencies.components.map(c=>c.id), expectedDependencyFree,
+        'All and only certified dependency-free components remain compatible');
 
       const queryWithoutDeps = await callOk(client,'search_verified_components',{
         query:'booking schema', nodeVersion:'24.15.0',
