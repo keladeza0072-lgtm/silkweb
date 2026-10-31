@@ -28,7 +28,8 @@ import {
   type PlannedImageAd,
 } from './imageAdsPlan.js';
 import { checkImageAdPolicy } from './imageAdsPolicy.js';
-import { finishAdPng, type ImageGenerator } from './museImage.js';
+import type { ImageGenerator } from './museImage.js';
+import { finishLiveAdPngSharp } from './imageAdFinishSharp.js';
 import { isLiveProviderConfigured } from './provider.js';
 
 export interface LiveImageAd {
@@ -165,7 +166,25 @@ export async function imageAdsGenerateLiveOutcome(body: unknown, deps: LiveDeps)
       recordFatal(error(status, code, `Ad ${i + 1}: ${message}`.slice(0, limit)));
       continue;
     }
-    const finished = finishAdPng(bytes.png, `ads[${i}].png`);
+    let finished: Awaited<ReturnType<typeof finishLiveAdPngSharp>>;
+    try {
+      finished = await finishLiveAdPngSharp(
+        bytes.png,
+        { headline: plan.headline, body: plan.body, cta: plan.cta },
+        plan.audience,
+        `ads[${i}].png`,
+      );
+    } catch {
+      const message = `Ad ${i + 1}: Image finishing failed unexpectedly.`;
+      failures.push({
+        id: plan.id,
+        audience: plan.audience,
+        code: 'IMAGE_FINISH_FAILED',
+        message,
+      });
+      recordFatal(error(502, 'IMAGE_FINISH_FAILED', message));
+      continue;
+    }
     if (!finished.ok) {
       const message = finished.issues.map((f) => f.message).join(' ');
       failures.push({ id: plan.id, audience: plan.audience, code: 'IMAGE_FINISH_FAILED', message: `Ad ${i + 1}: ${message}`.slice(0, 400) });

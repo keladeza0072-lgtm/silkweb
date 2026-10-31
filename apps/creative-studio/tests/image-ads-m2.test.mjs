@@ -233,7 +233,14 @@ test('m2 live outcome runs the full mocked pipeline with meta engine label', asy
   assert.deepEqual(outcome.payload.ads.map((a) => a.audience).sort(), ['cold', 'hot', 'warm']);
   assert.equal(new Set(outcome.payload.ads.map((a) => a.headline)).size, 3);
   for (let i = 0; i < 3; i += 1) {
-    assert.deepEqual(Buffer.from(outcome.payload.ads[i].pngDataUrl.split(',')[1], 'base64'), pngs[i]);
+    assert.ok(outcome.payload.ads[i].pngDataUrl.startsWith('data:image/png;base64,'));
+    assert.equal(outcome.payload.ads[i].width, 1080);
+    assert.equal(outcome.payload.ads[i].height, 1350);
+    assert.equal(
+      Buffer.from(outcome.payload.ads[i].pngDataUrl.split(',')[1], 'base64').equals(pngs[i]),
+      false,
+      'Finished advertisement must differ from the raw provider photograph.',
+    );
     assert.ok(!JSON.stringify(outcome.payload.ads[i]).toLowerCase().includes('silkweb'));
   }
   assert.equal(outcome.payload.engine.kind, 'meta');
