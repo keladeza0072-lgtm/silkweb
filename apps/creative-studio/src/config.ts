@@ -33,7 +33,7 @@ export interface BriefField {
   required: boolean;
 }
 
-export const CREATIVE_STUDIO_VERSION = '0.2.0';
+export const CREATIVE_STUDIO_VERSION = '0.3.0';
 export const CREATIVE_STUDIO_DEFAULT_PORT = 3003;
 
 /** No model inference is wired in by default. */

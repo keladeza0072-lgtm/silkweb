@@ -1,0 +1,255 @@
+/**
+ * SilkWeb Image Ads — Milestone 2 live orchestration.
+ *
+ * Six separated stages:
+ *  1. Input validation (imageAds.ts, incl. optional M2 details)
+ *  2. Creative planning (Muse Spark 1.3 adapter)
+ *  3. Policy validation (internal checks)
+ *  4. Muse Image generation (one call per ad, no retries)
+ *  5. Image finishing (verified 1080 x 1350 PNG, no bitmap font, no SilkWeb branding)
+ *  6. Output verification (final shape check)
+ *
+ * Paid inference never runs unless the caller supplies live
+ * planner/image providers AND the server environment is configured
+ * (SILKWEB_CREATIVE_PROVIDER=live with MODEL_API_KEY). Tests inject
+ * mock providers with allowTestProviders: true — no network.
+ */
+
+import {
+  IMAGE_AD_HEIGHT,
+  IMAGE_AD_WIDTH,
+  validateImageAdInput,
+  type ImageAdInput,
+  type ImageAdIssue,
+} from './imageAds.js';
+import {
+  validateImageAdPlans,
+  type ImageAdPlanner,
+  type PlannedImageAd,
+} from './imageAdsPlan.js';
+import { checkImageAdPolicy } from './imageAdsPolicy.js';
+import { finishAdPng, type ImageGenerator } from './museImage.js';
+import { isLiveProviderConfigured } from './provider.js';
+
+export interface LiveImageAd {
+  id: string;
+  audience: PlannedImageAd['audience'];
+  angle: string;
+  headline: string;
+  body: string;
+  cta: string;
+  visualPrompt: string;
+  width: number;
+  height: number;
+  pngDataUrl: string;
+  referenceGuided: boolean;
+}
+
+export interface LiveDeps {
+  planner: ImageAdPlanner;
+  images: ImageGenerator;
+  /** Tests set this to allow deterministic test doubles. The HTTP route never does. */
+  allowTestProviders?: boolean;
+  env?: NodeJS.ProcessEnv;
+}
+
+export interface LiveImageFailure {
+  id: string;
+  audience: PlannedImageAd['audience'];
+  code: string;
+  message: string;
+}
+
+export interface LiveSuccessPayload {
+  ok: true;
+  /** Absent/false on a full three-ad result; true when only some ads succeeded. */
+  partial?: false;
+  objective: string;
+  productLabel: string;
+  ads: LiveImageAd[];
+  failures?: LiveImageFailure[];
+  warning?: string;
+  engine: { kind: 'meta'; planner: string; imagery: string };
+  note: string;
+}
+
+export interface LivePartialPayload {
+  ok: true;
+  partial: true;
+  objective: string;
+  productLabel: string;
+  ads: LiveImageAd[];
+  failures: LiveImageFailure[];
+  warning: string;
+  engine: { kind: 'meta'; planner: string; imagery: string };
+  note: string;
+}
+
+export type LiveOutcome =
+  | { status: 200; payload: LiveSuccessPayload }
+  | { status: 206; payload: LivePartialPayload }
+  | { status: number; payload: { ok: false; issues?: ImageAdIssue[]; error?: { code: string; message: string } } };
+
+function issues(status: number, issues: ImageAdIssue[]): LiveOutcome {
+  return { status, payload: { ok: false, issues } };
+}
+
+function error(status: number, code: string, message: string): LiveOutcome {
+  return { status, payload: { ok: false, error: { code, message } } };
+}
+
+/**
+ * Full live outcome. Never throws — every failure maps to a payload.
+ * Exactly one planner call and one image call per ad; no retries.
+ */
+export async function imageAdsGenerateLiveOutcome(body: unknown, deps: LiveDeps): Promise<LiveOutcome> {
+  const env = deps.env ?? process.env;
+  const liveConfigured = isLiveProviderConfigured(env);
+  const testMode = deps.allowTestProviders === true;
+
+  if (!liveConfigured && !testMode) {
+    return error(503, 'PROVIDER_UNAVAILABLE', 'Live image-ads generation is not configured. Set SILKWEB_CREATIVE_PROVIDER=live with MODEL_API_KEY to enable it.');
+  }
+  if ((deps.planner.testOnly === true || deps.images.testOnly === true) && !testMode) {
+    return error(500, 'TEST_PROVIDER_NOT_ALLOWED', 'Test-provider output must never be served as live generation.');
+  }
+
+  // Stage 1 — input validation.
+  const checked = validateImageAdInput(body);
+  if (!checked.ok) return issues(422, checked.issues);
+  const input: ImageAdInput = checked.input;
+
+  // Stage 2 — creative planning (exactly one planner call).
+  let rawPlans: unknown;
+  try {
+    rawPlans = await deps.planner.plan(input);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown planner failure.';
+    if (/timed out after \d+ms/.test(message)) return error(504, 'PLANNER_TIMEOUT', message.slice(0, 300));
+    return error(502, 'PLANNER_ERROR', `Creative planning failed: ${message}`.slice(0, 400));
+  }
+  const validated = validateImageAdPlans(rawPlans);
+  if (!validated.ok) {
+    return error(502, 'INVALID_PLAN', validated.error);
+  }
+
+  // Stage 3 — policy validation.
+  const findings = checkImageAdPolicy(validated.plans, input);
+  if (findings.length > 0) {
+    return {
+      status: 422,
+      payload: { ok: false, issues: findings.map((f) => ({ field: f.field, message: f.message })) },
+    };
+  }
+
+  // Stage 4 + 5 — image generation and finishing, one call per ad,
+  // no retries. A per-ad failure is recorded truthfully and the loop
+  // continues so successfully generated ads are never silently discarded.
+  const ads: LiveImageAd[] = [];
+  const failures: LiveImageFailure[] = [];
+  let firstFatal: LiveOutcome | null = null;
+  const recordFatal = (outcome: LiveOutcome): void => {
+    if (firstFatal === null) firstFatal = outcome;
+  };
+  for (let i = 0; i < validated.plans.length; i += 1) {
+    const plan = validated.plans[i];
+    let bytes: { png: Buffer; referenceGuided: boolean };
+    try {
+      bytes = await deps.images.generate(plan, input);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown image failure.';
+      const code = /timed out after \d+ms/.test(message) ? 'IMAGE_TIMEOUT' : 'IMAGE_ERROR';
+      const status = code === 'IMAGE_TIMEOUT' ? 504 : 502;
+      const limit = code === 'IMAGE_TIMEOUT' ? 300 : 400;
+      failures.push({ id: plan.id, audience: plan.audience, code, message: `Ad ${i + 1}: ${message}`.slice(0, limit) });
+      recordFatal(error(status, code, `Ad ${i + 1}: ${message}`.slice(0, limit)));
+      continue;
+    }
+    const finished = finishAdPng(bytes.png, `ads[${i}].png`);
+    if (!finished.ok) {
+      const message = finished.issues.map((f) => f.message).join(' ');
+      failures.push({ id: plan.id, audience: plan.audience, code: 'IMAGE_FINISH_FAILED', message: `Ad ${i + 1}: ${message}`.slice(0, 400) });
+      recordFatal(issues(502, finished.issues.map((f) => ({ field: f.field, message: f.message }))));
+      continue;
+    }
+    ads.push({
+      id: plan.id,
+      audience: plan.audience,
+      angle: plan.angle,
+      headline: plan.headline,
+      body: plan.body,
+      cta: plan.cta,
+      visualPrompt: plan.visualPrompt,
+      width: finished.width,
+      height: finished.height,
+      pngDataUrl: finished.pngDataUrl,
+      referenceGuided: bytes.referenceGuided,
+    });
+  }
+
+  // Nothing usable: report the first failure exactly as before (no retries).
+  if (ads.length === 0) {
+    if (firstFatal !== null) return firstFatal;
+    return error(502, 'IMAGE_VERIFICATION_FAILED', 'Expected exactly three verified advertisements.');
+  }
+
+  // Stage 6 — output verification. A full result covers cold, warm, and
+  // hot; a partial result is verified ad-by-ad and labeled as partial.
+  const productLabel = input.productName.length > 0 ? input.productName : 'Your product';
+  const engine = { kind: 'meta' as const, planner: deps.planner.name, imagery: deps.images.name };
+  const verified = verifyLiveAds(ads);
+  if (!verified.ok) return error(502, 'IMAGE_VERIFICATION_FAILED', verified.message);
+
+  if (failures.length === 0) {
+    if (ads.length !== 3) return error(502, 'IMAGE_VERIFICATION_FAILED', 'Expected exactly three verified advertisements.');
+    const audiences = ads.map((a) => a.audience).sort().join(',');
+    if (audiences !== 'cold,hot,warm') return error(502, 'IMAGE_VERIFICATION_FAILED', 'Ads must cover cold, warm, and hot.');
+    return {
+      status: 200,
+      payload: {
+        ok: true,
+        objective: input.objective,
+        productLabel,
+        ads,
+        engine,
+        note: 'Meta-generated advertisements. Copy and imagery were produced by Meta models from your supplied product facts.',
+      },
+    };
+  }
+
+  return {
+    status: 206,
+    payload: {
+      ok: true,
+      partial: true,
+      objective: input.objective,
+      productLabel,
+      ads,
+      failures,
+      warning: `Only ${ads.length} of 3 ads could be generated. The failed ${failures.length === 1 ? 'ad was' : 'ads were'} not retried automatically — you can try again.`,
+      engine,
+      note: 'Partial Meta-generated result. Copy and imagery were produced by Meta models from your supplied product facts.',
+    },
+  };
+}
+
+/**
+ * Per-ad output verification shared by full and partial results:
+ * verified 1080 x 1350 PNG data URLs, known audiences, no duplicates.
+ */
+function verifyLiveAds(ads: LiveImageAd[]): { ok: true } | { ok: false; message: string } {
+  const seen = new Set<string>();
+  for (const ad of ads) {
+    if (!ad.pngDataUrl.startsWith('data:image/png;base64,') || ad.width !== IMAGE_AD_WIDTH || ad.height !== IMAGE_AD_HEIGHT) {
+      return { ok: false, message: `Ad ${ad.id} failed output verification.` };
+    }
+    if (ad.audience !== 'cold' && ad.audience !== 'warm' && ad.audience !== 'hot') {
+      return { ok: false, message: `Ad ${ad.id} has an unknown audience.` };
+    }
+    if (seen.has(ad.audience)) {
+      return { ok: false, message: 'Ads must cover distinct audiences.' };
+    }
+    seen.add(ad.audience);
+  }
+  return { ok: true };
+}

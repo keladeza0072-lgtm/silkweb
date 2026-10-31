@@ -1,16 +1,17 @@
-# SilkWeb Creative Studio — Milestone 1.5 guided workspace
+# SilkWeb Image Ads — Milestone 1
 
-Standalone, locally runnable campaign workspace for the Creative MVP
-([CREATIVE_MVP.md](../../CREATIVE_MVP.md), [CREATIVE_UX.md](../../CREATIVE_UX.md)).
-Plain HTML/CSS/JavaScript frontend, Node.js 24 + TypeScript backend on
-built-in `node:http`. Binds to `127.0.0.1`, default port `3003`.
+Offline slice of the Image Ads MVP
+([SILKWEB_IMAGE_ADS_BUILD.md](../../SILKWEB_IMAGE_ADS_BUILD.md)):
+one product input plus one campaign objective becomes exactly three
+professional, downloadable image ads. Plain HTML/CSS/JavaScript
+frontend, Node.js 24 + TypeScript backend on built-in `node:http`.
+Binds to `127.0.0.1`, default port `3003`.
 
-**Milestone 1.5 is guided but still offline.** Model generation is NOT
-connected: every generation control (concepts, images, evaluation, policy
-review, landing page) is visibly disabled, the API reports
-`"generationConnected": false`, and no endpoint invents campaign results
-or scores. Elicitation is deterministic local rules only — no AI service
-is called.
+**Milestone 1 is fully offline.** Copy comes from deterministic,
+claim-free templates and PNGs from the local raster renderer — the
+API labels every result `"local-draft"` and no endpoint calls a
+model. Muse creative review connects in a later milestone with
+explicit approval.
 
 ## Install, build, test, run
 
@@ -27,48 +28,54 @@ npm start
 Then open `http://127.0.0.1:3003` in a browser.
 
 - `npm test` builds the TypeScript and runs the suite
-  (`tests/creative-studio.test.mjs`, socket-free: config, validation,
-  and static-allowlist checks directly against `dist/`).
+  (`tests/creative-studio.test.mjs`, `tests/concepts.test.mjs`,
+  `tests/library-2b.test.mjs`, `tests/live-provider.test.mjs`,
+  `tests/image-ads.test.mjs`; socket-free).
 - `$env:PORT = "3004"; npm start` overrides the port.
-- No dependencies beyond dev-time `typescript` + `@types/node`.
-  No external AI calls, no secrets, no persistence — validated briefs
-  live in the page session only.
+- No runtime dependencies beyond dev-time `typescript` +
+  `@types/node`. No external AI calls, no secrets, no
+  persistence — uploads live in the request only and are never
+  stored.
 
 ## What is inside
 
-1. **Welcome** — one prominent free-text campaign box, tappable example
-   prompts (from `/api/config`), editorial hero, step progress, and live
-   model-connection status from `/api/health`.
-2. **Clarify** — deterministic elicitation over
-   `POST /api/elicit/analyze`: extracts stated facts, asks one missing
-   question at a time (max 3 by default), with suggested answers, custom
-   input, and skip. Answered/skipped questions never repeat; vague input
-   yields `missing`, never invented facts.
-3. **Review** — structured brief with Supplied/Assumed/Missing badges,
-   editable fields, explicit assumption list, and style/photography
-   controls tucked inside optional advanced settings. Validates through
-   the unchanged `POST /api/briefs/validate`; optional fields never block.
-4. **Create** — 2 concept slots, 2 image slots, 7-item brief-completeness
-   readiness list (not a model score), policy-reminder checklist, and
-   landing-page preview. All generation buttons are disabled with
-   "requires model inference" titles; nothing is presented as real output.
-5. **Six advertising-style slots + photography modes** — clearly labeled
-   temporary slots (`style-slot-a`…`f`, `placeholder: true`); photography
-   mode is auto-recommended from setting cues, changeable in Review.
+1. **Create** — centered single-purpose screen: product image
+   upload (PNG, JPEG, WebP, up to 1.5 MB) with thumbnail preview
+   and remove/replace, product-name input, three objective cards
+   (Drive Sales default, Build Awareness, Launch a Product), and
+   a Generate Ads CTA. One of image/name is required.
+2. **Generating** — loading animation with
+   "Creating your three ads..." and rotating step messages. No
+   invented percentage progress. Failures show an actionable
+   error with a retry control.
+3. **Results** — "Your ads are ready.": exactly three creative
+   cards, each with its real 1080 x 1350 PNG preview at 4:5,
+   individual headline, body copy, CTA, Download PNG, and Copy
+   ad text. Three-column desktop, single-column mobile, plus a
+   Start-new control.
+
+The renderer composites uploaded **PNG** product photos
+cover-fit into the creative. JPEG/WebP uploads are accepted and
+shown as thumbnails, but this milestone renders a typographic
+product plate instead of compositing them — the results screen
+says so explicitly. Copy uses only the supplied product name:
+no discounts, endorsements, testimonials, or results language.
 
 ## JSON API (loopback only)
 
 | Method | Path | Result |
 |---|---|---|
 | `GET` | `/api/health` | `200 {"ok":true,"service":"creative-studio","version","generationConnected":false}` |
-| `GET` | `/api/config` | styles, photography modes, brief fields, example prompts, elicitation defaults, policy checks, `generationConnected` |
-| `POST` | `/api/elicit/analyze` | `200 {ok:true,values,sources,questions,assumptions,readiness,…}` or `422` on bad input; `400` on invalid JSON. Deterministic — no AI calls |
-| `POST` | `/api/briefs/validate` | `200 {ok:true,…}` or `422 {ok:false,issues}`; `400` on invalid JSON |
+| `GET` | `/api/config` | styles, frameworks, modes, brief fields, prompts, elicitation defaults, policy checks, plus `imageAds` objectives and ad size |
+| `POST` | `/api/image-ads/generate` | `200 {ok:true,objective,productLabel,ads:[{id,direction,angle,headline,body,cta,width,height,pngDataUrl,photoComposited}],photoComposited,engine,note}`; `422` on validation issues; `400` on invalid JSON; `413` on oversize bodies |
+| `POST` | `/api/briefs/validate` | retained from the earlier workspace milestone |
+| `POST` | `/api/elicit/analyze`, `/api/concepts/generate`, `/api/evaluate`, `/api/landing/preview`, `/api/images/generate` | retained backend contracts; not part of the customer-facing Image Ads flow |
 
 ## Boundaries (do not cross in this milestone)
 
-- No external AI API calls; no image generation; no invented
-  concepts, scores, or landing pages.
+- No external AI API calls; no paid inference; no invented
+  discounts, endorsements, testimonials, or product claims.
+- Never present draft renders as model-generated advertising.
 - Nothing outside `apps/creative-studio/` is read or modified
   (sibling Studio/MCP/registry/booking apps, experiments, and
   benchmarks are untouched).

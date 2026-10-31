@@ -1,15 +1,15 @@
-﻿{
+{
     "name":  "@silkweb/creative-studio",
-    "version":  "0.1.0",
+    "version":  "0.3.0",
     "private":  true,
     "type":  "module",
-    "description":  "SilkWeb Creative Studio Milestone 1: local campaign-brief workspace shell. No model inference yet.",
+    "description":  "SilkWeb Image Ads MVP Milestone 1: three offline draft-rendered image ads from one product and one goal.",
     "engines":  {
                     "node":  "\u003e=24"
                 },
     "scripts":  {
                     "build":  "tsc -p tsconfig.json",
-                    "test":  "npm run build \u0026\u0026 node --test tests/creative-studio.test.mjs tests/concepts.test.mjs tests/library-2b.test.mjs tests/live-provider.test.mjs",
+                    "test":  "npm run build \u0026\u0026 node --test tests/creative-studio.test.mjs tests/concepts.test.mjs tests/library-2b.test.mjs tests/live-provider.test.mjs tests/image-ads.test.mjs tests/image-ads-m2.test.mjs",
                     "start":  "npm run build \u0026\u0026 node dist/server.js"
                 },
     "devDependencies":  {

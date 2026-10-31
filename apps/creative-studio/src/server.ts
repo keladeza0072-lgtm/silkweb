@@ -29,6 +29,17 @@ import {
   QUESTION_ORDER,
   validateAnalyzeInput,
 } from './elicit.js';
+import {
+  IMAGE_ADS_MAX_BODY_BYTES,
+  IMAGE_AD_HEIGHT,
+  IMAGE_AD_OBJECTIVES,
+  IMAGE_AD_SUPPORTED_FORMATS,
+  IMAGE_AD_WIDTH,
+  imageAdsGenerateOutcome,
+} from './imageAds.js';
+import { imageAdsGenerateLiveOutcome } from './imageAdsLive.js';
+import { MetaMuseImageAdPlanner } from './imageAdsPlan.js';
+import { MetaMuseImageProvider } from './museImage.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = join(here, '..', 'public');
@@ -59,14 +70,14 @@ export function serveStatic(pathname: string): { status: number; type: string; b
   return { status: 200, type: CONTENT_TYPES[ext], body: readFileSync(abs) };
 }
 
-function readBody(req: IncomingMessage): Promise<string> {
+function readBody(req: IncomingMessage, maxBytes: number = MAX_BODY_BYTES): Promise<string> {
   return new Promise((resolvePromise, rejectPromise) => {
     const chunks: Buffer[] = [];
     let size = 0;
     req.on('data', (chunk: Buffer) => {
       size += chunk.length;
-      if (size > MAX_BODY_BYTES) {
-        rejectPromise(new Error('Request body exceeds 64KB.'));
+      if (size > maxBytes) {
+        rejectPromise(new Error(`Request body exceeds ${Math.round(maxBytes / 1024)}KB.`));
         req.destroy();
         return;
       }
@@ -100,6 +111,14 @@ export function configPayload(): {
   examplePrompts: typeof EXAMPLE_PROMPTS;
   elicitation: { maxQuestions: number; questionOrder: typeof QUESTION_ORDER };
   policyChecks: typeof POLICY_CHECKS;
+  imageAds: {
+    objectives: typeof IMAGE_AD_OBJECTIVES;
+    defaultObjective: string;
+    adWidth: number;
+    adHeight: number;
+    supportedFormats: readonly string[];
+    adCount: number;
+  };
 } {
   return {
     version: CREATIVE_STUDIO_VERSION,
@@ -111,6 +130,14 @@ export function configPayload(): {
     examplePrompts: EXAMPLE_PROMPTS,
     elicitation: { maxQuestions: ELICITATION_DEFAULT_MAX_QUESTIONS, questionOrder: QUESTION_ORDER },
     policyChecks: POLICY_CHECKS,
+    imageAds: {
+      objectives: IMAGE_AD_OBJECTIVES,
+      defaultObjective: 'drive-sales',
+      adWidth: IMAGE_AD_WIDTH,
+      adHeight: IMAGE_AD_HEIGHT,
+      supportedFormats: IMAGE_AD_SUPPORTED_FORMATS,
+      adCount: 3,
+    },
   };
 }
 
@@ -402,6 +429,62 @@ export async function handleApi(
   if (pathname === '/api/images/generate' && method === 'POST') {
     await readBody(req).catch(() => '');
     const outcome = imagesGenerateOutcome();
+    sendJson(res, outcome.status, outcome.payload);
+    return true;
+  }
+
+  /**
+   * Image Ads Milestone 1: deterministic offline generation of three
+   * creative specs with real 1080 x 1350 PNG files. Accepts a larger
+   * body for the optional product-image upload; oversize bodies get
+   * an explicit 413 instead of a generic 500.
+   */
+  if (pathname === '/api/image-ads/generate' && method === 'POST') {
+    let text: string;
+    try {
+      text = await readBody(req, IMAGE_ADS_MAX_BODY_BYTES);
+    } catch {
+      sendJson(res, 413, { ok: false, issues: [{ field: 'body', message: 'Request body is too large.' }] });
+      return true;
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text || '{}');
+    } catch {
+      sendJson(res, 400, { ok: false, issues: [{ field: 'body', message: 'Request body must be valid JSON.' }] });
+      return true;
+    }
+    const outcome = imageAdsGenerateOutcome(parsed);
+    sendJson(res, outcome.status, outcome.payload);
+    return true;
+  }
+
+  /**
+   * Image Ads Milestone 2 live route: Muse Spark planning + Muse
+   * Image generation with policy checks and PNG verification.
+   * Requires SILKWEB_CREATIVE_PROVIDER=live with MODEL_API_KEY;
+   * otherwise an explicit 503 — drafts are never labeled as
+   * Meta-generated. No automatic retries.
+   */
+  if (pathname === '/api/image-ads/generate-live' && method === 'POST') {
+    let text: string;
+    try {
+      text = await readBody(req, IMAGE_ADS_MAX_BODY_BYTES);
+    } catch {
+      sendJson(res, 413, { ok: false, issues: [{ field: 'body', message: 'Request body is too large.' }] });
+      return true;
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text || '{}');
+    } catch {
+      sendJson(res, 400, { ok: false, issues: [{ field: 'body', message: 'Request body must be valid JSON.' }] });
+      return true;
+    }
+    const outcome = await imageAdsGenerateLiveOutcome(parsed, {
+      planner: new MetaMuseImageAdPlanner(),
+      images: new MetaMuseImageProvider(),
+    });
     sendJson(res, outcome.status, outcome.payload);
     return true;
   }

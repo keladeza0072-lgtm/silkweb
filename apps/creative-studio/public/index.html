@@ -1,217 +1,100 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="SilkWeb Creative Studio — turn a business description into advertising concepts, creative evaluation, and a landing-page preview." />
-  <title>SilkWeb Creative Studio</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#fcfbf8" />
+  <meta name="description" content="SilkWeb turns one product and one goal into three downloadable image ads." />
+  <title>SilkWeb — Your product. Three standout ads.</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to main content</a>
-
-  <header class="nav">
-    <div class="nav-inner">
-      <div class="brand">
-        <span class="brand-mark" aria-hidden="true">SW</span>
-        <span class="brand-text">
-          <strong>SilkWeb Creative Studio</strong>
-          <small>From brief to campaign</small>
-        </span>
-      </div>
-      <nav aria-label="Studio sections">
-        <ul class="nav-links">
-          <li><a href="#section-brief">Brief</a></li>
-          <li><a href="#section-campaign">Campaign</a></li>
-          <li><a href="#section-concepts">Concepts</a></li>
-          <li><a href="#section-evaluation">Evaluation</a></li>
-          <li><a href="#section-landing">Landing page</a></li>
-          <li><a href="#section-images">Images</a></li>
-        </ul>
-      </nav>
-      <p class="connection" role="status">
-        <span class="dot dot-off" id="connection-dot" aria-hidden="true"></span>
-        <span id="connection-label">Checking connection…</span>
-      </p>
-    </div>
-  </header>
-
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="header"><div class="wrap nav">
+    <a class="brand" href="#main" aria-label="SilkWeb home"><svg class="star" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 0 37.2 24.8 51 13 39.2 27 64 32 39.2 37 51 51 37.2 39.2 32 64 26.8 39.2 13 51 24.8 37 0 32 24.8 27 13 13 26.8 24.8Z"/></svg><span>SilkWeb</span></a>
+    <nav class="nav-links" aria-label="Main navigation"><a href="#screen-create">Create</a></nav>
+  </div></header>
   <main id="main">
-    <div class="hero glass">
-      <div class="hero-main">
-        <p class="eyebrow">SilkWeb Creative · Campaign studio</p>
-        <h1>Describe the business. Direct the campaign.</h1>
-        <p class="lede">
-          Write one natural-language brief. Creative Studio clarifies what is
-          missing, drafts two advertising concepts, scores them against
-          transparent checks, and previews your landing page — all in one place.
-        </p>
-      </div>
-      <dl class="hero-stats">
-        <div><dt>Concepts per request</dt><dd>2</dd></div>
-        <div><dt>Evaluation checks</dt><dd>7 weighted</dd></div>
-        <div><dt>Image slots</dt><dd>2</dd></div>
-      </dl>
-    </div>
-
-    <!-- BRIEF -->
-    <section id="section-brief" class="panel glass" aria-labelledby="brief-title">
-      <p class="eyebrow">Your brief</p>
-      <h2 id="brief-title">What should this campaign say?</h2>
-      <p class="panel-sub">
-        One description is enough to begin. Anything you already stated is kept;
-        at most three short follow-ups fill the gaps. You can edit the brief later.
-      </p>
-      <form id="welcome-form" novalidate>
-        <div class="field">
-          <label for="campaign-description">Your campaign idea</label>
-          <textarea
-            id="campaign-description"
-            name="description"
-            rows="4"
-            maxlength="2000"
-            placeholder="e.g. Acme Coffee is launching cold-brew cans for commuters aged 25–40 to drive launch-week trial…"
-            aria-describedby="welcome-hint welcome-error"></textarea>
-          <p id="welcome-hint" class="hint">Stays in this browser session until you request generation.</p>
-          <p id="welcome-error" class="form-errors" role="alert" hidden></p>
-        </div>
-        <div class="examples">
-          <p class="examples-label" id="examples-label">Try an example:</p>
-          <div id="example-chips" class="chips" role="group" aria-labelledby="examples-label"></div>
-        </div>
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary btn-large">Understand my brief →</button>
-        </div>
-      </form>
-
-      <div id="clarify-block" hidden>
-        <hr class="divider" />
-        <p id="clarify-progress" class="panel-sub" role="status" aria-live="polite"></p>
-        <div id="question-card" class="question-card">
-          <h3 id="question-prompt"></h3>
-          <p id="question-helper" class="panel-sub"></p>
-          <div id="question-suggestions" class="chips" role="group" aria-label="Suggested answers"></div>
-          <form id="custom-form" class="custom-row" novalidate>
-            <label class="visually-hidden" for="custom-answer">Or write your own answer</label>
-            <input id="custom-answer" name="custom" type="text" maxlength="500" placeholder="Or write your own answer…" />
-            <button type="submit" class="btn btn-primary">Use this</button>
-          </form>
-          <div class="question-nav">
-            <button type="button" id="q-back" class="btn btn-ghost">← Back</button>
-            <button type="button" id="q-skip" class="btn btn-ghost">Skip →</button>
+    <section class="create" id="screen-create" aria-labelledby="create-heading">
+      <div class="wrap create-inner">
+        <p class="eyebrow">IMAGE ADS</p>
+        <h1 id="create-heading">Your product. Three standout ads.</h1>
+        <p class="hero-sub">Upload your product, choose your goal, and let SilkWeb create.</p>
+        <form id="ads-form" class="ads-form" novalidate>
+          <div class="upload" id="upload-zone">
+            <img id="upload-preview" class="upload-preview" alt="Uploaded product preview" hidden />
+            <div class="upload-empty" id="upload-empty">
+              <span class="upload-icon" aria-hidden="true">▣</span>
+              <p><strong>Upload your product image</strong></p>
+              <p class="help">PNG, JPEG, or WebP · up to 1.5&nbsp;MB</p>
+              <label class="button button-secondary" for="product-image">Choose image</label>
+            </div>
+            <div class="upload-actions" id="upload-actions" hidden>
+              <button type="button" class="button button-secondary button-small" id="replace-image">Replace</button>
+              <button type="button" class="button button-secondary button-small" id="remove-image">Remove</button>
+            </div>
+            <input id="product-image" name="product-image" type="file" accept="image/png,image/jpeg,image/webp" hidden />
           </div>
+          <label class="field-label" for="product-name">Product name <span class="optional">or upload an image above</span></label>
+          <input id="product-name" name="product-name" type="text" maxlength="120" autocomplete="off" placeholder="e.g. Luma Candles" />
+          <fieldset class="objectives">
+            <legend>Campaign objective</legend>
+            <div class="objective-grid" id="objective-grid" role="radiogroup" aria-label="Campaign objective"></div>
+          </fieldset>
+          <details class="details" id="optional-details">
+            <summary>Optional product details</summary>
+            <div class="details-body">
+              <label class="field-label" for="differentiator">What makes it different?</label>
+              <input id="differentiator" name="differentiator" type="text" maxlength="200" autocomplete="off" placeholder="e.g. Poured in small batches" />
+              <div class="price-row">
+                <div>
+                  <label class="field-label" for="price">Price (optional)</label>
+                  <input id="price" name="price" type="text" inputmode="decimal" maxlength="40" autocomplete="off" placeholder="e.g. 49.99" />
+                </div>
+                <div>
+                  <label class="field-label" for="currency">Currency</label>
+                  <input id="currency" name="currency" type="text" maxlength="8" autocomplete="off" placeholder="e.g. USD" />
+                </div>
+              </div>
+              <label class="field-label" for="special-offer">Genuine special offer (only if real)</label>
+              <input id="special-offer" name="special-offer" type="text" maxlength="200" autocomplete="off" placeholder="e.g. Free shipping this weekend" />
+              <p class="help">Only add offers and prices that are genuinely available. SilkWeb never invents discounts.</p>
+            </div>
+          </details>
+          <p class="quantity" aria-label="Three ads per generation, fixed"><span class="quantity-badge" aria-hidden="true">3</span> Three ads per generation · fixed</p>
+          <p class="form-errors" id="form-errors" role="alert" hidden></p>
+          <button class="button button-primary button-large" type="submit" id="generate-btn">Generate Ads <span aria-hidden="true">→</span></button>
+          <p class="fineprint" id="engine-note">Local draft render · final copy review connects later.</p>
+        </form>
+      </div>
+    </section>
+    <section class="generating" id="screen-generating" aria-labelledby="generating-heading" hidden>
+      <div class="wrap generating-inner">
+        <div class="spinner" aria-hidden="true"></div>
+        <h2 id="generating-heading">Creating your three ads…</h2>
+        <p class="help" id="generating-status" role="status">Composing layouts…</p>
+        <div class="error-panel" id="generating-error" hidden>
+          <p class="form-errors" id="generating-error-text" role="alert"></p>
+          <button class="button button-primary" type="button" id="retry-btn">Try again</button>
+          <button class="button button-secondary" type="button" id="draft-btn" hidden>Use local draft instead</button>
         </div>
-        <div id="heard-box" class="heard" aria-live="polite">
-          <h3>What we heard so far</h3>
-          <ul id="heard-list"></ul>
+      </div>
+    </section>
+    <section class="results" id="screen-results" aria-labelledby="results-heading" hidden>
+      <div class="wrap">
+        <div class="results-head">
+          <div>
+            <p class="eyebrow">IMAGE ADS</p>
+            <p class="engine-badge" id="engine-banner" role="status" hidden></p>
+            <h2 id="results-heading">Your ads are ready.</h2>
+            <p class="help" id="results-note"></p>
+          </div>
+          <button class="button button-secondary" type="button" id="start-new">Start new <span aria-hidden="true">→</span></button>
         </div>
+        <div class="ads-grid" id="ads-grid"></div>
       </div>
-    </section>
-
-    <!-- CAMPAIGN -->
-    <section id="section-campaign" class="panel glass" aria-labelledby="campaign-title">
-      <p class="eyebrow">Campaign review</p>
-      <h2 id="campaign-title">Is this your campaign?</h2>
-      <p class="panel-sub">
-        Facts you supplied are marked <strong>Supplied</strong>; anything missing
-        can be added here. Pick a preferred style and copy approach — each comes
-        from the approved creative library, and incompatible picks are set aside
-        with an explanation rather than invented around.
-      </p>
-      <div id="brief-review"></div>
-      <div id="assumptions-box" class="assumptions" aria-live="polite"></div>
-      <fieldset class="choices">
-        <legend>Preferred advertising style <span class="tag">6 approved</span></legend>
-        <div id="style-grid" class="card-grid" role="radiogroup" aria-label="Preferred advertising style"></div>
-      </fieldset>
-      <fieldset class="choices">
-        <legend>Preferred copy approach <span class="tag">4 approved</span></legend>
-        <div id="framework-grid" class="card-grid cols-4" role="radiogroup" aria-label="Preferred copy approach"></div>
-      </fieldset>
-      <fieldset class="choices">
-        <legend>Photography mode</legend>
-        <p id="mode-reason" class="hint"></p>
-        <div id="mode-row" class="mode-row" role="radiogroup" aria-label="Photography mode"></div>
-      </fieldset>
-      <p id="review-errors" class="form-errors" role="alert" hidden></p>
-      <div class="form-actions">
-        <button type="button" id="r-validate" class="btn btn-primary">Validate campaign</button>
-      </div>
-      <p id="review-result" class="form-result" role="status" aria-live="polite"></p>
-    </section>
-
-    <!-- CONCEPTS -->
-    <section id="section-concepts" class="panel glass" aria-labelledby="concepts-title">
-      <p class="eyebrow">Creative concepts</p>
-      <h2 id="concepts-title">Two directions to choose from</h2>
-      <p class="panel-sub" id="concepts-sub">
-        Validate your campaign above, then request concepts. One request makes
-        exactly one generation call — never retried automatically.
-      </p>
-      <div class="form-actions concepts-actions">
-        <button type="button" id="generate-btn" class="btn btn-primary btn-large" disabled>Request two concepts</button>
-      </div>
-      <div id="concepts-status" class="status-line" role="status" aria-live="polite"></div>
-      <div id="concepts-list" class="concepts-grid"></div>
-    </section>
-
-    <!-- EVALUATION -->
-    <section id="section-evaluation" class="panel glass" aria-labelledby="evaluation-title">
-      <p class="eyebrow">Creative evaluation</p>
-      <h2 id="evaluation-title">How ready is each concept?</h2>
-      <p class="panel-sub">
-        Seven weighted checks, computed locally from your brief and the concept
-        text. <strong>No model performed this evaluation.</strong> Policy concerns
-        are listed separately — nothing here is legal or platform approval.
-      </p>
-      <div class="form-actions">
-        <button type="button" id="evaluate-btn" class="btn btn-primary" disabled>Run evaluation</button>
-      </div>
-      <div id="evaluation-status" class="status-line" role="status" aria-live="polite"></div>
-      <div id="evaluation-list" class="eval-grid"></div>
-      <div id="policy-list" class="policy-grid"></div>
-    </section>
-
-    <!-- LANDING -->
-    <section id="section-landing" class="panel glass" aria-labelledby="landing-title">
-      <p class="eyebrow">Landing page</p>
-      <h2 id="landing-title">Preview the campaign page</h2>
-      <p class="panel-sub">
-        Assembled from your brief and the chosen concept only. Supporting points
-        repeat verified brief facts — nothing is invented, and empty sections say so.
-      </p>
-      <div class="form-actions landing-actions">
-        <div class="seg" role="group" aria-label="Preview width">
-          <button type="button" id="view-desktop" class="btn btn-small seg-active" aria-pressed="true">Desktop</button>
-          <button type="button" id="view-mobile" class="btn btn-small" aria-pressed="false">Mobile</button>
-        </div>
-        <button type="button" id="landing-btn" class="btn btn-primary" disabled>Preview landing page</button>
-      </div>
-      <div id="landing-status" class="status-line" role="status" aria-live="polite"></div>
-      <div id="landing-wrap" class="landing-wrap" hidden>
-        <article id="landing-page" class="lp" aria-label="Landing page preview"></article>
-        <p class="hint" id="landing-method"></p>
-      </div>
-    </section>
-
-    <!-- IMAGES -->
-    <section id="section-images" class="panel glass" aria-labelledby="images-title">
-      <p class="eyebrow">Campaign images</p>
-      <h2 id="images-title">Two image slots, ready when you are</h2>
-      <p class="panel-sub">
-        Image generation is not connected yet, so no image below is AI-generated.
-        Each slot already holds its concept's photography prompt — copy it, or keep
-        it for the coming provider at <code>POST /api/images/generate</code>.
-      </p>
-      <div id="images-status" class="status-line" role="status" aria-live="polite"></div>
-      <ol id="images-list" class="slots image-slots"></ol>
     </section>
   </main>
-
-  <footer class="footer">
-    <p>SilkWeb Creative Studio · Local-first — elicitation, evaluation, and landing assembly run in code, not in a model. Concept generation calls the provider only when configured, once per request.</p>
-  </footer>
-
-  <script src="/app.js" defer></script>
-</body>
-</html>
+  <footer class="footer wrap"><div><p class="footer-brand">SilkWeb · Image Ads MVP</p></div><span class="footer-note" id="footer-note"></span></footer>
+<script src="/app.js" defer></script>
+</body></html>
