@@ -14,6 +14,7 @@ import type {
   FinishLayout,
 } from './imageAdFinishTypes.js';
 import { compositionForAudience } from './imageAdComposition.js';
+import type { CreativeClassId } from './creativeReferenceRegistry.js';
 
 type FinishResult =
   | {
@@ -141,7 +142,73 @@ function button(label: string, x: number, y: number, dark: boolean): string {
           fill="${fg}">${xml(short)}</text>`;
 }
 
-function overlay(copy: FinishCopy, layout: FinishLayout): Buffer {
+/**
+ * Reference-guided compositions.
+ *
+ * These treatments use validated planned copy only. They do not create
+ * additional product claims, testimonials, offers, or feature annotations.
+ * The default audience layouts remain available as a fallback.
+ */
+function creativeOverlay(
+  copy: FinishCopy,
+  creativeClass: CreativeClassId,
+): Buffer | null {
+  let content: string;
+
+  switch (creativeClass) {
+    case 'OUTCOME_HERO':
+      content = `
+        <rect width="${WIDTH}" height="410" fill="#F8F7F5"/>
+        <rect x="72" y="65" width="96" height="7" rx="3" fill="#596273"/>
+        ${textLines(copy.headline, 72, 161, 936, 82, 92, 2, INK, 700)}
+        ${textLines(copy.body, 72, 344, 936, 34, 46, 1, MUTED, 400)}
+        <rect x="48" y="1150" width="420" height="142" rx="29" fill="#F8F7F5"/>
+        ${button(copy.cta, 74, 1173, false)}`;
+      break;
+
+    case 'BENEFIT_STACK':
+      content = `
+        <rect width="490" height="${HEIGHT}" fill="#F8F7F5"/>
+        <rect x="58" y="80" width="68" height="7" rx="3" fill="#596273"/>
+        ${textLines(copy.headline, 58, 188, 372, 62, 74, 4, INK, 700)}
+        <rect x="58" y="600" width="374" height="2" fill="#D8DCE0"/>
+        ${textLines(copy.body, 58, 680, 372, 31, 44, 5, MUTED, 400)}
+        ${button(copy.cta, 58, 1168, false)}`;
+      break;
+
+    case 'ANNOTATED_HERO':
+      content = `
+        <rect width="${WIDTH}" height="268" fill="#F8F7F5"/>
+        ${textLines(copy.headline, 72, 125, 936, 65, 74, 2, INK, 700)}
+        <rect x="540" y="1000" width="488" height="290" rx="24"
+              fill="#F8F7F5"/>
+        <rect x="574" y="1037" width="65" height="6" rx="3" fill="#596273"/>
+        ${textLines(copy.body, 574, 1101, 414, 29, 41, 2, INK, 400)}
+        ${button(copy.cta, 574, 1170, false)}`;
+      break;
+
+    case 'OFFER_HERO':
+      content = `
+        <rect width="${WIDTH}" height="352" fill="#172238"/>
+        <rect x="60" y="57" width="9" height="238" rx="4" fill="#FFFFFF"/>
+        ${textLines(copy.headline, 98, 148, 880, 76, 89, 2, WHITE, 700)}
+        ${textLines(copy.body, 98, 297, 880, 33, 44, 1, WHITE, 400)}
+        <rect x="48" y="1150" width="420" height="142" rx="29" fill="#172238"/>
+        ${button(copy.cta, 74, 1173, true)}`;
+      break;
+
+    default:
+      return null;
+  }
+
+  return Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}"
+     height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">` +
+    content + '</svg>',
+    'utf8',
+  );
+}
+function overlay(copy: FinishCopy, layout: FinishLayout, renderEmbeddedCta = true): Buffer {
   let content = '';
 
   if (layout === 'discovery') {
@@ -149,21 +216,20 @@ function overlay(copy: FinishCopy, layout: FinishLayout): Buffer {
       <rect width="${WIDTH}" height="424" fill="${PAPER}"/>
       ${textLines(copy.headline, 72, 148, 936, 74, 86, 2, INK, 700)}
       ${textLines(copy.body, 72, 334, 936, 35, 49, 2, MUTED, 400)}
-      <rect x="52" y="1148" width="418" height="142"
-            rx="30" fill="${PAPER}"/>
-      ${button(copy.cta, 76, 1171, false)}`;
+      ${renderEmbeddedCta ? '<rect x="52" y="1148" width="418" height="142" rx="30" fill="${PAPER}"/>' : ''}
+      ${renderEmbeddedCta ? button(copy.cta, 76, 1171, false) : ""}`;
   } else if (layout === 'consideration') {
     content = `
       <rect y="748" width="${WIDTH}" height="602" fill="${INK}"/>
       ${textLines(copy.headline, 72, 853, 936, 69, 81, 2, WHITE, 700)}
       ${textLines(copy.body, 72, 1039, 936, 34, 48, 2, WHITE, 400)}
-      ${button(copy.cta, 72, 1186, true)}`;
+      ${renderEmbeddedCta ? button(copy.cta, 72, 1186, true) : ""}`;
   } else {
     content = `
       <rect y="790" width="${WIDTH}" height="560" fill="${INK}"/>
       ${textLines(copy.headline, 72, 891, 936, 68, 80, 2, WHITE, 700)}
       ${textLines(copy.body, 72, 1064, 936, 33, 47, 2, WHITE, 400)}
-      ${button(copy.cta, 72, 1191, true)}`;
+      ${renderEmbeddedCta ? button(copy.cta, 72, 1191, true) : ""}`;
   }
 
   return Buffer.from(
@@ -179,6 +245,8 @@ export async function finishLiveAdPngSharp(
   copy: FinishCopy,
   audience: FinishAudience,
   field = 'png',
+  creativeClass?: CreativeClassId,
+  renderEmbeddedCta = true,
 ): Promise<FinishResult> {
   if (!Buffer.isBuffer(png) || png.length === 0) {
     return { ok: false, issues: [{ field, message: 'Image is empty.' }] };
@@ -206,7 +274,7 @@ export async function finishLiveAdPngSharp(
         fit: 'contain',
         background: PAPER,
       })
-      .composite([{ input: overlay(copy, layout), left: 0, top: 0 }])
+      .composite([{ input: creativeClass ? (creativeOverlay(copy, creativeClass) ?? overlay(copy, layout, renderEmbeddedCta)) : overlay(copy, layout, renderEmbeddedCta), left: 0, top: 0 }])
       .png()
       .toBuffer();
 

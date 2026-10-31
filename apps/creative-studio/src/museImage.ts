@@ -1,4 +1,4 @@
-import { buildPhotoCompositionGuidance } from './imageAdPhotoDirection.js';
+import { buildBlueprintPhotoGuidance } from './imageAdPhotoDirection.js';
 /**
  * SilkWeb Image Ads — Milestone 2 imagery adapter and PNG finishing.
  *
@@ -135,7 +135,7 @@ export function buildMuseImagePrompt(plan: PlannedImageAd, input: ImageAdInput):
     `Product: ${product}. Preserve the product appearance as closely as possible; do not invent branding or attributes.`,
     `Audience mood (${plan.audience}): ${plan.audience === 'cold' ? 'open, inviting discovery' : plan.audience === 'warm' ? 'considered, trustworthy evaluation' : 'decisive, clear call to action'}.`,
     'Photographic background with generous negative space for copy. No text, no words, no letters, no logos, no watermarks in the image.',
-    buildPhotoCompositionGuidance(plan.audience),
+    buildBlueprintPhotoGuidance(plan.audience, input),
   ];
   if (input.upload) lines.push('Reference-guided: edit/compose using the supplied product photo as the visual reference.');
   else lines.push('No product photo supplied: generic premium setting, never a fabricated branded product close-up.');

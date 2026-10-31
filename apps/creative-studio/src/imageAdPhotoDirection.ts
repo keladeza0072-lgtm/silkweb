@@ -1,4 +1,4 @@
-﻿/**
+/**
  * SilkWeb Creative — M4C photographic composition guidance.
  *
  * Aligns Muse Image photography with the existing Sharp typography
@@ -9,6 +9,9 @@
  */
 
 import type { ImageAdAudience } from './imageAdsPlan.js';
+import type { ImageAdInput } from './imageAds.js';
+import { selectCreativeClasses } from './imageAdCreativeSelection.js';
+import { blueprintForClass } from './imageAdBlueprint.js';
 
 export interface PhotoCompositionDirection {
   audience: ImageAdAudience;
@@ -80,5 +83,38 @@ export function buildPhotoCompositionGuidance(
     'Produce photographic content only. Do not generate advertising headlines,',
     'CTA buttons, promotional text, invented logos, or decorative text.',
     'Preserve the supplied product identity whenever a reference image exists.',
+  ].join('\n');
+}
+
+/**
+ * Shares the selected spatial blueprint with the image model.
+ * This guides composition; it does not verify object placement.
+ */
+export function buildBlueprintPhotoGuidance(
+  audience: ImageAdAudience,
+  input: ImageAdInput,
+): string {
+  const selected = selectCreativeClasses(input).selections.find(
+    item => item.audience === audience,
+  );
+
+  const blueprint = selected && blueprintForClass(selected.classId);
+
+  if (!blueprint) return buildPhotoCompositionGuidance(audience);
+
+  const describe = (r: { x: number; y: number; w: number; h: number }) =>
+    `left ${Math.round(r.x * 100)}%, top ${Math.round(r.y * 100)}%, ` +
+    `width ${Math.round(r.w * 100)}%, height ${Math.round(r.h * 100)}%`;
+
+  return [
+    `Creative composition class: ${blueprint.classId}.`,
+    `Reserved product region: ${describe(blueprint.product)}.`,
+    `Reserved headline region: ${describe(blueprint.headline)}.`,
+    `Reserved body copy region: ${describe(blueprint.body)}.`,
+    'Keep essential product features within the product region.',
+    'Keep headline and body copy regions visually calm.',
+    'Preserve the supplied product identity.',
+    'No text, captions, logos, CTA buttons, or invented claims.',
+    'Regions are approximate composition guidance, not verified masks.',
   ].join('\n');
 }

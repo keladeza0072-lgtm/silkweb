@@ -30,6 +30,8 @@ import {
 import { checkImageAdPolicy } from './imageAdsPolicy.js';
 import type { ImageGenerator } from './museImage.js';
 import { finishLiveAdPngSharp } from './imageAdFinishSharp.js';
+import { selectCreativeClasses } from './imageAdCreativeSelection.js';
+import { renderBlueprintAd } from './imageAdBlueprintRenderer.js';
 import { isLiveProviderConfigured } from './provider.js';
 
 export interface LiveImageAd {
@@ -152,7 +154,7 @@ export async function imageAdsGenerateLiveOutcome(body: unknown, deps: LiveDeps)
   const recordFatal = (outcome: LiveOutcome): void => {
     if (firstFatal === null) firstFatal = outcome;
   };
-  for (let i = 0; i < validated.plans.length; i += 1) {
+  const creativeSelections = selectCreativeClasses(input).selections;  for (let i = 0; i < validated.plans.length; i += 1) {
     const plan = validated.plans[i];
     let bytes: { png: Buffer; referenceGuided: boolean };
     try {
@@ -168,12 +170,39 @@ export async function imageAdsGenerateLiveOutcome(body: unknown, deps: LiveDeps)
     }
     let finished: Awaited<ReturnType<typeof finishLiveAdPngSharp>>;
     try {
-      finished = await finishLiveAdPngSharp(
-        bytes.png,
-        { headline: plan.headline, body: plan.body, cta: plan.cta },
-        plan.audience,
-        `ads[${i}].png`,
-      );
+      const selectedClass = creativeSelections.find(
+        (selection) => selection.audience === plan.audience,
+      )?.classId;
+
+      const blueprintResult = selectedClass
+        ? await renderBlueprintAd(
+            bytes.png,
+            { headline: plan.headline, body: plan.body, cta: plan.cta },
+            selectedClass,
+          )
+        : null;
+
+      if (blueprintResult?.ok) {
+        finished = {
+          ok: true,
+          pngDataUrl: blueprintResult.pngDataUrl,
+          width: blueprintResult.width,
+          height: blueprintResult.height,
+          layout:
+            plan.audience === 'cold' ? 'discovery' :
+            plan.audience === 'warm' ? 'consideration' :
+            'action',
+        };
+      } else {
+        finished = await finishLiveAdPngSharp(
+          bytes.png,
+          { headline: plan.headline, body: plan.body, cta: plan.cta },
+          plan.audience,
+          `ads[${i}].png`,
+          undefined,
+          false,
+        );
+      }
     } catch {
       const message = `Ad ${i + 1}: Image finishing failed unexpectedly.`;
       failures.push({

@@ -1,4 +1,5 @@
-﻿import { test } from 'node:test';
+import { selectCreativeClasses } from '../dist/imageAdCreativeSelection.js';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
@@ -56,27 +57,55 @@ test('m4c photo directions match existing Sharp panel boundaries', () => {
   assert.match(buildPhotoCompositionGuidance('hot'), /560 pixels/);
 });
 
-test('m4c image prompts include audience-specific composition guidance', () => {
-  for (const audience of audiences) {
-    const prompt = buildMuseImagePrompt(plan(audience), input());
-    const direction = photoDirectionForAudience(audience);
+test('m4c image prompts use class-specific spatial blueprints', () => {
+  const completeInput = {
+    productName: 'Luma Candles',
+    objective: 'drive-sales',
+    differentiator: 'Hand-poured soy wax',
+    specialOffer: 'Free shipping this weekend',
+  };
+  const selections = selectCreativeClasses(completeInput).selections;
 
-    assert.ok(prompt.includes(direction.productPlacement));
-    assert.ok(prompt.includes(direction.protectedAreas));
-    assert.ok(prompt.includes('Preserve the product appearance'));
+  for (const selected of selections) {
+    const prompt = buildMuseImagePrompt(
+      {
+        audience: selected.audience,
+        visualPrompt: 'Premium candle photographed on a table.',
+      },
+      completeInput,
+    );
+
+    assert.ok(prompt.includes(
+      `Creative composition class: ${selected.classId}.`
+    ));
+    assert.ok(prompt.includes('Reserved product region:'));
+    assert.ok(prompt.includes('Reserved headline region:'));
+    assert.ok(prompt.includes('Reserved body copy region:'));
+    assert.ok(prompt.includes('Keep essential product features within the product region.'));
   }
 });
 
-test('m4c prevents model-generated advertising text and logos', () => {
-  for (const audience of audiences) {
-    const prompt = buildMuseImagePrompt(plan(audience), input());
+test('m4c prevents model-generated advertising text, logos and buttons', () => {
+  const completeInput = {
+    productName: 'Luma Candles',
+    objective: 'drive-sales',
+    differentiator: 'Hand-poured soy wax',
+    specialOffer: 'Free shipping this weekend',
+  };
+  for (const audience of ['cold', 'warm', 'hot']) {
+    const prompt = buildMuseImagePrompt(
+      {
+        audience,
+        visualPrompt: 'Premium candle photographed on a table.',
+      },
+      completeInput,
+    );
 
-    assert.match(prompt, /No text, no words/);
-    assert.match(prompt, /Do not generate advertising headlines/);
-    assert.match(prompt, /invented logos/);
+    assert.match(prompt, /No text, captions, logos, CTA buttons, or invented claims/);
+    assert.match(prompt, /Preserve the supplied product identity/);
+    assert.doesNotMatch(prompt, /A CTA element will overlap/);
   }
 });
-
 test('m4c image prompt respects existing length limit', () => {
   for (const audience of audiences) {
     const prompt = buildMuseImagePrompt(
