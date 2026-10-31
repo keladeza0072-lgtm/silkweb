@@ -412,7 +412,7 @@ export function suggestionsFor(
   return [];
 }
 
-export const DEFAULT_STYLE_ID = 'style-slot-a';
+export const DEFAULT_STYLE_ID = 'problem-solution';
 export const DEFAULT_PHOTOGRAPHY_MODE = 'product' as const;
 
 const WEBSITE_CUES = ['website', 'landing page', 'homepage', 'hero banner', 'site hero', 'web banner'];
@@ -540,7 +540,7 @@ export function analyzeBrief(options: {
     {
       field: 'styleId',
       value: DEFAULT_STYLE_ID,
-      reason: 'Advanced setting — style slots are optional until the final style library lands.',
+      reason: 'Default preference — Problem vs. Solution fits most campaigns; change it under creative preferences.',
     },
     {
       field: 'photographyMode',
@@ -606,7 +606,7 @@ export function evaluateReadiness(values: Record<BriefFieldId, string>): Readine
       id: 'style',
       label: 'Advertising style chosen',
       met: true,
-      detail: 'Defaults to Style A (temporary slot) — adjustable under advanced settings.',
+      detail: 'Defaults to Problem vs. Solution — adjustable under creative preferences.',
     },
     {
       id: 'photography',

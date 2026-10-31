@@ -1,11 +1,10 @@
 /**
- * Creative Studio Milestone 1 configuration.
+ * Creative Studio configuration.
  *
- * The six advertising styles are temporary labeled slots: the exact
- * production style names are not provided yet, so each slot carries a
- * stable id plus an explicit `placeholder: true` flag. The frontend
- * renders the flag so placeholder names are never mistaken for the
- * final 42-style library. Photography modes follow CREATIVE_MVP.md.
+ * The visible style and framework lists come from the approved V1
+ * creative library (CREATIVE_LIBRARY_V1.md): six advertising styles
+ * and four copywriting frameworks. Temporary placeholder slots are
+ * gone from the product — unknown ids stay rejected.
  */
 
 export interface StyleSlot {
@@ -13,6 +12,12 @@ export interface StyleSlot {
   name: string;
   tagline: string;
   placeholder: boolean;
+}
+
+export interface FrameworkSlot {
+  id: string;
+  name: string;
+  tagline: string;
 }
 
 export interface PhotographyMode {
@@ -28,19 +33,31 @@ export interface BriefField {
   required: boolean;
 }
 
-export const CREATIVE_STUDIO_VERSION = '0.1.0';
+export const CREATIVE_STUDIO_VERSION = '0.2.0';
 export const CREATIVE_STUDIO_DEFAULT_PORT = 3003;
 
-/** No model inference is wired in Milestone 1. */
+/** No model inference is wired in by default. */
 export const GENERATION_CONNECTED = false;
 
+/**
+ * The six approved V1 advertising styles, in library order.
+ * Taglines restate each style's V1 purpose for the picker UI.
+ */
 export const STYLE_SLOTS: readonly StyleSlot[] = [
-  { id: 'style-slot-a', name: 'Style A — Temporary Slot', tagline: 'Placeholder slot until the final style library lands.', placeholder: true },
-  { id: 'style-slot-b', name: 'Style B — Temporary Slot', tagline: 'Placeholder slot until the final style library lands.', placeholder: true },
-  { id: 'style-slot-c', name: 'Style C — Temporary Slot', tagline: 'Placeholder slot until the final style library lands.', placeholder: true },
-  { id: 'style-slot-d', name: 'Style D — Temporary Slot', tagline: 'Placeholder slot until the final style library lands.', placeholder: true },
-  { id: 'style-slot-e', name: 'Style E — Temporary Slot', tagline: 'Placeholder slot until the final style library lands.', placeholder: true },
-  { id: 'style-slot-f', name: 'Style F — Temporary Slot', tagline: 'Placeholder slot until the final style library lands.', placeholder: true },
+  { id: 'problem-solution', name: 'Problem vs. Solution', tagline: 'Connect an identifiable problem to a relevant solution.', placeholder: false },
+  { id: 'notification-offer', name: 'Offer / Notification Offer', tagline: 'Highlight a genuine promotional incentive. Needs a real offer in the brief.', placeholder: false },
+  { id: 'chat-script', name: 'WhatsApp / Chat Script', tagline: 'Present advertising as a relatable conversation.', placeholder: false },
+  { id: 'whiteboard', name: 'Whiteboard', tagline: 'Explain a product, process, or service step by step.', placeholder: false },
+  { id: 'before-after', name: 'Before vs. After', tagline: 'Contrast a situation, process, or experience. Needs supportable change.', placeholder: false },
+  { id: 'editorial', name: 'Editorial / Magazine', tagline: 'Premium photography-led brand storytelling.', placeholder: false },
+];
+
+/** The four approved V1 copywriting frameworks, in library order. */
+export const FRAMEWORK_SLOTS: readonly FrameworkSlot[] = [
+  { id: 'aida', name: 'AIDA', tagline: 'Attention → Interest → Desire → Action.' },
+  { id: 'pas', name: 'PAS', tagline: 'Problem → Agitation → Solution.' },
+  { id: 'bab', name: 'BAB', tagline: 'Before → After → Bridge.' },
+  { id: 'fab', name: 'FAB', tagline: 'Features → Advantages → Benefits.' },
 ];
 
 export const PHOTOGRAPHY_MODES: readonly PhotographyMode[] = [
@@ -65,7 +82,7 @@ export const ELICITATION_DEFAULT_MAX_QUESTIONS = 3;
 export const ELICITATION_MAX_DESCRIPTION_LENGTH = 2000;
 export const ELICITATION_MAX_ANSWER_LENGTH = 500;
 
-/** One-tap starters for the Welcome stage. Plain examples — never sent anywhere. */
+/** One-tap starters for the brief stage. Plain examples — never sent anywhere. */
 export const EXAMPLE_PROMPTS: readonly string[] = [
   'Acme Coffee is launching cold-brew cans for commuters aged 25–40 to drive launch-week trial with 2-for-1 opening weekend.',
   'Northwind Outfitters is introducing a waterproof trail jacket for weekend hikers; goal is to boost holiday sales with free shipping over $50.',
@@ -74,6 +91,10 @@ export const EXAMPLE_PROMPTS: readonly string[] = [
 
 export function styleSlotIds(): string[] {
   return STYLE_SLOTS.map((slot) => slot.id);
+}
+
+export function frameworkSlotIds(): string[] {
+  return FRAMEWORK_SLOTS.map((slot) => slot.id);
 }
 
 export function photographyModeIds(): string[] {

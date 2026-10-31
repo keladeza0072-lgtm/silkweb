@@ -8,6 +8,7 @@ import {
   CREATIVE_STUDIO_VERSION,
   ELICITATION_DEFAULT_MAX_QUESTIONS,
   EXAMPLE_PROMPTS,
+  FRAMEWORK_SLOTS,
   MAX_BODY_BYTES,
   PHOTOGRAPHY_MODES,
   STYLE_SLOTS,
@@ -15,6 +16,8 @@ import {
 import { validateBrief, type BriefInput } from './validate.js';
 import { validateCampaignContext } from './campaign.js';
 import { generateConcepts } from './concepts.js';
+import { evaluateConcepts, reviewPolicies } from './evaluate.js';
+import { buildLandingPreview, validateLandingInput } from './landing.js';
 import { initializeApprovedCreativeLibrary } from './library.js';
 import { isLiveProviderConfigured, MetaMuseConceptProvider } from './provider.js';
 
@@ -91,6 +94,7 @@ export function configPayload(): {
   version: string;
   generationConnected: boolean;
   styles: typeof STYLE_SLOTS;
+  frameworks: typeof FRAMEWORK_SLOTS;
   photographyModes: typeof PHOTOGRAPHY_MODES;
   briefFields: typeof BRIEF_FIELDS;
   examplePrompts: typeof EXAMPLE_PROMPTS;
@@ -101,11 +105,96 @@ export function configPayload(): {
     version: CREATIVE_STUDIO_VERSION,
     generationConnected: isLiveProviderConfigured(),
     styles: STYLE_SLOTS,
+    frameworks: FRAMEWORK_SLOTS,
     photographyModes: PHOTOGRAPHY_MODES,
     briefFields: BRIEF_FIELDS,
     examplePrompts: EXAMPLE_PROMPTS,
     elicitation: { maxQuestions: ELICITATION_DEFAULT_MAX_QUESTIONS, questionOrder: QUESTION_ORDER },
     policyChecks: POLICY_CHECKS,
+  };
+}
+
+/**
+ * Deterministic creative-evaluation outcome (no model involved).
+ * Expects { campaign, concepts } with exactly two validated
+ * concepts; returns weighted readiness scores plus the separate
+ * policy checklists. Never throws — failures map to payloads.
+ */
+export function evaluateOutcome(parsedBody: unknown): { status: number; payload: unknown } {
+  if (typeof parsedBody !== 'object' || parsedBody === null || Array.isArray(parsedBody)) {
+    return { status: 400, payload: { ok: false, issues: [{ field: 'body', message: 'Evaluation request must be a JSON object.' }] } };
+  }
+  const record = parsedBody as Record<string, unknown>;
+  const checkedCampaign = validateCampaignContext(record.campaign ?? {});
+  if (!checkedCampaign.ok) {
+    return { status: 422, payload: { ok: false, issues: checkedCampaign.issues } };
+  }
+  if (!Array.isArray(record.concepts) || record.concepts.length !== 2) {
+    return {
+      status: 422,
+      payload: { ok: false, issues: [{ field: 'concepts', message: 'Evaluation needs exactly the two generated concepts.' }] },
+    };
+  }
+  return {
+    status: 200,
+    payload: {
+      ok: true,
+      evaluations: evaluateConcepts(
+        checkedCampaign.context,
+        record.concepts as [Parameters<typeof evaluateConcepts>[1][0], Parameters<typeof evaluateConcepts>[1][1]],
+      ),
+      policies: reviewPolicies(
+        checkedCampaign.context,
+        record.concepts as [Parameters<typeof reviewPolicies>[1][0], Parameters<typeof reviewPolicies>[1][1]],
+      ),
+    },
+  };
+}
+
+/**
+ * Deterministic landing-preview outcome (no model involved).
+ * Expects { campaign, concept }; assembles preview content from
+ * supplied facts only. Never throws.
+ */
+export function landingOutcome(parsedBody: unknown): { status: number; payload: unknown } {
+  const shape = validateLandingInput(parsedBody);
+  if (!shape.ok) {
+    return { status: 400, payload: { ok: false, issues: shape.issues } };
+  }
+  const record = parsedBody as { campaign: unknown; concept: unknown };
+  const checkedCampaign = validateCampaignContext(record.campaign ?? {});
+  if (!checkedCampaign.ok) {
+    return { status: 422, payload: { ok: false, issues: checkedCampaign.issues } };
+  }
+  return {
+    status: 200,
+    payload: {
+      ok: true,
+      landing: buildLandingPreview(
+        checkedCampaign.context,
+        record.concept as Parameters<typeof buildLandingPreview>[1],
+      ),
+    },
+  };
+}
+
+/**
+ * Image-generation boundary for a later provider milestone.
+ * No image provider ships yet, so every request gets an explicit
+ * IMAGE_UNAVAILABLE — the UI must never present an image as
+ * generated. The route exists so the integration point is stable.
+ */
+export function imagesGenerateOutcome(): { status: number; payload: unknown } {
+  return {
+    status: 503,
+    payload: {
+      ok: false,
+      error: {
+        code: 'IMAGE_UNAVAILABLE',
+        message: 'Image generation is not connected yet. No image was generated.',
+      },
+      generationConnected: isLiveProviderConfigured(),
+    },
   };
 }
 
@@ -278,6 +367,41 @@ export async function handleApi(
       return true;
     }
     const outcome = await conceptsGenerateOutcomeLive(parsed);
+    sendJson(res, outcome.status, outcome.payload);
+    return true;
+  }
+
+  if (pathname === '/api/evaluate' && method === 'POST') {
+    const text = await readBody(req);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text || '{}');
+    } catch {
+      sendJson(res, 400, { ok: false, issues: [{ field: 'body', message: 'Request body must be valid JSON.' }] });
+      return true;
+    }
+    const outcome = evaluateOutcome(parsed);
+    sendJson(res, outcome.status, outcome.payload);
+    return true;
+  }
+
+  if (pathname === '/api/landing/preview' && method === 'POST') {
+    const text = await readBody(req);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text || '{}');
+    } catch {
+      sendJson(res, 400, { ok: false, issues: [{ field: 'body', message: 'Request body must be valid JSON.' }] });
+      return true;
+    }
+    const outcome = landingOutcome(parsed);
+    sendJson(res, outcome.status, outcome.payload);
+    return true;
+  }
+
+  if (pathname === '/api/images/generate' && method === 'POST') {
+    await readBody(req).catch(() => '');
+    const outcome = imagesGenerateOutcome();
     sendJson(res, outcome.status, outcome.payload);
     return true;
   }

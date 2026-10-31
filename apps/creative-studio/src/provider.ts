@@ -210,8 +210,12 @@ function stripCodeFences(text: string): string {
  * not to retain it beyond the response.
  */
 export function buildLiveConceptPrompt(context: CampaignContext): string {
-  const pair = recommendConceptPair(context);
-  const advice = recommendCreatives(context);
+  const preferences = {
+    styleId: context.preferredStyleId,
+    frameworkId: context.preferredFrameworkId,
+  };
+  const pair = recommendConceptPair(context, preferences);
+  const advice = recommendCreatives(context, preferences);
   const campaignJson = truncate(JSON.stringify(context), 6000);
   const recommendationLines = [
     `Recommended style ids in order: ${pair.styleIds.join(', ')}.`,

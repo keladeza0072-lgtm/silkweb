@@ -28,6 +28,10 @@ export interface CampaignContext {
   facts: string[];
   /** Explicit guesses marked as assumptions, never as facts. */
   assumptions: string[];
+  /** Optional preferred advertising-style id (honored only when compatible). */
+  preferredStyleId?: string;
+  /** Optional preferred copywriting-framework id (honored only when compatible). */
+  preferredFrameworkId?: string;
 }
 
 export interface ContextIssue {
@@ -102,6 +106,26 @@ function checkOptional(
   return value;
 }
 
+function checkOptionalId(
+  record: Record<string, unknown>,
+  field: string,
+  label: string,
+  issues: ContextIssue[],
+): string | undefined {
+  const raw = record[field];
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== 'string' || !raw.trim()) {
+    issues.push({ field, message: `${label} must be text when supplied.` });
+    return undefined;
+  }
+  const value = raw.trim();
+  if (value.length > 64 || !/^[a-z0-9][a-z0-9_-]{0,63}$/i.test(value)) {
+    issues.push({ field, message: `${label} must be a valid library identifier.` });
+    return undefined;
+  }
+  return value;
+}
+
 function checkStringList(
   record: Record<string, unknown>,
   field: string,
@@ -157,10 +181,14 @@ export function validateCampaignContext(input: unknown): CampaignValidation {
   const creativeDirection = checkOptional(record, 'creativeDirection', 'Creative direction', issues);
   const facts = checkStringList(record, 'facts', 'Facts', issues);
   const assumptions = checkStringList(record, 'assumptions', 'Assumptions', issues);
+  const preferredStyleId = checkOptionalId(record, 'preferredStyleId', 'Preferred style', issues);
+  const preferredFrameworkId = checkOptionalId(record, 'preferredFrameworkId', 'Preferred framework', issues);
 
   if (issues.length > 0) return { ok: false, issues };
 
   const context: CampaignContext = { description, product, objective, facts, assumptions };
+  if (preferredStyleId !== undefined) context.preferredStyleId = preferredStyleId;
+  if (preferredFrameworkId !== undefined) context.preferredFrameworkId = preferredFrameworkId;
   if (channel !== undefined) context.channel = channel;
   if (audience !== undefined) context.audience = audience;
   if (brand !== undefined) context.brand = brand;

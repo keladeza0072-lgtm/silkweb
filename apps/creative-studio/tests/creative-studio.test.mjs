@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   BRIEF_FIELDS,
   CREATIVE_STUDIO_DEFAULT_PORT,
+  FRAMEWORK_SLOTS,
   GENERATION_CONNECTED,
   PHOTOGRAPHY_MODES,
   STYLE_SLOTS,
@@ -12,7 +13,7 @@ import { validateBrief } from '../dist/validate.js';
 import { configPayload, healthPayload, serveStatic } from '../dist/server.js';
 
 /**
- * Creative Studio Milestone 1 suite. Socket-free: the pure config /
+ * Creative Studio shell suite. Socket-free: the pure config /
  * validation layer plus the static-allowlist helper are exercised
  * directly. No model calls, no fixtures outside this app.
  */
@@ -24,19 +25,34 @@ const VALID_BRIEF = {
   objective: 'Drive launch-week trial',
   offer: '2-for-1 opening weekend',
   creativeDirection: 'Bright mornings, bold type.',
-  styleId: 'style-slot-a',
+  styleId: 'problem-solution',
   photographyMode: 'product',
 };
 
-test('config exposes six placeholder style slots', () => {
+test('config exposes the six approved advertising styles', () => {
   assert.equal(STYLE_SLOTS.length, 6);
+  assert.deepEqual(
+    STYLE_SLOTS.map((s) => s.id),
+    ['problem-solution', 'notification-offer', 'chat-script', 'whiteboard', 'before-after', 'editorial'],
+  );
   for (const slot of STYLE_SLOTS) {
-    assert.match(slot.id, /^style-slot-[a-f]$/);
-    assert.equal(slot.placeholder, true);
-    assert.ok(slot.name.toLowerCase().includes('temporary'), 'slot names must read as temporary');
+    assert.equal(slot.placeholder, false, `${slot.id} must not be a placeholder slot`);
+    assert.ok(slot.name.trim().length > 0);
+    assert.ok(slot.tagline.trim().length > 0);
+    assert.ok(!slot.name.toLowerCase().includes('temporary'), 'approved names must not read as temporary');
   }
-  const ids = new Set(STYLE_SLOTS.map((s) => s.id));
-  assert.equal(ids.size, 6);
+});
+
+test('config exposes the four approved copywriting frameworks', () => {
+  assert.equal(FRAMEWORK_SLOTS.length, 4);
+  assert.deepEqual(
+    FRAMEWORK_SLOTS.map((f) => f.id),
+    ['aida', 'pas', 'bab', 'fab'],
+  );
+  for (const fw of FRAMEWORK_SLOTS) {
+    assert.ok(fw.name.trim().length > 0);
+    assert.ok(fw.tagline.trim().length > 0);
+  }
 });
 
 test('config exposes three photography modes', () => {
@@ -73,7 +89,7 @@ test('valid brief passes validation', () => {
 });
 
 test('missing required fields fail with field-level issues', () => {
-  const result = validateBrief({ styleId: 'style-slot-a', photographyMode: 'lifestyle' });
+  const result = validateBrief({ styleId: 'problem-solution', photographyMode: 'lifestyle' });
   assert.equal(result.ok, false);
   for (const field of ['brand', 'product', 'audience', 'objective']) {
     assert.ok(result.issues.some((i) => i.field === field), `${field} must be flagged`);
@@ -85,6 +101,12 @@ test('unknown style and photography mode fail', () => {
   assert.equal(result.ok, false);
   assert.ok(result.issues.some((i) => i.field === 'styleId'));
   assert.ok(result.issues.some((i) => i.field === 'photographyMode'));
+});
+
+test('legacy placeholder style slots are rejected', () => {
+  const result = validateBrief({ ...VALID_BRIEF, styleId: 'style-slot-a' });
+  assert.equal(result.ok, false);
+  assert.ok(result.issues.some((i) => i.field === 'styleId'));
 });
 
 test('overlong input fails', () => {
@@ -115,6 +137,10 @@ test('config exposes welcome prompts and elicitation defaults', async () => {
   assert.equal(payload.elicitation.maxQuestions, 3);
   assert.ok(Array.isArray(payload.examplePrompts) && payload.examplePrompts.length >= 3);
   assert.ok(Array.isArray(payload.policyChecks) && payload.policyChecks.length >= 3);
+  assert.equal(payload.styles.length, 6);
+  assert.ok(payload.styles.every((s) => s.placeholder === false));
+  assert.ok(!JSON.stringify(payload.styles).includes('style-slot'), 'no placeholder slots in the visible config');
+  assert.equal(payload.frameworks.length, 4);
 });
 
 test('extraction finds explicitly stated facts only', async () => {
