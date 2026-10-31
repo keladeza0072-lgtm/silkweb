@@ -9,7 +9,7 @@
                 },
     "scripts":  {
                     "build":  "tsc -p tsconfig.json",
-                    "test":  "npm run build \u0026\u0026 node --test tests/creative-studio.test.mjs tests/concepts.test.mjs tests/library-2b.test.mjs tests/live-provider.test.mjs tests/image-ads.test.mjs tests/image-ads-m2.test.mjs",
+                    "test":  "npm run build \u0026\u0026 node --test tests/creative-studio.test.mjs tests/concepts.test.mjs tests/library-2b.test.mjs tests/live-provider.test.mjs tests/image-ads.test.mjs tests/image-ads-m2.test.mjs tests/image-ads-m3a.test.mjs",
                     "start":  "npm run build \u0026\u0026 node dist/server.js"
                 },
     "devDependencies":  {

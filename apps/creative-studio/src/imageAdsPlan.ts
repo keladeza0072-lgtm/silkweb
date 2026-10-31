@@ -15,6 +15,10 @@ import {
   MUSE_SPARK_MODEL,
   resolveModelApiKey,
 } from './provider.js';
+import {
+  buildImageAdStrategySection,
+  type ImageAdStrategyProvenance,
+} from './imageAdStrategy.js';
 
 export type ImageAdAudience = 'cold' | 'warm' | 'hot';
 
@@ -66,36 +70,100 @@ function objectiveLine(objective: ImageAdObjective['id']): string {
  * sent only as this request's input and the model is asked not to
  * retain it. Only supplied facts may appear in copy.
  */
-export function buildImageAdPlanPrompt(input: ImageAdInput): string {
+/**
+ * Internal provenance record for one planning-prompt build: pack
+ * version, selected style/framework/principle ids with reasons, and
+ * rejected evidence-dependent candidates. Recorded in memory only —
+ * never part of the customer response payload and never shown in
+ * the UI.
+ */
+export interface RecordedPlanProvenance {
+  at: string;
+  provenance: ImageAdStrategyProvenance;
+}
+
+const PROVENANCE_LOG: RecordedPlanProvenance[] = [];
+const MAX_PROVENANCE_ENTRIES = 50;
+
+function recordPlanProvenance(provenance: ImageAdStrategyProvenance): void {
+  PROVENANCE_LOG.push({ at: new Date().toISOString(), provenance });
+  while (PROVENANCE_LOG.length > MAX_PROVENANCE_ENTRIES) PROVENANCE_LOG.shift();
+}
+
+/** Most recently recorded planning provenance, or undefined when none. */
+export function lastImageAdPlanProvenance(): RecordedPlanProvenance | undefined {
+  const entry = PROVENANCE_LOG[Math.max(0, PROVENANCE_LOG.length - 1)];
+  return entry === undefined ? undefined : { at: entry.at, provenance: entry.provenance };
+}
+
+/** Copy of the in-memory planning provenance log (newest last). */
+export function recentImageAdPlanProvenance(): RecordedPlanProvenance[] {
+  return PROVENANCE_LOG.map((entry) => ({ at: entry.at, provenance: entry.provenance }));
+}
+
+/** Clear the in-memory planning provenance log (tests). */
+export function clearImageAdPlanProvenance(): void {
+  PROVENANCE_LOG.length = 0;
+}
+
+const PLAN_SAFETY_LINES: readonly string[] = [
+  'You plan three image advertisements for SilkWeb Creative Studio.',
+  'Return EXACTLY three plans as a single JSON array — no prose, no markdown, no extra text.',
+  'Plan 1 must have audience "cold" (discovery: introduce the product).',
+  'Plan 2 must have audience "warm" (consideration: help evaluation).',
+  'Plan 3 must have audience "hot" (action: invite a decision now).',
+  'Adapt all three to the campaign objective below.',
+  'Each plan object must contain exactly these string fields:',
+  'id, audience, angle, headline, body, cta, visualPrompt.',
+  'The three headlines, bodies, and angles must all differ from each other.',
+  'Each ad must take a different strategic angle for its audience (discovery vs consideration vs action) — not merely different wording.',
+  'Use ONLY the supplied facts. Never invent discounts, prices, specifications,',
+  'testimonials, endorsements, deadlines, scarcity claims, or before-and-after results.',
+  'A price or offer may appear in copy ONLY when it is listed in the supplied facts.',
+  'Treat user-provided claims as unverified: repeat them plainly, never strengthen them.',
+  'Never include SilkWeb branding in headlines, bodies, or CTAs.',
+  'visualPrompt must describe a distinct photographic composition (subject, setting, light, mood)',
+  'at 4:5 portrait ratio with generous space for copy; no rendered text in the image.',
+  'Use this brief only to answer this request; do not store, reuse, or disclose it beyond this response.',
+];
+
+/**
+ * Planning prompt plus its internal provenance. The strategy section
+ * (per-audience style, framework, and knowledge-pack guidance) is
+ * inserted between the safety instructions and the supplied facts.
+ * The prompt budget guard truncates only the facts tail — safety
+ * instructions and strategy guidance are never cut — and marks any
+ * truncation explicitly instead of silently dropping text.
+ */
+export function buildImageAdPlanPromptWithProvenance(input: ImageAdInput): {
+  prompt: string;
+  provenance: ImageAdStrategyProvenance;
+} {
   const product = input.productName.length > 0 ? input.productName : 'the pictured product';
   const facts: string[] = [`Product: ${product}`, `Objective: ${objectiveLine(input.objective)}`];
   if (input.differentiator) facts.push(`Differentiator: ${input.differentiator}`);
   if (input.price) facts.push(`Price: ${input.price}${input.currency ? ` ${input.currency}` : ''}`);
   if (input.specialOffer) facts.push(`Special offer (genuine, user-supplied): ${input.specialOffer}`);
   facts.push(`Product photo supplied: ${input.upload ? 'yes (reference-guided imagery preferred)' : 'no — do not fabricate branded appearance'}`);
-  const prompt = [
-    'You plan three image advertisements for SilkWeb Creative Studio.',
-    'Return EXACTLY three plans as a single JSON array — no prose, no markdown, no extra text.',
-    'Plan 1 must have audience "cold" (discovery: introduce the product).',
-    'Plan 2 must have audience "warm" (consideration: help evaluation).',
-    'Plan 3 must have audience "hot" (action: invite a decision now).',
-    'Adapt all three to the campaign objective below.',
-    'Each plan object must contain exactly these string fields:',
-    'id, audience, angle, headline, body, cta, visualPrompt.',
-    'The three headlines, bodies, and angles must all differ from each other.',
-    'Use ONLY the supplied facts. Never invent discounts, prices, specifications,',
-    'testimonials, endorsements, deadlines, scarcity claims, or before-and-after results.',
-    'A price or offer may appear in copy ONLY when it is listed in the supplied facts.',
-    'Treat user-provided claims as unverified: repeat them plainly, never strengthen them.',
-    'Never include SilkWeb branding in headlines, bodies, or CTAs.',
-    'visualPrompt must describe a distinct photographic composition (subject, setting, light, mood)',
-    'at 4:5 portrait ratio with generous space for copy; no rendered text in the image.',
-    'Use this brief only to answer this request; do not store, reuse, or disclose it beyond this response.',
-    '',
-    '## Supplied facts',
-    ...facts,
-  ].join('\n');
-  return prompt.length > MAX_PLAN_PROMPT_CHARS ? prompt.slice(0, MAX_PLAN_PROMPT_CHARS) : prompt;
+  const { section, provenance } = buildImageAdStrategySection(input);
+  recordPlanProvenance(provenance);
+  const head = [...PLAN_SAFETY_LINES, '', section, '', '## Supplied facts'].join('\n');
+  const room = MAX_PLAN_PROMPT_CHARS - head.length - '\n'.length - ' [facts truncated to fit prompt budget]'.length;
+  let tail = facts.join('\n');
+  if (room < tail.length) {
+    tail = `${tail.slice(0, Math.max(0, room))} [facts truncated to fit prompt budget]`;
+  }
+  return { prompt: `${head}\n${tail}`, provenance };
+}
+
+/**
+ * Planning prompt for Muse Spark 1.3. Internal strategies only:
+ * cold (discovery), warm (consideration), hot (action). The brief is
+ * sent only as this request's input and the model is asked not to
+ * retain it. Only supplied facts may appear in copy.
+ */
+export function buildImageAdPlanPrompt(input: ImageAdInput): string {
+  return buildImageAdPlanPromptWithProvenance(input).prompt;
 }
 
 function fail(message: string, issues: ImageAdPlanIssue[]): { ok: false; error: string; issues: ImageAdPlanIssue[] } {
