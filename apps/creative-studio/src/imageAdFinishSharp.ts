@@ -1,4 +1,4 @@
-﻿/**
+/**
  * SilkWeb Creative — Sharp-based image ad finishing.
  * Original photography, real SVG typography, deterministic layouts.
  * No model calls, network requests, or customer-facing style controls.
@@ -8,12 +8,12 @@ import {
   IMAGE_AD_WIDTH,
   IMAGE_AD_HEIGHT,
 } from './imageAds.js';
-import {
-  layoutForAudience,
-  type FinishAudience,
-  type FinishCopy,
-  type FinishLayout,
-} from './imageAdFinish.js';
+import type {
+  FinishAudience,
+  FinishCopy,
+  FinishLayout,
+} from './imageAdFinishTypes.js';
+import { compositionForAudience } from './imageAdComposition.js';
 
 type FinishResult =
   | {
@@ -195,7 +195,11 @@ export async function finishLiveAdPngSharp(
       return { ok: false, issues: [{ field, message: 'Image is not a supported PNG file.' }] };
     }
 
-    const layout = layoutForAudience(audience);
+    const preset = compositionForAudience(audience);
+    const layout: FinishLayout =
+      preset.id === 'EDITORIAL_DISCOVERY' ? 'discovery' :
+      preset.id === 'CONTEXTUAL_SPOTLIGHT' ? 'consideration' :
+      'action';
 
     const output = await sharp(png)
       .resize(WIDTH, HEIGHT, {
