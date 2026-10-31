@@ -541,8 +541,13 @@ const invokedAsMain =
   fileURLToPath(import.meta.url).endsWith('server.js') &&
   process.argv[1].endsWith('server.js');
 if (invokedAsMain) {
-  server.listen(PORT, '127.0.0.1', () => {
+  // Render and other cloud platforms need the server bound to all interfaces.
+  // Local development remains bound to localhost by default.
+  const HOST = process.env.HOST ??
+    (process.env.PORT ? '0.0.0.0' : '127.0.0.1');
+
+  server.listen(PORT, HOST, () => {
     // eslint-disable-next-line no-console
-    console.log(`creative-studio listening on http://127.0.0.1:${PORT}`);
+    console.log(`creative-studio listening on http://${HOST}:${PORT}`);
   });
 }
