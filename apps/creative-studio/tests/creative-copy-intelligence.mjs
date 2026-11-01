@@ -13,6 +13,9 @@ try{
   assert.ok(p.includes('Product: '+productName),'Full product name must remain present');
   assert.ok(!p.includes('[facts truncated to fit prompt budget]'),'Never silently drop customer facts');
   assert.ok(p.includes('Reject generic openings'));
+  assert.ok(p.includes('INTERNAL HEADLINE COMPETITION'));
+  assert.ok(p.includes('at least five meaningfully different headlines'));
+  assert.ok(p.includes('SELF-CRITIQUE'));
   console.log(productName, p.length);
  }
  assert.equal(scoreHeadlineDiagnostics('Considering a power bank?').pass,false);
