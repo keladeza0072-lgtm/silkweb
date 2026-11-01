@@ -157,27 +157,21 @@ export function buildImageAdPlanPromptWithProvenance(input: ImageAdInput): {
       // must leave room for the strategy pack and all customer facts.
       const short = (value: string, max = 120): string =>
         value.length <= max ? value : value.slice(0, max).replace(/\s+\S*$/, '') + '…';
-      const rows = selection.selections.map((r, i) => [
-        'Ad ' + (i + 1) + ' (' + r.audience + ', ' + r.family + ', ' + r.referenceId + ')',
-        'Scene: ' + short(r.scene, 135),
-        'Interaction: ' + r.interaction,
-        'Camera: ' + short(r.camera, 105),
-        'Typography: ' + short(r.typography, 95),
-      ].join(' | '));
+      const rows = selection.selections.map((r, i) =>
+        'Ad '+(i+1)+' '+r.audience+' '+r.referenceId+': '+short(r.interaction,155)
+      );
       return [
         '## SilkWeb Creative Director — ' + COPY_INTELLIGENCE_VERSION,
         'Apply Schwartz-style existing desire and awareness to make every headline an attention-grabbing, specific persuasive hook, not a generic announcement.',
-        'Each ad needs a distinct reason to care: desire (cold), credible consideration (warm), compelling next step (hot). These audiences are not identical to Schwartz awareness stages.',
+        'Distinct persuasive reasons: desire (cold), consideration (warm), decision (hot); not literal Schwartz stages.',
         'Reject generic openings: What is new from; Considering a; Hey - it is here; take a first look; just announced; come see.',
         'Cialdini: social proof, authority, urgency, scarcity, reciprocity and numeric claims REQUIRE supplied supporting evidence. Never manufacture them.',
         'INTERNAL HEADLINE COMPETITION: Privately draft at least five meaningfully different headlines for EACH ad (desire, problem/tension, surprising contrast, curiosity with honest payoff, clear benefit). Score each for scroll-stopping quality, specificity, reader relevance, originality, and factual support. Do not return candidates or scores; return only the strongest credible headline for each of the three ads.',
         'SELF-CRITIQUE: Reject generic questions (Want a simple way to...), vague problem fragments (A low battery in the middle of the day.), and self-referential launches (Let us take a minute with the new launch). Reject the first serviceable sentence. Ban slogan-like filler such as Power to carry your day, Take power along, Small thing Big day, designed for everyday carry. Prefer a real human situation and a clear why-care.',
         'COHERENCE: Each winning headline must earn its supporting body copy and action. Keep language natural, fresh, precise and easy to read over an actual photograph.',
-        'Copy must be original, factual and suitable for an actual 4:5 design; no imitation of reference ads.',
+        'Write factual, original copy; no copied advertisements.',
         ...rows,
-        'Visual studies: ' + selectVisualStudyPairs(input).map(p =>
-          p.audience + '=' + p.referenceId + ' (' + short(p.composition, 82) + ')'
-        ).join(' ; '),
+        'Visual studies: ' + selectVisualStudyPairs(input).map(p => p.audience+'='+p.referenceId).join(' ; '),
       ].join('\n');
     })()
     : '';
