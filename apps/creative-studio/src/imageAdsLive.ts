@@ -34,6 +34,7 @@ import { selectCreativeClasses } from './imageAdCreativeSelection.js';
 import { renderBlueprintAd } from './imageAdBlueprintRenderer.js';
 import {selectCreativeDirectorReferences} from './creativeDirector.js';
 import {finishCreativeDirectorAd} from './creativeDirectorFinish.js';
+import {segmentProductWithSam31} from './creativeSam31.js';
 import { isLiveProviderConfigured } from './provider.js';
 
 export interface LiveImageAd {
@@ -159,11 +160,27 @@ export async function imageAdsGenerateLiveOutcome(body: unknown, deps: LiveDeps)
   const creativeSelections = selectCreativeClasses(input).selections;
   const directorEnabled = env.SILKWEB_CREATIVE_DIRECTOR === 'on';
   const directorSelections = directorEnabled ? selectCreativeDirectorReferences(input).selections : [];
+  // SAM runs at most once for the entire campaign. Failure falls back
+  // transparently to the original uploaded product photograph.
+  let generationInput = input;
+  if (directorEnabled && env.SILKWEB_SAM31 === 'on' &&
+      input.upload && !testMode && env.MODEL_API_KEY) {
+    try {
+      const sam = await segmentProductWithSam31(input, {
+        apiKey: env.MODEL_API_KEY,
+        timeoutMs: 120_000,
+      });
+      generationInput = { ...input, samCutoutPng: sam.cutout };
+    } catch {
+      // No retries and no silent claim of SAM success.
+      generationInput = input;
+    }
+  }
   for (let i = 0; i < validated.plans.length; i += 1) {
     const plan = validated.plans[i];
     let bytes: { png: Buffer; referenceGuided: boolean };
     try {
-      bytes = await deps.images.generate(plan, input);
+      bytes = await deps.images.generate(plan, generationInput);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown image failure.';
       const code = /timed out after \d+ms/.test(message) ? 'IMAGE_TIMEOUT' : 'IMAGE_ERROR';
