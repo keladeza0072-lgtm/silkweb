@@ -9,6 +9,21 @@
 import sharp from 'sharp';
 import type { ImageAdInput } from './imageAds.js';
 export type SamSegmentation = {cutout:Buffer;maskCoverage:number};
+/** SAM concept prompts are short object categories, not brand/model descriptions. */
+export function samObjectConcept(productName:string):string {
+ const name=productName.toLowerCase();
+ if(/power[ -]?bank|portable charger/.test(name))return 'power bank';
+ if(/earbud|headphone/.test(name))return 'headphones';
+ if(/phone case/.test(name))return 'phone case';
+ if(/face serum|serum/.test(name))return 'bottle';
+ if(/perfume|fragrance/.test(name))return 'perfume bottle';
+ if(/coffee/.test(name))return 'coffee bag';
+ if(/shoe|sneaker/.test(name))return 'shoe';
+ if(/dress/.test(name))return 'dress';
+ if(/lamp/.test(name))return 'lamp';
+ const words=name.replace(/[^a-z0-9 -]/g,' ').trim().split(/\s+/);
+ return words.slice(-2).join(' ')||'product';
+}
 export type SamRaster = {raster:Uint8Array;cropWidth:number;cropHeight:number;box:{left:number;top:number;right:number;bottom:number}};
 export async function projectSamBoxMask(sourcePng:Buffer,mask:SamRaster):Promise<SamSegmentation>{
  const {data,info}=await sharp(sourcePng,{limitInputPixels:8_000_000}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
@@ -46,7 +61,7 @@ export async function segmentProductWithSam31(
  const info=await sharp(sourcePng).metadata();
  if(!info.width||!info.height||info.width*info.height>8_000_000)throw Error('SAM source image exceeds 8MP');
  // Product name is a category label, not an instruction from the customer.
- const concept=(input.productName||'product').slice(0,80);
+ const concept=samObjectConcept(input.productName||'product').slice(0,80);
  const client=new OpenAI({apiKey:options.apiKey,baseURL:'https://api.meta.ai/v1',timeout:options.timeoutMs??120000,maxRetries:0});
  const events=await client.responses.create({
   model:'sam-3.1',
@@ -60,7 +75,10 @@ export async function segmentProductWithSam31(
  const result=await parser.parseImageStream(events).finalResult;
  const masks=parser.recordsOfKind(result.records,'mask');
  const boxes=parser.recordsOfKind(result.records,'box');
- if(result.outcome.status!=='completed'||!masks.length)throw Error('SAM returned no completed mask');
+ if(result.outcome.status!=='completed'||!masks.length){
+  const codes=(result.diagnostics??[]).map((d:{code:string})=>d.code).slice(0,5).join(',')||'none';
+  throw Error('SAM no mask: status='+result.outcome.status+' masks='+masks.length+' boxes='+boxes.length+' diagnostics='+codes);
+ }
  const record=masks[0],box=record.bounds??boxes[0];
  if(!box)throw Error('SAM mask missing its source-image bounding box');
  const raster=parser.decodeMaskToRaster(record.mask);
