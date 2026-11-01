@@ -135,7 +135,7 @@ export async function finishTypographyV3(
   composed.push({input:label.png,left:PAD+36,top:y+Math.floor((buttonHeight-label.height)/2)});
   const finalBottom=y+buttonHeight;
   const base=await sharp(source).resize(W,H,{fit:'cover'}).png().toBuffer();
-  const fade=gradient(Math.max(570,Math.min(750,finalBottom+100)),'.94');
+  const fade=gradient(Math.max(570,Math.min(750,finalBottom+100)),0.94);
   const result=await sharp(base).composite([{input:fade,left:0,top:0},...composed]).png().toBuffer();
   return {ok:true,pngDataUrl:'data:image/png;base64,'+result.toString('base64'),width:W,height:H,
    diagnostics:{family:choice.family,headlineFont:headingFont,bodyFont:textFont,
