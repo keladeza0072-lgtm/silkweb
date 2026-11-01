@@ -105,7 +105,7 @@ export function buildMuseImageRequest(
       : MUSE_IMAGE_EDITS_ENDPOINT);
   const body: Record<string, unknown> = {
     model: options.model ?? MUSE_IMAGE_MODEL,
-    prompt: buildMuseImagePrompt(plan, input),
+    prompt: buildMuseImagePrompt(plan, input) + (input.samCutoutPng ? '\nThe LAST image is an optional transparent SAM segmentation of the SAME customer product. Use its outline to preserve product identity, but rely on the original customer photo for exact markings, color and appearance. The scene reference, if present, defines environment and light.' : ''),
     size: `${IMAGE_AD_WIDTH}x${IMAGE_AD_HEIGHT}`,
     n: 1,
     response_format: 'b64_json',
@@ -114,6 +114,7 @@ export function buildMuseImageRequest(
   const refs: Array<{image_url:string}> = [];
   if (options.approvedSceneDataUrl) refs.push({image_url:options.approvedSceneDataUrl});
   if (input.upload) refs.push({image_url:uploadImageDataUrl(input.upload)});
+  if (input.upload && input.samCutoutPng) refs.push({image_url:'data:image/png;base64,'+input.samCutoutPng.toString('base64')});
   if (refs.length) {
     return {endpoint:edits,body:{...body,images:refs}};
   }
