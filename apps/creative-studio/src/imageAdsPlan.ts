@@ -12,6 +12,7 @@
 import type { ImageAdInput, ImageAdObjective } from './imageAds.js';
 import { selectCreativeDirectorReferences } from './creativeDirector.js';
 import { selectVisualStudyPairs } from './creativeVisualPairing.js';
+import { COPY_INTELLIGENCE_VERSION } from './creativeCopyIntelligence.js';
 import {
   MUSE_RESPONSES_ENDPOINT,
   MUSE_SPARK_MODEL,
@@ -163,8 +164,10 @@ export function buildImageAdPlanPromptWithProvenance(input: ImageAdInput): {
         '## SilkWeb Creative Director — selected semantic advertising references',
         'Treat references as adaptable inspiration, not rigid layout rules. Do not copy an existing campaign.',
         'Write a different persuasive idea for each of these physically believable product interactions.',
-        'Avoid generic greetings, empty inspirational slogans and repeated headline structures.',
-        'Prefer concise, concrete language grounded in known product facts; NEVER invent performance, specifications or offers.',
+        'COPY INTELLIGENCE '+COPY_INTELLIGENCE_VERSION+': Use Schwartz-inspired existing desire and audience awareness; make every headline an attention-grabbing, persuasive hook rather than a campaign announcement.',
+        'Give each ad a distinct persuasive reason: recognizable desire for cold, credible consideration for warm, clear action for hot. Internal stages are NOT exact Schwartz awareness levels.',
+        'Reject generic openings: What is new from, Considering a, Hey - it is here, take a first look, just announced, come see, meet the new arrival.',
+        'Cialdini-style authority, social proof, reciprocity, scarcity and commitment need real supplied evidence; NEVER fabricate them, specifications, outcomes or offers.',
         'Use headline, body and cta fields for exact copy; choose whether the finished image needs all or only some of that text.',
         'Visual prompts should bring the selected interaction to life, not overrule its physical realism.',
         rows,
