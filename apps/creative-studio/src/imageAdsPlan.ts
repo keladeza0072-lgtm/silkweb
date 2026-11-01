@@ -11,6 +11,7 @@
 
 import type { ImageAdInput, ImageAdObjective } from './imageAds.js';
 import { selectCreativeDirectorReferences } from './creativeDirector.js';
+import { selectVisualStudyPairs } from './creativeVisualPairing.js';
 import {
   MUSE_RESPONSES_ENDPOINT,
   MUSE_SPARK_MODEL,
@@ -167,6 +168,10 @@ export function buildImageAdPlanPromptWithProvenance(input: ImageAdInput): {
         'Use headline, body and cta fields for exact copy; choose whether the finished image needs all or only some of that text.',
         'Visual prompts should bring the selected interaction to life, not overrule its physical realism.',
         rows,
+        '## Nine-study visual reference matches (original art direction, no reproduction of study photos)',
+        ...selectVisualStudyPairs(input).map((pair, i) =>
+          'Ad '+(i+1)+' ('+pair.audience+'): '+pair.referenceId+'. '+pair.composition+' Typography: '+pair.typography
+        ),
       ].join('\n');
     })()
     : '';
