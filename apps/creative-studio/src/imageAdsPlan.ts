@@ -160,12 +160,12 @@ export function buildImageAdPlanPromptWithProvenance(input: ImageAdInput): {
       const rows = selection.selections.map((r, i) => [
         'Ad ' + (i + 1) + ' (' + r.audience + ', ' + r.family + ', ' + r.referenceId + ')',
         'Scene: ' + short(r.scene, 135),
-        'Interaction: ' + short(r.interaction, 135),
+        'Interaction: ' + r.interaction,
         'Camera: ' + short(r.camera, 105),
         'Typography: ' + short(r.typography, 95),
       ].join(' | '));
       return [
-        '## Creative Director / ' + COPY_INTELLIGENCE_VERSION,
+        '## SilkWeb Creative Director — ' + COPY_INTELLIGENCE_VERSION,
         'Apply Schwartz-style existing desire and awareness to make every headline an attention-grabbing, specific persuasive hook, not a generic announcement.',
         'Each ad needs a distinct reason to care: desire (cold), credible consideration (warm), compelling next step (hot). These audiences are not identical to Schwartz awareness stages.',
         'Reject generic openings: What is new from; Considering a; Hey - it is here; take a first look; just announced; come see.',
