@@ -1,4 +1,5 @@
 import { buildBlueprintPhotoGuidance } from './imageAdPhotoDirection.js';
+import { selectCreativeDirectorReferences, buildDirectorImagePrompt } from './creativeDirector.js';
 /**
  * SilkWeb Image Ads — Milestone 2 imagery adapter and PNG finishing.
  *
@@ -129,6 +130,10 @@ function defaultImageFetch(url: string, init: MuseImageFetchInit): Promise<MuseI
  * no-fabrication constraints.
  */
 export function buildMuseImagePrompt(plan: PlannedImageAd, input: ImageAdInput): string {
+  if (process.env.SILKWEB_CREATIVE_DIRECTOR === 'on') {
+    const choice = selectCreativeDirectorReferences(input).selections.find(s => s.audience === plan.audience);
+    if (choice) return buildDirectorImagePrompt(plan, input, choice);
+  }
   const product = input.productName.length > 0 ? input.productName : 'the pictured product';
   const lines = [
     `Advertising photograph, vertical 4:5 portrait composition, 1080x1350: ${plan.visualPrompt}`,
