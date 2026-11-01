@@ -29,6 +29,7 @@ import {
 } from './imageAdsPlan.js';
 import { checkImageAdPolicy } from './imageAdsPolicy.js';
 import { checkCopyQuality } from './creativeCopyIntelligence.js';
+import { evaluateCreativePrinciples, type CreativeIntelligenceAssessment } from './creativePrincipleEvaluator.js';
 import type { ImageGenerator } from './museImage.js';
 import { finishLiveAdPngSharp } from './imageAdFinishSharp.js';
 import { selectCreativeClasses } from './imageAdCreativeSelection.js';
@@ -61,6 +62,8 @@ export interface LiveDeps {
   env?: NodeJS.ProcessEnv;
   /** Optional diagnostic for controlled evaluation; not exposed to customers. */
   onSamOutcome?: (outcome: {status:'success'|'fallback'|'skipped'; maskCoverage?:number; reason?:string})=>void;
+  /** Internal audit hook; never exposed in the customer response. */
+  onCreativeAudit?: (audit:CreativeIntelligenceAssessment)=>void;
 }
 
 export interface LiveImageFailure {
@@ -171,6 +174,12 @@ export async function imageAdsGenerateLiveOutcome(body: unknown, deps: LiveDeps)
       payload: { ok: false, issues: copyQuality.issues.map((f) => ({ field: f.field, message: f.message })) },
     };
   }
+
+  // Internal principle audit: connects each output to the selected book-inspired
+  // execution criteria. Observations are not proof of persuasion or a
+  // substitute for human evaluation. Never returned in the customer payload.
+  const creativeAudit=evaluateCreativePrinciples(validated.plans,input);
+  try { deps.onCreativeAudit?.(creativeAudit); } catch { /* diagnostics must not interrupt generation */ }
 
   // Stage 4 + 5 — image generation and finishing, one call per ad,
   // no retries. A per-ad failure is recorded truthfully and the loop
