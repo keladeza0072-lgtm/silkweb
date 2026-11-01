@@ -52,6 +52,7 @@ Object.assign(process.env,{
 const started=Date.now();
 await mkdir(output,{recursive:true});
 let result;
+let samOutcome={status:'not-reached'};
 try{
  console.log('LIVE: one Spark plan, at most one SAM segmentation, up to three Muse Image edits. No retries.');
  console.log('Product:',name,'objective:',objective,'approved scenes:',refs.map(x=>x.referenceId).join(', '));
@@ -60,6 +61,7 @@ try{
  },{
    planner:new MetaMuseImageAdPlanner({timeoutMs:60000}),
    images:new MetaMuseImageProvider({timeoutMs:180000}),
+   onSamOutcome:(diagnostic)=>{samOutcome=diagnostic;console.log('SAM STATUS:',diagnostic.status,diagnostic.maskCoverage??'',diagnostic.reason??'');},
  });
 }finally{
  for(const [k,v] of Object.entries(old)){
@@ -73,7 +75,7 @@ const report={
   engine:payload.engine??null,objective,productName:name,
   approvedSceneIds:refs.map(x=>x.referenceId),
   samRequested:true,
-  samOutcome:'not independently recorded by current orchestrator; cutout may have fallen back',
+  samOutcome,
   elapsedSeconds:Math.round((Date.now()-started)/1000),
   ads:[],failures:payload.failures??[],
   error:payload.error??null,issues:payload.issues??[],
