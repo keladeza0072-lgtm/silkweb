@@ -28,6 +28,7 @@ import {
   type PlannedImageAd,
 } from './imageAdsPlan.js';
 import { checkImageAdPolicy } from './imageAdsPolicy.js';
+import { checkCopyQuality } from './creativeCopyIntelligence.js';
 import type { ImageGenerator } from './museImage.js';
 import { finishLiveAdPngSharp } from './imageAdFinishSharp.js';
 import { selectCreativeClasses } from './imageAdCreativeSelection.js';
@@ -148,6 +149,26 @@ export async function imageAdsGenerateLiveOutcome(body: unknown, deps: LiveDeps)
     return {
       status: 422,
       payload: { ok: false, issues: findings.map((f) => ({ field: f.field, message: f.message })) },
+    };
+  }
+
+  // Stage 3b — copy-quality gate (deterministic, pre-inference).
+  // Runs after Muse Spark planning and before the first Muse Image
+  // call, so weak or generic copy never reaches paid generation. The
+  // copy is never silently rewritten and inference is never retried
+  // here: unacceptable copy is reported as a non-success outcome and
+  // no image is generated for any ad.
+  const copyQuality = checkCopyQuality(validated.plans, {
+    productName: input.productName,
+    differentiator: input.differentiator,
+    price: input.price,
+    currency: input.currency,
+    specialOffer: input.specialOffer,
+  });
+  if (!copyQuality.ok) {
+    return {
+      status: 422,
+      payload: { ok: false, issues: copyQuality.issues.map((f) => ({ field: f.field, message: f.message })) },
     };
   }
 
