@@ -157,7 +157,7 @@ export function buildImageAdPlanPromptWithProvenance(input: ImageAdInput): {
         'Camera: ' + r.camera,
         'Typographic character: ' + r.typography,
         'Visual failure to avoid: ' + r.risk,
-      ].join('\\n')).join('\\n\\n');
+      ].join('\n')).join('\n\n');
       return [
         '## SilkWeb Creative Director — selected semantic advertising references',
         'Treat references as adaptable inspiration, not rigid layout rules. Do not copy an existing campaign.',
@@ -167,7 +167,7 @@ export function buildImageAdPlanPromptWithProvenance(input: ImageAdInput): {
         'Use headline, body and cta fields for exact copy; choose whether the finished image needs all or only some of that text.',
         'Visual prompts should bring the selected interaction to life, not overrule its physical realism.',
         rows,
-      ].join('\\n');
+      ].join('\n');
     })()
     : '';
   recordPlanProvenance(provenance);
