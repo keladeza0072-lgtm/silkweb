@@ -65,30 +65,56 @@ if (result.outcome.status !== 'completed' || masks.length === 0) {
   }, null, 2));
   throw new Error('SAM produced no completed product mask. See report.');
 }
-const raster = decodeMaskToRaster(masks[0].mask);
+// SAM masks are cropped to the detected object box, not source-image sized.
+const record = masks[0];
+const raster = decodeMaskToRaster(record.mask);
 const w = metadata.width;
 const h = metadata.height;
-if (raster.length !== w * h) {
-  throw new Error('Mask dimensions do not match the original image: mask pixels=' + raster.length +
-    ', source pixels=' + (w*h) + '. Refusing incorrect compositing.');
+const box = record.bounds ?? boxes[0];
+if (!box) throw new Error('SAM provided a mask without its source-image bounding box.');
+const left = Math.round(box.left);
+const top = Math.round(box.top);
+const right = Math.round(box.right);
+const bottom = Math.round(box.bottom);
+if (![left,top,right,bottom].every(Number.isFinite) ||
+    left < 0 || top < 0 || right >= w || bottom >= h ||
+    right < left || bottom < top) {
+  throw new Error('SAM bounding box is outside the source image: ' + JSON.stringify(box));
+}
+const cropW = record.mask.width;
+const cropH = record.mask.height;
+if (raster.length !== cropW * cropH)
+  throw new Error('Decoded mask length disagrees with mask metadata.');
+const boxW = right-left+1;
+const boxH = bottom-top+1;
+console.log('Mask crop:', cropW, cropH, 'Object box:', left,top,right,bottom);
+// Resample only the cropped mask into SAM's source-pixel box, not the full frame.
+const alphaCrop = await sharp(Buffer.from(raster),{
+  raw:{width:cropW,height:cropH,channels:1}
+}).resize(boxW,boxH,{kernel:'nearest'}).raw().toBuffer();
+const fullAlpha = Buffer.alloc(w*h,0);
+for(let y=0;y<boxH;y++){
+  for(let x=0;x<boxW;x++){
+    fullAlpha[(top+y)*w+left+x] = alphaCrop[y*boxW+x] ? 255 : 0;
+  }
 }
 const { data, info } = await sharp(sourcePng).ensureAlpha().raw().toBuffer({resolveWithObject:true});
 if (info.channels !== 4 || info.width !== w || info.height !== h)
   throw new Error('Unexpected source pixel format.');
 let selectedPixels = 0;
-for (let i = 0; i < raster.length; i++) {
-  const on = raster[i] !== 0;
-  data[i*4+3] = on ? data[i*4+3] : 0;
-  if (on) selectedPixels++;
+for (let i = 0; i < fullAlpha.length; i++) {
+  const alpha = fullAlpha[i];
+  data[i*4+3] = Math.round(data[i*4+3] * (alpha/255));
+  if (alpha) selectedPixels++;
 }
-if (selectedPixels < raster.length * 0.01 || selectedPixels > raster.length * 0.95)
+if (selectedPixels < w*h*0.01 || selectedPixels > w*h*0.95)
   throw new Error('Product mask coverage outside expected range; review before using it.');
 await writeFile(resolve(root, 'sam-product-cutout.png'),
   await sharp(data,{raw:{width:w,height:h,channels:4}}).png().toBuffer());
 await writeFile(resolve(root, 'sam-report.json'), JSON.stringify({
   experiment:'SAM-CUTOUT-001', model:'sam-3.1', source:originalName, concept,
   sourceWidth:w, sourceHeight:h, elapsedMs,
-  masks:masks.length, boxes:boxes.length, maskCoverage:Number((selectedPixels/raster.length).toFixed(4)),
+  masks:masks.length, boxes:boxes.length, maskCrop:{width:cropW,height:cropH}, box:{left,top,right,bottom}, maskCoverage:Number((selectedPixels/raster.length).toFixed(4)),
   output:'sam-product-cutout.png',
   diagnostics:result.diagnostics.map(d=>({code:d.code,severity:d.severity})),
 },null,2));
