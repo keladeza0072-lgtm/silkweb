@@ -68,8 +68,7 @@ export const CREATIVE_KNOWLEDGE_PACK: readonly CreativePrinciple[] = [
       'considering it can handle specifics and a direct next step.',
     appliesWhen: ['cold/discovery audiences', 'warm/consideration audiences', 'hot/action audiences'],
     instruction:
-      'Cold plans orient first (what it is, who it is for); warm plans help ' +
-      'comparison; hot plans ask for the decision directly.',
+      'Cold plans connect a recognizable existing desire to the product category; warm plans offer a concrete reason to consider the product; hot plans provide a clear, honest next action. Never merely announce or describe the campaign.',
     restrictions: 'Never use awareness as an excuse to invent claims for any audience tier.',
   }),
   reviewed({
@@ -134,8 +133,7 @@ export const CREATIVE_KNOWLEDGE_PACK: readonly CreativePrinciple[] = [
       'tease only what the advertisement actually delivers.',
     appliesWhen: ['cold/discovery audiences'],
     instruction:
-      'Open cold ads with a genuine question or inviting detail drawn from ' +
-      'supplied facts; answer it within the same ad.',
+      'Open cold ads with an arresting but truthful human situation or curiosity hook, then deliver a clear payoff in the body. Avoid generic rhetorical questions.',
     restrictions: 'No clickbait gaps, no withheld essentials, no mystery the copy never resolves.',
   }),
   reviewed({
@@ -162,8 +160,7 @@ export const CREATIVE_KNOWLEDGE_PACK: readonly CreativePrinciple[] = [
       'a large vague one, especially for audiences close to deciding.',
     appliesWhen: ['hot/action audiences'],
     instruction:
-      'Give hot ads one specific easy action (shop, order, explore the ' +
-      'launch) tied to supplied facts such as price or offer when present.',
+      'Give hot ads one specific, low-friction action (for example See Details or Shop Now) without inventing urgency, launch status, availability or offers.',
     restrictions: 'An easy step must still be a real one; never invent urgency or scarcity.',
   }),
   pending({
