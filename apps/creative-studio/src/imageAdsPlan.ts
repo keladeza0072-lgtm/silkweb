@@ -158,7 +158,7 @@ export function buildImageAdPlanPromptWithProvenance(input: ImageAdInput): {
       const short = (value: string, max = 120): string =>
         value.length <= max ? value : value.slice(0, max).replace(/\s+\S*$/, '') + '…';
       const rows = selection.selections.map((r, i) =>
-        'Ad '+(i+1)+' '+r.audience+' '+r.referenceId+': '+short(r.interaction,155)
+        'Ad '+(i+1)+' '+r.audience+' '+r.referenceId+': '+r.interaction
       );
       return [
         '## SilkWeb Creative Director — ' + COPY_INTELLIGENCE_VERSION,
