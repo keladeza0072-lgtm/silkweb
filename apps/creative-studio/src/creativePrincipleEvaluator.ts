@@ -100,7 +100,7 @@ export const CREATIVE_EXECUTION_CRITERIA:Readonly<Record<string,PrincipleCriteri
  'cialdini-small-step':{
   id:'cialdini-small-step',
   intent:'Give an easy honest next action without false urgency.',
-  strongExample:'See Details',
+  strongExample:'See product details before choosing',
   weakExample:'Act now before it sells out',
   observableCheck:'CTA length and presence; appropriateness of action requires human judgment.',
   humanReviewQuestion:'Is this a single low-friction action that the user can actually take?',
