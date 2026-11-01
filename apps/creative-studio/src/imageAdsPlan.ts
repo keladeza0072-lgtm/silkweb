@@ -43,7 +43,7 @@ export interface ImageAdPlanIssue {
 export const IMAGE_AD_PLAN_COUNT = 3;
 export const MAX_PLAN_PROMPT_CHARS = 8000;
 export const MAX_PLAN_RESPONSE_BYTES = 32 * 1024;
-export const DEFAULT_PLAN_TIMEOUT_MS = 15_000;
+export const DEFAULT_PLAN_TIMEOUT_MS = 90_000;
 
 const FIELD_LIMITS: Record<keyof Omit<PlannedImageAd, 'audience'>, number> = {
   id: 64,

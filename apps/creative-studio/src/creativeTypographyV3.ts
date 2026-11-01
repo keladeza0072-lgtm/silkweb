@@ -103,7 +103,10 @@ export async function finishTypographyV3(
   }
   const isEditorial=choice.family==='tactile-editorial';
   const isStudio=choice.family==='studio-still-life';
-  const headingFont:FontKey=isEditorial?'playfair':'oswald';
+  const headingFont:FontKey=
+  choice.family==='situated-lifestyle'?'dm':
+  (isEditorial||isStudio)?'playfair':
+  'oswald';
   const textFont:FontKey='dm';
   const heading=await fit(copy.headline,headingFont,isEditorial?79:isStudio?87:95,46,940,3);
   const body=await fit(copy.body,textFont,34,25,940,3);
