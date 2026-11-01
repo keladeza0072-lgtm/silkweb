@@ -142,6 +142,8 @@ export interface ImageAdInput {
   productName: string;
   objective: ImageAdObjective['id'];
   upload: ParsedUpload | null;
+  /** Internal-only SAM reference. Never accepted from customer JSON. */
+  samCutoutPng?: Buffer;
   /** Optional Milestone 2 details (collapsed in the UI, all user-supplied). */
   differentiator: string;
   price: string;
