@@ -32,6 +32,8 @@ import type { ImageGenerator } from './museImage.js';
 import { finishLiveAdPngSharp } from './imageAdFinishSharp.js';
 import { selectCreativeClasses } from './imageAdCreativeSelection.js';
 import { renderBlueprintAd } from './imageAdBlueprintRenderer.js';
+import {selectCreativeDirectorReferences} from './creativeDirector.js';
+import {finishCreativeDirectorAd} from './creativeDirectorFinish.js';
 import { isLiveProviderConfigured } from './provider.js';
 
 export interface LiveImageAd {
@@ -154,7 +156,10 @@ export async function imageAdsGenerateLiveOutcome(body: unknown, deps: LiveDeps)
   const recordFatal = (outcome: LiveOutcome): void => {
     if (firstFatal === null) firstFatal = outcome;
   };
-  const creativeSelections = selectCreativeClasses(input).selections;  for (let i = 0; i < validated.plans.length; i += 1) {
+  const creativeSelections = selectCreativeClasses(input).selections;
+  const directorEnabled = env.SILKWEB_CREATIVE_DIRECTOR === 'on';
+  const directorSelections = directorEnabled ? selectCreativeDirectorReferences(input).selections : [];
+  for (let i = 0; i < validated.plans.length; i += 1) {
     const plan = validated.plans[i];
     let bytes: { png: Buffer; referenceGuided: boolean };
     try {
@@ -174,34 +179,52 @@ export async function imageAdsGenerateLiveOutcome(body: unknown, deps: LiveDeps)
         (selection) => selection.audience === plan.audience,
       )?.classId;
 
-      const blueprintResult = selectedClass
-        ? await renderBlueprintAd(
-            bytes.png,
-            { headline: plan.headline, body: plan.body, cta: plan.cta },
-            selectedClass,
-          )
-        : null;
-
-      if (blueprintResult?.ok) {
+      if (directorEnabled) {
+        const choice = directorSelections.find(s => s.audience === plan.audience);
+        if (!choice) throw new Error('No reference selected for planned audience.');
+        const editorial = await finishCreativeDirectorAd(
+          bytes.png,
+          {headline:plan.headline,body:plan.body,cta:plan.cta},
+          choice,
+        );
+        if (!editorial.ok) throw new Error(editorial.reason);
         finished = {
           ok: true,
-          pngDataUrl: blueprintResult.pngDataUrl,
-          width: blueprintResult.width,
-          height: blueprintResult.height,
-          layout:
-            plan.audience === 'cold' ? 'discovery' :
-            plan.audience === 'warm' ? 'consideration' :
-            'action',
+          pngDataUrl: editorial.pngDataUrl,
+          width: editorial.width,
+          height: editorial.height,
+          layout: plan.audience === 'cold' ? 'discovery' : plan.audience === 'warm' ? 'consideration' : 'action',
         };
       } else {
-        finished = await finishLiveAdPngSharp(
-          bytes.png,
-          { headline: plan.headline, body: plan.body, cta: plan.cta },
-          plan.audience,
-          `ads[${i}].png`,
-          undefined,
-          false,
-        );
+        const blueprintResult = selectedClass
+          ? await renderBlueprintAd(
+              bytes.png,
+              { headline: plan.headline, body: plan.body, cta: plan.cta },
+              selectedClass,
+            )
+          : null;
+
+        if (blueprintResult?.ok) {
+          finished = {
+            ok: true,
+            pngDataUrl: blueprintResult.pngDataUrl,
+            width: blueprintResult.width,
+            height: blueprintResult.height,
+            layout:
+              plan.audience === 'cold' ? 'discovery' :
+              plan.audience === 'warm' ? 'consideration' :
+              'action',
+          };
+        } else {
+          finished = await finishLiveAdPngSharp(
+            bytes.png,
+            { headline: plan.headline, body: plan.body, cta: plan.cta },
+            plan.audience,
+            `ads[${i}].png`,
+            undefined,
+            false,
+          );
+        }
       }
     } catch {
       const message = `Ad ${i + 1}: Image finishing failed unexpectedly.`;
