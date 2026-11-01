@@ -133,6 +133,8 @@ const GENERIC_HEADLINE_OPENINGS=[
  /^(great|big|exciting) news\b/i,
  /^we'?re (excited|proud|thrilled) to (announce|present|share)\b/i,
  /^you won'?t believe\b/i,
+ /^want a (simple|easy|better) way to\b/i,
+ /^let['’]?s take a (minute|moment|look)\b/i,
 ];
 
 /** Whole headlines that are only a bare call-to-action or vague filler. */
@@ -143,6 +145,7 @@ const GENERIC_HEADLINE_WHOLE=[
  /^(the )?(perfect|ideal) choice for everyone[.!]*$/i,
  /^don'?t miss out[.!]*$/i,
  /^great (quality|product|products) for everyone[.!]*$/i,
+ /^a low battery in the middle of the day[.!]*$/i,
 ];
 
 /**
@@ -296,6 +299,14 @@ export function checkCopyQuality(plans:readonly CopyQualityPlan[],brief:CopyQual
   const combined=(headline+' '+body).trim();
   if(combined.length>0&&!hasProductRelevance(combined,brief)){
    issues.push({field:'plans['+index+'].headline',message:'Plan '+(index+1)+' copy shows no concrete product relevance.'});
+  }
+  // A campaign objective is not evidence that a product is newly released.
+  // Generic launch-status declarations make poor copy and can mislead.
+  const launchFiller=/\\b(?:the new (?:launch|arrival|[A-Z][A-Za-z0-9-]* compact power bank)|new launch|explore the launch|see the launch|have a look and see what it is|just announced)\\b/i;
+  const supplied=([brief.productName,brief.differentiator,brief.specialOffer].filter(Boolean).join(' '));
+  if(!/\\b(?:newly launched|new release|now launching|just launched)\\b/i.test(supplied)
+      && launchFiller.test(headline+' '+body)){
+    issues.push({field:'plans['+index+'].body',message:'Plan '+(index+1)+' uses generic or unverified launch claims; campaign objective is not release evidence.'});
   }
   const fields:ReadonlyArray<readonly [string,string]>=[
    ['plans['+index+'].headline',headline],
