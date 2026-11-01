@@ -57,6 +57,8 @@ export interface LiveDeps {
   /** Tests set this to allow deterministic test doubles. The HTTP route never does. */
   allowTestProviders?: boolean;
   env?: NodeJS.ProcessEnv;
+  /** Optional diagnostic for controlled evaluation; not exposed to customers. */
+  onSamOutcome?: (outcome: {status:'success'|'fallback'|'skipped'; maskCoverage?:number; reason?:string})=>void;
 }
 
 export interface LiveImageFailure {
@@ -171,10 +173,14 @@ export async function imageAdsGenerateLiveOutcome(body: unknown, deps: LiveDeps)
         timeoutMs: 120_000,
       });
       generationInput = { ...input, samCutoutPng: sam.cutout };
-    } catch {
-      // No retries and no silent claim of SAM success.
+      deps.onSamOutcome?.({status:'success',maskCoverage:sam.maskCoverage});
+    } catch (samError) {
+      // No retries. Preserve the original photo and report diagnostic to evaluator.
       generationInput = input;
+      deps.onSamOutcome?.({status:'fallback',reason:samError instanceof Error ? samError.message.slice(0,200):'Unknown SAM failure'});
     }
+  } else {
+    deps.onSamOutcome?.({status:'skipped',reason:!input.upload?'no product image':'SAM flag not active'});
   }
   for (let i = 0; i < validated.plans.length; i += 1) {
     const plan = validated.plans[i];
