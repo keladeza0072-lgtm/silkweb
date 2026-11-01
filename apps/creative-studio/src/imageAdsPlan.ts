@@ -156,7 +156,7 @@ export function buildImageAdPlanPromptWithProvenance(input: ImageAdInput): {
       // and remain available for the image-generation stage. This section
       // must leave room for the strategy pack and all customer facts.
       const short = (value: string, max = 120): string =>
-        value.length <= max ? value : value.slice(0, max).replace(/\\s+\\S*$/, '') + '…';
+        value.length <= max ? value : value.slice(0, max).replace(/\s+\S*$/, '') + '…';
       const rows = selection.selections.map((r, i) => [
         'Ad ' + (i + 1) + ' (' + r.audience + ', ' + r.family + ', ' + r.referenceId + ')',
         'Scene: ' + short(r.scene, 135),
@@ -175,7 +175,7 @@ export function buildImageAdPlanPromptWithProvenance(input: ImageAdInput): {
         'Visual studies: ' + selectVisualStudyPairs(input).map(p =>
           p.audience + '=' + p.referenceId + ' (' + short(p.composition, 82) + ')'
         ).join(' ; '),
-      ].join('\\n');
+      ].join('\n');
     })()
     : '';
   recordPlanProvenance(provenance);
