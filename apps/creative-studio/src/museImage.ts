@@ -1,5 +1,6 @@
 import { buildBlueprintPhotoGuidance } from './imageAdPhotoDirection.js';
 import { selectCreativeDirectorReferences, buildDirectorImagePrompt } from './creativeDirector.js';
+import { selectVisualStudyPairs } from './creativeVisualPairing.js';
 /**
  * SilkWeb Image Ads — Milestone 2 imagery adapter and PNG finishing.
  *
@@ -132,7 +133,13 @@ function defaultImageFetch(url: string, init: MuseImageFetchInit): Promise<MuseI
 export function buildMuseImagePrompt(plan: PlannedImageAd, input: ImageAdInput): string {
   if (process.env.SILKWEB_CREATIVE_DIRECTOR === 'on') {
     const choice = selectCreativeDirectorReferences(input).selections.find(s => s.audience === plan.audience);
-    if (choice) return buildDirectorImagePrompt(plan, input, choice);
+    if (choice) {
+      const visual = selectVisualStudyPairs(input).find(s => s.audience === plan.audience);
+      return [
+        buildDirectorImagePrompt(plan, input, choice),
+        visual ? 'PRIMARY reference study: '+visual.referenceId+'. Original composition influenced by: '+visual.composition+'. Object handling: '+visual.productRelationship+'. Typography reference for later finishing ONLY: '+visual.typography+'. Never reproduce the exact study photograph, packaging, model, or brand.' : '',
+      ].filter(Boolean).join('\n');
+    }
   }
   const product = input.productName.length > 0 ? input.productName : 'the pictured product';
   const lines = [
