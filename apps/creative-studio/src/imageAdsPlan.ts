@@ -170,6 +170,9 @@ export function buildImageAdPlanPromptWithProvenance(input: ImageAdInput): {
         'Each ad needs a distinct reason to care: desire (cold), credible consideration (warm), compelling next step (hot). These audiences are not identical to Schwartz awareness stages.',
         'Reject generic openings: What is new from; Considering a; Hey - it is here; take a first look; just announced; come see.',
         'Cialdini: social proof, authority, urgency, scarcity, reciprocity and numeric claims REQUIRE supplied supporting evidence. Never manufacture them.',
+        'INTERNAL HEADLINE COMPETITION: Privately draft at least five meaningfully different headlines for EACH ad (desire, problem/tension, surprising contrast, curiosity with honest payoff, clear benefit). Score each for scroll-stopping quality, specificity, reader relevance, originality, and factual support. Do not return candidates or scores; return only the strongest credible headline for each of the three ads.',
+        'SELF-CRITIQUE: Reject the first serviceable sentence. Ban slogan-like filler such as Power to carry your day, Take power along, Small thing Big day, designed for everyday carry. Prefer a real human situation and a clear why-care.',
+        'COHERENCE: Each winning headline must earn its supporting body copy and action. Keep language natural, fresh, precise and easy to read over an actual photograph.',
         'Copy must be original, factual and suitable for an actual 4:5 design; no imitation of reference ads.',
         ...rows,
         'Visual studies: ' + selectVisualStudyPairs(input).map(p =>
