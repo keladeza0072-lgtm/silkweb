@@ -28,14 +28,15 @@ export function selectCreativeDirectorReferences(input: ImageAdInput): CreativeD
   const usedFamilies=new Set<CreativeFamily>(),usedIds=new Set<string>();
   const selections=audiences.map((audience)=>{
     const compatible=CREATIVE_REFERENCES.filter(r=>r.compatible.includes(category)&&r.objectives.includes(input.objective));
-    const pool=compatible.length>=3?compatible:CREATIVE_REFERENCES.filter(r=>r.compatible.includes('general')&&r.objectives.includes(input.objective));
+    const pool=compatible.length>=3?compatible:[...compatible,...CREATIVE_REFERENCES.filter(r=>r.compatible.includes('general')&&r.objectives.includes(input.objective))];
     const ranked=pool.map((r,i)=>({
       r,score:
         (usedFamilies.has(r.family)?-100:0)+(usedIds.has(r.id)?-1000:0)+
         (audience==='cold'&&r.family==='human-interaction'?35:0)+
         (audience==='warm'&&r.family==='situated-lifestyle'?35:0)+
         (audience==='hot'&&r.family==='studio-still-life'?30:0)+
-        (audience==='hot'&&r.family==='tactile-editorial'?28:0)-i
+        (audience==='hot'&&r.family==='tactile-editorial'?28:0)+
+        (r.compatible.includes(category) && category!=='general'?20:0)-i
     })).sort((a,b)=>b.score-a.score);
     const r=ranked[0]?.r;
     if(!r)throw Error('No compatible creative reference');
