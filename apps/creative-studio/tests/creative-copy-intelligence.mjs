@@ -9,7 +9,9 @@ try{
   const p=buildImageAdPlanPrompt({productName,objective:'launch-product',upload:null,differentiator:'',price:'',currency:'',specialOffer:''});
   assert.ok(p.length<=8000,'Prompt exceeds 8k chars: '+productName+' '+p.length);
   assert.ok(p.includes(COPY_INTELLIGENCE_VERSION));
-  assert.ok(p.includes('Cialdini-style'));
+  assert.ok(p.includes('Cialdini:'));
+  assert.ok(p.includes('Product: '+productName),'Full product name must remain present');
+  assert.ok(!p.includes('[facts truncated to fit prompt budget]'),'Never silently drop customer facts');
   assert.ok(p.includes('Reject generic openings'));
   console.log(productName, p.length);
  }
