@@ -34,6 +34,7 @@ import { selectCreativeClasses } from './imageAdCreativeSelection.js';
 import { renderBlueprintAd } from './imageAdBlueprintRenderer.js';
 import {selectCreativeDirectorReferences} from './creativeDirector.js';
 import {finishCreativeDirectorAd} from './creativeDirectorFinish.js';
+import {finishTypographyV2} from './creativeTypographyV2.js';
 import {segmentProductWithSam31} from './creativeSam31.js';
 import { isLiveProviderConfigured } from './provider.js';
 
@@ -205,7 +206,7 @@ export async function imageAdsGenerateLiveOutcome(body: unknown, deps: LiveDeps)
       if (directorEnabled) {
         const choice = directorSelections.find(s => s.audience === plan.audience);
         if (!choice) throw new Error('No reference selected for planned audience.');
-        const editorial = await finishCreativeDirectorAd(
+        const editorial = await (env.SILKWEB_TYPOGRAPHY_V2 === 'on' ? finishTypographyV2 : finishCreativeDirectorAd)(
           bytes.png,
           {headline:plan.headline,body:plan.body,cta:plan.cta},
           choice,
