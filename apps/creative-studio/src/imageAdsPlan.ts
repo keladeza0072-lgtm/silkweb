@@ -61,7 +61,7 @@ function objectiveLine(objective: ImageAdObjective['id']): string {
     case 'build-awareness':
       return 'Build Awareness: introduce the product widely with a memorable first impression.';
     case 'launch-product':
-      return 'Launch a Product: announce something new and invite a first look.';
+      return 'Launch a Product: introduce the product compellingly; this objective alone does NOT establish that the product is new or just released.';
     default:
       return objective;
   }
@@ -115,7 +115,7 @@ const PLAN_SAFETY_LINES: readonly string[] = [
   'Plan 1 must have audience "cold" (discovery: introduce the product).',
   'Plan 2 must have audience "warm" (consideration: help evaluation).',
   'Plan 3 must have audience "hot" (action: invite a decision now).',
-  'Adapt all three to the campaign objective below.',
+  'Adapt all three to the campaign objective below. Never imply a product has just launched solely because the objective is Launch Product.',
   'Each plan object must contain exactly these string fields:',
   'id, audience, angle, headline, body, cta, visualPrompt.',
   'The three headlines, bodies, and angles must all differ from each other.',
@@ -171,7 +171,7 @@ export function buildImageAdPlanPromptWithProvenance(input: ImageAdInput): {
         'Reject generic openings: What is new from; Considering a; Hey - it is here; take a first look; just announced; come see.',
         'Cialdini: social proof, authority, urgency, scarcity, reciprocity and numeric claims REQUIRE supplied supporting evidence. Never manufacture them.',
         'INTERNAL HEADLINE COMPETITION: Privately draft at least five meaningfully different headlines for EACH ad (desire, problem/tension, surprising contrast, curiosity with honest payoff, clear benefit). Score each for scroll-stopping quality, specificity, reader relevance, originality, and factual support. Do not return candidates or scores; return only the strongest credible headline for each of the three ads.',
-        'SELF-CRITIQUE: Reject the first serviceable sentence. Ban slogan-like filler such as Power to carry your day, Take power along, Small thing Big day, designed for everyday carry. Prefer a real human situation and a clear why-care.',
+        'SELF-CRITIQUE: Reject generic questions (Want a simple way to...), vague problem fragments (A low battery in the middle of the day.), and self-referential launches (Let us take a minute with the new launch). Reject the first serviceable sentence. Ban slogan-like filler such as Power to carry your day, Take power along, Small thing Big day, designed for everyday carry. Prefer a real human situation and a clear why-care.',
         'COHERENCE: Each winning headline must earn its supporting body copy and action. Keep language natural, fresh, precise and easy to read over an actual photograph.',
         'Copy must be original, factual and suitable for an actual 4:5 design; no imitation of reference ads.',
         ...rows,
