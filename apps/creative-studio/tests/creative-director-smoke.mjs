@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {selectCreativeDirectorReferences,inferProductCategory,buildDirectorImagePrompt} from '../dist/creativeDirector.js';
+import {CREATIVE_REFERENCES} from '../dist/creativeDirectorRegistry.js';
 const cases=[
  ['INIU compact power bank','tech'],
  ['Gentle face serum','beauty'],
@@ -15,6 +16,13 @@ for(const [productName,category] of cases){
  assert.equal(result.selections.length,3);
  assert.equal(new Set(result.selections.map(x=>x.referenceId)).size,3);
  assert.equal(new Set(result.selections.map(x=>x.family)).size,3);
+ for(const choice of result.selections){
+  const reference=CREATIVE_REFERENCES.find(r=>r.id===choice.referenceId);
+  assert.ok(reference,'Missing reference '+choice.referenceId);
+  assert.ok(reference.compatible.includes(category),productName+' wrongly matched '+choice.referenceId);
+ }
+ if(category==='food')assert.ok(result.selections.every(x=>x.referenceId.startsWith('FOOD-')));
+ if(category==='beauty')assert.ok(result.selections.every(x=>!x.referenceId.startsWith('TRAVEL-')));
  const plan={id:'ad-1',audience:'cold',headline:'Discover the details',body:'Explore the product.',cta:'Learn more',angle:'Discovery',visualPrompt:'Authentic commercial story'};
  for(const item of result.selections){
   const prompt=buildDirectorImagePrompt(plan,input,item);
