@@ -10,6 +10,7 @@
  */
 
 import type { ImageAdInput, ImageAdObjective } from './imageAds.js';
+import { selectCreativeDirectorReferences } from './creativeDirector.js';
 import {
   MUSE_RESPONSES_ENDPOINT,
   MUSE_SPARK_MODEL,
@@ -146,9 +147,33 @@ export function buildImageAdPlanPromptWithProvenance(input: ImageAdInput): {
   if (input.specialOffer) facts.push(`Special offer (genuine, user-supplied): ${input.specialOffer}`);
   facts.push(`Product photo supplied: ${input.upload ? 'yes (reference-guided imagery preferred)' : 'no — do not fabricate branded appearance'}`);
   const { section, provenance } = buildImageAdStrategySection(input);
+  const directorSection = process.env.SILKWEB_CREATIVE_DIRECTOR === 'on'
+    ? (() => {
+      const selection = selectCreativeDirectorReferences(input);
+      const rows = selection.selections.map((r, i) => [
+        'Ad ' + (i + 1) + ' (' + r.audience + ') reference ' + r.referenceId + ':',
+        'Scene: ' + r.scene,
+        'Product interaction: ' + r.interaction,
+        'Camera: ' + r.camera,
+        'Typographic character: ' + r.typography,
+        'Visual failure to avoid: ' + r.risk,
+      ].join('\\n')).join('\\n\\n');
+      return [
+        '## SilkWeb Creative Director — selected semantic advertising references',
+        'Treat references as adaptable inspiration, not rigid layout rules. Do not copy an existing campaign.',
+        'Write a different persuasive idea for each of these physically believable product interactions.',
+        'Avoid generic greetings, empty inspirational slogans and repeated headline structures.',
+        'Prefer concise, concrete language grounded in known product facts; NEVER invent performance, specifications or offers.',
+        'Use headline, body and cta fields for exact copy; choose whether the finished image needs all or only some of that text.',
+        'Visual prompts should bring the selected interaction to life, not overrule its physical realism.',
+        rows,
+      ].join('\\n');
+    })()
+    : '';
   recordPlanProvenance(provenance);
-  const head = [...PLAN_SAFETY_LINES, '', section, '', '## Supplied facts'].join('\n');
+  const head = [...PLAN_SAFETY_LINES, '', section, ...(directorSection ? ['', directorSection] : []), '', '## Supplied facts'].join('\n');
   const room = MAX_PLAN_PROMPT_CHARS - head.length - '\n'.length - ' [facts truncated to fit prompt budget]'.length;
+  if (room < 200) throw new Error('Creative Director guidance exceeds planning prompt budget.');
   let tail = facts.join('\n');
   if (room < tail.length) {
     tail = `${tail.slice(0, Math.max(0, room))} [facts truncated to fit prompt budget]`;
