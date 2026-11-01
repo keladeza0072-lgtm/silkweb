@@ -1,6 +1,7 @@
 import { buildBlueprintPhotoGuidance } from './imageAdPhotoDirection.js';
 import { selectCreativeDirectorReferences, buildDirectorImagePrompt } from './creativeDirector.js';
 import { selectVisualStudyPairs } from './creativeVisualPairing.js';
+import { loadApprovedSceneAsset } from './creativeApprovedScenes.js';
 /**
  * SilkWeb Image Ads — Milestone 2 imagery adapter and PNG finishing.
  *
@@ -95,7 +96,7 @@ export interface MuseImageRequest {
 export function buildMuseImageRequest(
   plan: PlannedImageAd,
   input: ImageAdInput,
-  options: { endpoint?: string; editsEndpoint?: string; model?: string } = {},
+  options: { endpoint?: string; editsEndpoint?: string; model?: string; approvedSceneDataUrl?: string } = {},
 ): MuseImageRequest {
   const generations = options.endpoint ?? MUSE_IMAGE_ENDPOINT;
   const edits = options.editsEndpoint
@@ -110,8 +111,11 @@ export function buildMuseImageRequest(
     response_format: 'b64_json',
     output_format: 'png',
   };
-  if (input.upload) {
-    return { endpoint: edits, body: { ...body, images: [{ image_url: uploadImageDataUrl(input.upload) }] } };
+  const refs: Array<{image_url:string}> = [];
+  if (options.approvedSceneDataUrl) refs.push({image_url:options.approvedSceneDataUrl});
+  if (input.upload) refs.push({image_url:uploadImageDataUrl(input.upload)});
+  if (refs.length) {
+    return {endpoint:edits,body:{...body,images:refs}};
   }
   return { endpoint: generations, body };
 }
@@ -218,11 +222,20 @@ export class MetaMuseImageProvider implements ImageGenerator {
     if (!this.apiKey) {
       throw new Error('Live image generation is not configured. Set SILKWEB_CREATIVE_PROVIDER=live with MODEL_API_KEY to enable it.');
     }
-    const referenceGuided = Boolean(input.upload);
+    const directorEnabled = process.env.SILKWEB_CREATIVE_DIRECTOR === 'on';
+    const assetRoot = process.env.SILKWEB_APPROVED_SCENE_DIR;
+    const match = directorEnabled && assetRoot
+      ? selectVisualStudyPairs(input).find(s=>s.audience===plan.audience)
+      : undefined;
+    const scene = match && assetRoot
+      ? await loadApprovedSceneAsset(match.referenceId,assetRoot)
+      : null;
+    const referenceGuided = Boolean(input.upload || scene);
     const request = buildMuseImageRequest(plan, input, {
       endpoint: this.endpoint,
       editsEndpoint: this.editsEndpoint,
       model: this.model,
+      approvedSceneDataUrl: scene?.dataUrl,
     });
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
