@@ -302,9 +302,9 @@ export function checkCopyQuality(plans:readonly CopyQualityPlan[],brief:CopyQual
   }
   // A campaign objective is not evidence that a product is newly released.
   // Generic launch-status declarations make poor copy and can mislead.
-  const launchFiller=/\\b(?:the new (?:launch|arrival|[A-Z][A-Za-z0-9-]* compact power bank)|new launch|explore the launch|see the launch|have a look and see what it is|just announced)\\b/i;
+  const launchFiller=/\b(?:the new (?:launch|arrival|[A-Z][A-Za-z0-9-]* compact power bank)|new launch|explore the launch|see the launch|have a look and see what it is|just announced)\b/i;
   const supplied=([brief.productName,brief.differentiator,brief.specialOffer].filter(Boolean).join(' '));
-  if(!/\\b(?:newly launched|new release|now launching|just launched)\\b/i.test(supplied)
+  if(!/\b(?:newly launched|new release|now launching|just launched)\b/i.test(supplied)
       && launchFiller.test(headline+' '+body)){
     issues.push({field:'plans['+index+'].body',message:'Plan '+(index+1)+' uses generic or unverified launch claims; campaign objective is not release evidence.'});
   }
