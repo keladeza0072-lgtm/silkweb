@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {selectVisualStudyPairs} from '../dist/creativeVisualPairing.js';
 import {buildImageAdPlanPrompt} from '../dist/imageAdsPlan.js';
+import {buildMuseImagePrompt} from '../dist/museImage.js';
 const cases=[
  ['INIU compact power bank','TECH-HAND-01'],
  ['Gentle face serum','PREMIUM-PORTRAIT-05'],
@@ -18,7 +19,11 @@ for(const [name] of cases){
  process.env.SILKWEB_CREATIVE_DIRECTOR='on';
  const prompt=buildImageAdPlanPrompt(input);
  assert.ok(prompt.length<=8000,'Prompt exceeds ceiling ('+prompt.length+')');
- for(const match of result)assert.ok(prompt.includes(match.referenceId),'Missing image study '+match.referenceId);
+ for(const match of result){
+  assert.ok(prompt.includes(match.referenceId),'Missing image study '+match.referenceId);
+  const plan={id:'ad-'+match.audience,audience:match.audience,headline:'Discover the design',body:'Explore the product',cta:'Learn more',angle:'Editorial',visualPrompt:'Original brand-relevant photograph'};
+  assert.ok(buildMuseImagePrompt(plan,input).includes('PRIMARY reference study: '+match.referenceId),'Generator does not use same study');
+ }
  process.env.SILKWEB_CREATIVE_DIRECTOR='off';
  console.log(name, result.map(x=>x.referenceId).join(' / '),prompt.length);
 }
