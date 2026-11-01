@@ -152,30 +152,30 @@ export function buildImageAdPlanPromptWithProvenance(input: ImageAdInput): {
   const directorSection = process.env.SILKWEB_CREATIVE_DIRECTOR === 'on'
     ? (() => {
       const selection = selectCreativeDirectorReferences(input);
+      // Compact director guidance: full descriptions live in the registry
+      // and remain available for the image-generation stage. This section
+      // must leave room for the strategy pack and all customer facts.
+      const short = (value: string, max = 120): string =>
+        value.length <= max ? value : value.slice(0, max).replace(/\\s+\\S*$/, '') + '…';
       const rows = selection.selections.map((r, i) => [
-        'Ad ' + (i + 1) + ' (' + r.audience + ') reference ' + r.referenceId + ':',
-        'Scene: ' + r.scene,
-        'Product interaction: ' + r.interaction,
-        'Camera: ' + r.camera,
-        'Typographic character: ' + r.typography,
-        'Visual failure to avoid: ' + r.risk,
-      ].join('\n')).join('\n\n');
+        'Ad ' + (i + 1) + ' (' + r.audience + ', ' + r.family + ', ' + r.referenceId + ')',
+        'Scene: ' + short(r.scene, 135),
+        'Interaction: ' + short(r.interaction, 135),
+        'Camera: ' + short(r.camera, 105),
+        'Typography: ' + short(r.typography, 95),
+      ].join(' | '));
       return [
-        '## SilkWeb Creative Director — selected semantic advertising references',
-        'Treat references as adaptable inspiration, not rigid layout rules. Do not copy an existing campaign.',
-        'Write a different persuasive idea for each of these physically believable product interactions.',
-        'COPY INTELLIGENCE '+COPY_INTELLIGENCE_VERSION+': Use Schwartz-inspired existing desire and audience awareness; make every headline an attention-grabbing, persuasive hook rather than a campaign announcement.',
-        'Give each ad a distinct persuasive reason: recognizable desire for cold, credible consideration for warm, clear action for hot. Internal stages are NOT exact Schwartz awareness levels.',
-        'Reject generic openings: What is new from, Considering a, Hey - it is here, take a first look, just announced, come see, meet the new arrival.',
-        'Cialdini-style authority, social proof, reciprocity, scarcity and commitment need real supplied evidence; NEVER fabricate them, specifications, outcomes or offers.',
-        'Use headline, body and cta fields for exact copy; choose whether the finished image needs all or only some of that text.',
-        'Visual prompts should bring the selected interaction to life, not overrule its physical realism.',
-        rows,
-        '## Nine-study visual reference matches (original art direction, no reproduction of study photos)',
-        ...selectVisualStudyPairs(input).map((pair, i) =>
-          'Ad '+(i+1)+' ('+pair.audience+'): '+pair.referenceId+'. '+pair.composition+' Typography: '+pair.typography
-        ),
-      ].join('\n');
+        '## Creative Director / ' + COPY_INTELLIGENCE_VERSION,
+        'Apply Schwartz-style existing desire and awareness to make every headline an attention-grabbing, specific persuasive hook, not a generic announcement.',
+        'Each ad needs a distinct reason to care: desire (cold), credible consideration (warm), compelling next step (hot). These audiences are not identical to Schwartz awareness stages.',
+        'Reject generic openings: What is new from; Considering a; Hey - it is here; take a first look; just announced; come see.',
+        'Cialdini: social proof, authority, urgency, scarcity, reciprocity and numeric claims REQUIRE supplied supporting evidence. Never manufacture them.',
+        'Copy must be original, factual and suitable for an actual 4:5 design; no imitation of reference ads.',
+        ...rows,
+        'Visual studies: ' + selectVisualStudyPairs(input).map(p =>
+          p.audience + '=' + p.referenceId + ' (' + short(p.composition, 82) + ')'
+        ).join(' ; '),
+      ].join('\\n');
     })()
     : '';
   recordPlanProvenance(provenance);
