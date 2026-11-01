@@ -27,8 +27,10 @@ export async function finishCreativeDirectorAd(
  png:Buffer,copy:AdCopy,choice:CreativeDirectorChoice
 ):Promise<{ok:true;pngDataUrl:string;width:number;height:number}|{ok:false;reason:string}>{
  try{
-  const img=sharp(png).resize(W,H,{fit:'cover'});
-  const sample=await img.clone().extract({left:40,top:42,width:450,height:245})
+  // Normalize to the final pixel canvas before cropping: Sharp may reorder
+  // chained resize/extract operations and reject the extraction bounds.
+  const base=await sharp(png).resize(W,H,{fit:'cover'}).png().toBuffer();
+  const sample=await sharp(base).extract({left:40,top:42,width:450,height:245})
     .resize(1,1).removeAlpha().raw().toBuffer();
   const luma=0.2126*sample[0]+0.7152*sample[1]+0.0722*sample[2];
   const light=luma<138;
@@ -49,7 +51,7 @@ export async function finishCreativeDirectorAd(
   // Only overlay body text when brief and likely to fit; complete copy remains API metadata.
   const body=safeBody.length<=85?'<text x="'+x+'" y="'+bodyY+'" font-family="Arial,Helvetica,sans-serif" font-size="29" fill="'+secondary+'">'+clean(safeBody)+'</text>':'';
   const overlay=Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'">'+header+body+'</svg>');
-  const out=await img.composite([{input:overlay,left:0,top:0}]).png().toBuffer();
+  const out=await sharp(base).composite([{input:overlay,left:0,top:0}]).png().toBuffer();
   return {ok:true,pngDataUrl:'data:image/png;base64,'+out.toString('base64'),width:W,height:H};
- }catch{return {ok:false,reason:'Creative Director typography finishing failed'};}
+ }catch(error){return {ok:false,reason:'Creative Director typography finishing failed: '+(error instanceof Error?error.message:'Unknown image error')};}
 }
