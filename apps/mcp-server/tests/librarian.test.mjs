@@ -178,7 +178,7 @@ const REAL_COMPONENTS = [
 ];
 
 describe('librarian MCP tools against the certified registry', () => {
-  it('lists ping plus the three librarian tools', async () => {
+  it('lists all seven MCP tools', async () => {
     await withClient({}, async (client) => {
       const listed = await client.listTools();
       const names = listed.tools.map((tool) => tool.name).sort();
@@ -187,6 +187,9 @@ describe('librarian MCP tools against the certified registry', () => {
         'inspect_verified_component',
         'ping',
         'search_verified_components',
+        'silkweb_agents_select',
+        'silkweb_code_lookup',
+        'silkweb_data_lookup',
       ]);
     });
   });

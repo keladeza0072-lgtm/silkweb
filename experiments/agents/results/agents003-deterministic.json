@@ -1,0 +1,737 @@
+{
+  "summary": {
+    "protocol": "AGENTS-003",
+    "benchmarkType": "local-deterministic-only",
+    "repeatsPerScenario": 30,
+    "trials": 90,
+    "passed": 90,
+    "modelCalls": 0,
+    "meanMs": 2.0116155555555557,
+    "medianMs": 1.7882999999999925,
+    "p95Ms": 2.795899999999989,
+    "totalMs": 181.04540000000003,
+    "note": "Local execution measurements; not comparable to end-to-end Muse coding latency."
+  },
+  "trials": [
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 0,
+      "elapsedMs": 10.0017,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 0,
+      "elapsedMs": 2.285599999999988,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 0,
+      "elapsedMs": 2.693099999999987,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 1,
+      "elapsedMs": 3.591000000000008,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 1,
+      "elapsedMs": 1.9367000000000019,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 1,
+      "elapsedMs": 2.026299999999992,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 2,
+      "elapsedMs": 2.4694999999999823,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 2,
+      "elapsedMs": 2.0364000000000146,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 2,
+      "elapsedMs": 2.1628000000000043,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 3,
+      "elapsedMs": 2.6526000000000067,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 3,
+      "elapsedMs": 1.8491999999999962,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 3,
+      "elapsedMs": 2.301899999999989,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 4,
+      "elapsedMs": 2.795899999999989,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 4,
+      "elapsedMs": 5.052199999999999,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 4,
+      "elapsedMs": 2.6140000000000043,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 5,
+      "elapsedMs": 4.037800000000004,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 5,
+      "elapsedMs": 1.5990999999999929,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 5,
+      "elapsedMs": 1.5620000000000118,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 6,
+      "elapsedMs": 1.9516999999999882,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 6,
+      "elapsedMs": 1.5386999999999773,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 6,
+      "elapsedMs": 1.668200000000013,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 7,
+      "elapsedMs": 2.124200000000002,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 7,
+      "elapsedMs": 1.3966000000000065,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 7,
+      "elapsedMs": 1.5124000000000137,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 8,
+      "elapsedMs": 2.6347000000000094,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 8,
+      "elapsedMs": 1.7820000000000107,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 8,
+      "elapsedMs": 2.2686000000000206,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 9,
+      "elapsedMs": 1.5255999999999972,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 9,
+      "elapsedMs": 1.4144000000000005,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 9,
+      "elapsedMs": 1.9990999999999985,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 10,
+      "elapsedMs": 1.429000000000002,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 10,
+      "elapsedMs": 1.409400000000005,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 10,
+      "elapsedMs": 1.9762000000000057,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 11,
+      "elapsedMs": 1.6295000000000073,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 11,
+      "elapsedMs": 1.4120000000000061,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 11,
+      "elapsedMs": 2.26339999999999,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 12,
+      "elapsedMs": 1.4617000000000075,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 12,
+      "elapsedMs": 1.4558000000000106,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 12,
+      "elapsedMs": 2.072900000000004,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 13,
+      "elapsedMs": 1.4282999999999788,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 13,
+      "elapsedMs": 1.4620999999999924,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 13,
+      "elapsedMs": 2.0681999999999903,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 14,
+      "elapsedMs": 1.5448000000000093,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 14,
+      "elapsedMs": 1.488900000000001,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 14,
+      "elapsedMs": 2.2626999999999953,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 15,
+      "elapsedMs": 1.6569000000000074,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 15,
+      "elapsedMs": 1.5302000000000078,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 15,
+      "elapsedMs": 2.2235000000000014,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 16,
+      "elapsedMs": 1.6565999999999974,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 16,
+      "elapsedMs": 2.122099999999989,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 16,
+      "elapsedMs": 2.4102000000000032,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 17,
+      "elapsedMs": 1.5012999999999863,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 17,
+      "elapsedMs": 1.464100000000002,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 17,
+      "elapsedMs": 2.0490000000000066,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 18,
+      "elapsedMs": 1.4805000000000064,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 18,
+      "elapsedMs": 1.4221000000000004,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 18,
+      "elapsedMs": 2.0313999999999908,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 19,
+      "elapsedMs": 1.4266000000000076,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 19,
+      "elapsedMs": 1.8778000000000077,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 19,
+      "elapsedMs": 1.5685000000000002,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 20,
+      "elapsedMs": 2.2890999999999906,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 20,
+      "elapsedMs": 1.8892000000000166,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 20,
+      "elapsedMs": 1.4762999999999806,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 21,
+      "elapsedMs": 1.4259999999999877,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 21,
+      "elapsedMs": 1.9639999999999986,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 21,
+      "elapsedMs": 1.5067999999999984,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 22,
+      "elapsedMs": 1.4687000000000126,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 22,
+      "elapsedMs": 1.951599999999985,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 22,
+      "elapsedMs": 1.48660000000001,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 23,
+      "elapsedMs": 1.6698000000000093,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 23,
+      "elapsedMs": 1.9750999999999976,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 23,
+      "elapsedMs": 1.464999999999975,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 24,
+      "elapsedMs": 1.6525000000000318,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 24,
+      "elapsedMs": 2.2346999999999753,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 24,
+      "elapsedMs": 1.7882999999999925,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 25,
+      "elapsedMs": 1.8272000000000048,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 25,
+      "elapsedMs": 2.294499999999971,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 25,
+      "elapsedMs": 1.554300000000012,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 26,
+      "elapsedMs": 1.4612000000000194,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 26,
+      "elapsedMs": 2.085300000000018,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 26,
+      "elapsedMs": 1.7402999999999906,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 27,
+      "elapsedMs": 1.6926000000000272,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 27,
+      "elapsedMs": 2.0143999999999664,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 27,
+      "elapsedMs": 1.598799999999983,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 28,
+      "elapsedMs": 1.4782000000000153,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 28,
+      "elapsedMs": 2.093900000000019,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 28,
+      "elapsedMs": 1.7367999999999597,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "versionConflict",
+      "repeat": 29,
+      "elapsedMs": 2.5347000000000435,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "conditionalWorkflow",
+      "repeat": 29,
+      "elapsedMs": 1.6943999999999733,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    },
+    {
+      "protocol": "AGENTS-003",
+      "scenarioId": "constrainedRecovery",
+      "repeat": 29,
+      "elapsedMs": 1.725400000000036,
+      "status": "DETERMINISTIC_PASS",
+      "modelCalls": 0
+    }
+  ]
+}

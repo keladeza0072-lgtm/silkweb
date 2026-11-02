@@ -13,7 +13,8 @@ function buildMessages({
   scenarioId,
   toolVersion,
   guidance,
-  history
+  history,
+  taskFacts = null
 }) {
   return [
     {
@@ -33,13 +34,22 @@ function buildMessages({
     },
     {
       role: 'user',
-      content: JSON.stringify({
-        task: 'Resolve eligible order ORD-001 and write an audit record.',
-        toolVersion,
-        tools: publicToolContracts(toolVersion).tools,
-        guidance: guidance ?? null,
-        observations: history
-      })
+      content: JSON.stringify(taskFacts
+        ? {
+          task: taskFacts.task,
+          facts: taskFacts.facts,
+          toolVersion,
+          tools: publicToolContracts(toolVersion).tools,
+          guidance: guidance ?? null,
+          observations: history
+        }
+        : {
+          task: 'Resolve eligible order ORD-001 and write an audit record.',
+          toolVersion,
+          tools: publicToolContracts(toolVersion).tools,
+          guidance: guidance ?? null,
+          observations: history
+        })
     }
   ];
 }
@@ -68,7 +78,9 @@ export async function runAgentDecisionLoop({
   scenarioId,
   guidance = null,
   decide,
-  maxDecisions = MAX_DECISIONS
+  maxDecisions = MAX_DECISIONS,
+  scenarios = null,
+  evaluateOutcome = null
 }) {
   if (typeof decide !== 'function') {
     throw new TypeError('decide must be a function');
@@ -82,7 +94,17 @@ export async function runAgentDecisionLoop({
     throw new RangeError('Invalid decision limit');
   }
 
-  const session = createInteractiveBenchmark(scenarioId);
+  const session = createInteractiveBenchmark(scenarioId, {
+    ...(scenarios ? { scenarios } : {}),
+    ...(evaluateOutcome ? { evaluateOutcome } : {})
+  });
+  const scenarioView = scenarios?.[scenarioId] ?? null;
+  const taskFacts = scenarioView && scenarioView.task && scenarioView.facts
+    ? {
+      task: scenarioView.task,
+      facts: structuredClone(scenarioView.facts)
+    }
+    : null;
   const history = [];
   let finishReason = 'DECISION_LIMIT';
 
@@ -91,7 +113,8 @@ export async function runAgentDecisionLoop({
       scenarioId,
       toolVersion: session.toolVersion,
       guidance,
-      history: structuredClone(history)
+      history: structuredClone(history),
+      ...(taskFacts ? { taskFacts } : {})
     });
 
     const decision = await decide({

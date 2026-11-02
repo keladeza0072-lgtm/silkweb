@@ -22,8 +22,12 @@ function validAction(action) {
   );
 }
 
-export function createInteractiveBenchmark(scenarioId) {
-  const scenario = BENCHMARK_SCENARIOS[scenarioId];
+export function createInteractiveBenchmark(
+  scenarioId,
+  { scenarios = BENCHMARK_SCENARIOS, evaluateOutcome = null } = {}
+) {
+  const registry = scenarios ?? BENCHMARK_SCENARIOS;
+  const scenario = registry[scenarioId];
 
   if (!scenario) {
     throw new Error(`Unknown benchmark scenario: ${scenarioId}`);
@@ -104,7 +108,9 @@ export function createInteractiveBenchmark(scenarioId) {
     finished = true;
 
     const snapshot = environment.snapshot();
-    const evaluation = evaluateOrderOutcome(snapshot);
+    const evaluation = evaluateOutcome
+      ? evaluateOutcome(scenario, snapshot)
+      : evaluateOrderOutcome(snapshot);
 
     return {
       scenarioId,

@@ -14,6 +14,8 @@ import {
   selectTrustedComponents,
   sourceTrustedComponent,
 } from './librarian.js';
+import { DATA_LOOKUP_DEFAULT_LIMIT, DATA_LOOKUP_MAX_LIMIT, dataLookup } from './intelligence.js';
+import { selectAgentProcedure } from './agentsBridge.js';
 
 const componentSummarySchema = z.object({
   id: z.string(),
@@ -70,6 +72,45 @@ const sourceOutputSchema = z.object({
   ),
   totalBytes: z.number(),
   truncated: z.boolean(),
+});
+
+const dataLookupOutputSchema = z.object({
+  available: z.boolean(),
+  topic: z.string().nullable(),
+  components: z.array(
+    z.object({
+      id: z.string(),
+      version: z.string(),
+      capabilities: z.array(z.string()),
+      rules: z.array(z.string()),
+      truncated: z.boolean(),
+    }),
+  ),
+  checkedCapabilities: z.array(z.string()),
+  note: z.string(),
+  totalTrusted: z.number(),
+  rejected: z.array(z.object({ id: z.string(), version: z.string(), code: z.string() })),
+});
+
+const agentSelectionOutputSchema = z.object({
+  status: z.string(),
+  selected: z
+    .object({
+      id: z.string(),
+      version: z.string(),
+      task: z.string(),
+      toolVersion: z.string(),
+      steps: z.array(z.object({ op: z.string(), args: z.record(z.string(), z.unknown()) })),
+      constraints: z.array(z.string()),
+    })
+    .nullable(),
+  inspected: z.array(z.object({ id: z.string().nullable(), version: z.string().nullable(), reason: z.string() })),
+  inspectedTruncated: z.boolean(),
+  libraryVersion: z.string(),
+  approvalsChecked: z.number(),
+  toolContract: z.object({ toolVersion: z.string(), requiredResolveArgs: z.array(z.string()) }).nullable(),
+  contractNote: z.string().nullable(),
+  note: z.string(),
 });
 
 function toToolError(error: unknown): Error {
@@ -196,6 +237,96 @@ function createServer(): McpServer {
       try {
         const selection = await selectTrustedComponents();
         const output = sourceTrustedComponent(selection, args.id, args.version, args);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(output) }],
+          structuredContent: output,
+        };
+      } catch (error: unknown) {
+        throw toToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'silkweb_code_lookup',
+    {
+      description:
+        'Retrieve relevant, verified coding intelligence from the certified registry. ' +
+        'Searches only components with currently valid evidence, with exact stack, ' +
+        'AND-semantics capabilities, and case-insensitive query filters. ' +
+        'Results use deterministic (id, version) order and never include canned answers. ' +
+        'Read-only; no code execution or AI calls.',
+      inputSchema: z.object({
+        capabilities: z.array(z.string().min(1).max(100)).max(8).optional(),
+        stack: z.string().min(1).max(100).optional(),
+        query: z.string().max(200).optional(),
+        limit: z.number().int().min(1).max(SEARCH_MAX_LIMIT).default(SEARCH_DEFAULT_LIMIT),
+      }),
+      outputSchema: searchOutputSchema,
+      annotations: { readOnlyHint: true },
+    },
+    async (args) => {
+      try {
+        const selection = await selectTrustedComponents();
+        const output = searchTrusted(selection, args);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(output) }],
+          structuredContent: output,
+        };
+      } catch (error: unknown) {
+        throw toToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'silkweb_data_lookup',
+    {
+      description:
+        'Retrieve available data intelligence, including supported schema or business-rule context. ' +
+        'Returns manifest invariants with currently valid evidence for matching verified components. ' +
+        'Reports honestly when no registry-backed data context matches; never invents business rules. ' +
+        'Read-only; no code execution or AI calls.',
+      inputSchema: z.object({
+        topic: z.string().max(200).optional(),
+        limit: z.number().int().min(1).max(DATA_LOOKUP_MAX_LIMIT).default(DATA_LOOKUP_DEFAULT_LIMIT),
+      }),
+      outputSchema: dataLookupOutputSchema,
+      annotations: { readOnlyHint: true },
+    },
+    async (args) => {
+      try {
+        const selection = await selectTrustedComponents();
+        const output = dataLookup(selection, args);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(output) }],
+          structuredContent: output,
+        };
+      } catch (error: unknown) {
+        throw toToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'silkweb_agents_select',
+    {
+      description:
+        'Select an applicable approved agent procedure using the existing trust store and compatibility checks. ' +
+        'Runs the real selector over the approved procedure library with digest-bound approvals and ' +
+        'tool-version contract checks. Fails closed for missing tasks, revoked procedures, and ' +
+        'incompatible versions; never invents a procedure. ' +
+        'Returns guidance data only; never executes procedures. Read-only.',
+      inputSchema: z.object({
+        task: z.string().min(1).max(200),
+        toolVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
+      }),
+      outputSchema: agentSelectionOutputSchema,
+      annotations: { readOnlyHint: true },
+    },
+    async (args) => {
+      try {
+        const output = await selectAgentProcedure(args.task, args.toolVersion);
         return {
           content: [{ type: 'text', text: JSON.stringify(output) }],
           structuredContent: output,

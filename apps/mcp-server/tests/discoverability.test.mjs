@@ -29,9 +29,9 @@ function description(name) {
   return literals.map((item) => item[1]).join('');
 }
 
-test('all four MCP tools remain registered', () => {
+test('all seven MCP tools remain registered', () => {
   const registrations = source.match(/server\.registerTool\s*\(/g) ?? [];
-  assert.equal(registrations.length, 4);
+  assert.equal(registrations.length, 7);
 });
 
 test('search advertises reusable verified components', () => {
@@ -64,4 +64,26 @@ test('ping retains its connectivity purpose', () => {
 
   assert.match(text, /connectivity check/i);
   assert.match(text, /no API calls/i);
+});
+
+test('code lookup advertises verified registry reuse', () => {
+  const text = description('silkweb_code_lookup');
+
+  assert.match(text, /verified/i);
+  assert.match(text, /deterministic \(id, version\) order/i);
+  assert.match(text, /never include canned answers/i);
+});
+
+test('data lookup advertises honest unavailable responses', () => {
+  const text = description('silkweb_data_lookup');
+
+  assert.match(text, /never invents business rules/i);
+  assert.match(text, /currently valid evidence/i);
+});
+
+test('agents selection advertises guidance-only trust checks', () => {
+  const text = description('silkweb_agents_select');
+
+  assert.match(text, /never invents a procedure/i);
+  assert.match(text, /never executes procedures/i);
 });

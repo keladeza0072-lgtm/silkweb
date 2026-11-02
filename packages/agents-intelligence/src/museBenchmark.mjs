@@ -5,7 +5,9 @@ export async function runMuseBenchmark({
   scenarioId,
   guidance = null,
   transport,
-  maxDecisions = 12
+  maxDecisions = 12,
+  scenarios = null,
+  evaluateOutcome = null
 }) {
   if (typeof transport !== 'function') {
     throw new TypeError('A Muse transport function is required');
@@ -18,6 +20,8 @@ export async function runMuseBenchmark({
     scenarioId,
     guidance,
     maxDecisions,
+    ...(scenarios ? { scenarios } : {}),
+    ...(evaluateOutcome ? { evaluateOutcome } : {}),
     decide: async ({ messages, step }) => {
       const response = await transport({
         messages,
