@@ -17,7 +17,11 @@ let objectives = FALLBACK_OBJECTIVES;
 let uploadedDataUrl = '';
 let uploadedFileName = '';
 let lastRequest = null;
+let demoAccessCode = '';
 let messageTimer = 0;
+let pollTimer = 0;
+let activeGeneration = 0;
+const POLL_INTERVAL_MS = 2000;
 
 async function loadConfig() {
   try {
@@ -157,10 +161,10 @@ function showGeneratingError(message) {
   $('#retry-btn').focus();
 }
 
-async function postAds(endpoint, request) {
+async function postAds(endpoint, request, extraHeaders) {
   const res = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', ...(extraHeaders || {}) },
     body: JSON.stringify(request),
   });
   const payload = await res.json().catch(() => null);
@@ -175,37 +179,85 @@ function payloadMessage(payload, fallback) {
   return fallback;
 }
 
+function stopPolling() { if (pollTimer) window.clearTimeout(pollTimer); pollTimer = 0; }
+function setQueuedStatus() { stopGeneratingMessages(); $('#generating-status').textContent = 'Your request is queued. Generation will start shortly. Keep this tab open.'; }
+async function pollJob(jobId, gen) {
+  let failures = 0;
+  const step = async () => {
+    if (gen !== activeGeneration) return;
+    let res; let payload = null;
+    try {
+      res = await fetch('/api/image-ads/jobs/' + encodeURIComponent(jobId));
+      payload = await res.json().catch(() => null);
+    } catch {
+      failures += 1;
+      $('#generating-status').textContent = 'Connection interrupted. Checking again. Your generation has not been resubmitted.';
+      pollTimer = window.setTimeout(step, POLL_INTERVAL_MS * 2);
+      return;
+    }
+    if (gen !== activeGeneration) return;
+    if (res.status === 404) {
+      stopPolling(); stopGeneratingMessages(); $('#generate-btn').disabled = false;
+      showGeneratingError('This generation is no longer available. It may have expired or the service restarted. Use Try again to start a new generation manually.');
+      return;
+    }
+    if (!res.ok || !payload) {
+      failures += 1;
+      if (failures >= 3) $('#generating-status').textContent = 'Still checking your generation status. Your generation has not been resubmitted.';
+      pollTimer = window.setTimeout(step, POLL_INTERVAL_MS * 2);
+      return;
+    }
+    failures = 0;
+    if (payload.status === 'queued') { setQueuedStatus(); pollTimer = window.setTimeout(step, POLL_INTERVAL_MS); return; }
+    if (payload.status === 'running') { if (!messageTimer) startGeneratingMessages(); pollTimer = window.setTimeout(step, POLL_INTERVAL_MS); return; }
+    stopPolling(); stopGeneratingMessages(); $('#generate-btn').disabled = false;
+    if (payload.status === 'succeeded' && payload.result && payload.result.ok === true) { renderResults(payload.result, 'meta'); return; }
+    if (payload.status === 'failed') {
+      showGeneratingError((payload.error && payload.error.message) || 'SilkWeb could not create your ads. Check your input and try again.');
+      if (payload.error && payload.error.code === 'PROVIDER_UNAVAILABLE') $('#draft-btn').hidden = false;
+      return;
+    }
+    showGeneratingError('SilkWeb returned an unexpected status. Please try again.');
+  };
+  pollTimer = window.setTimeout(step, 800);
+}
 async function generateAds(request) {
   lastRequest = request;
   clearError();
   $('#generating-error').hidden = true;
   $('#draft-btn').hidden = true;
+  stopPolling();
+  const gen = ++activeGeneration;
   showScreen('generating');
-  startGeneratingMessages();
+  setQueuedStatus();
   const button = $('#generate-btn');
   button.disabled = true;
-  try {
-    const live = await postAds('/api/image-ads/generate-live', request).catch(() => null);
-    if (!live) {
-      showGeneratingError('The studio is unreachable. Check your connection and try again.');
-      return;
-    }
-    if ((live.res.status === 200 || live.res.status === 206) && live.payload && live.payload.ok === true) {
-      renderResults(live.payload, 'meta');
-      return;
-    }
-    if (live.res.status === 503 && live.payload && live.payload.error && live.payload.error.code === 'PROVIDER_UNAVAILABLE') {
-      showGeneratingError('Live generation is not configured on this studio. Ask your administrator to set SILKWEB_CREATIVE_PROVIDER=live with MODEL_API_KEY, or preview a clearly labeled local draft instead.');
-      $('#draft-btn').hidden = false;
-      return;
-    }
-    showGeneratingError(payloadMessage(live.payload, 'SilkWeb could not create your ads. Check your input and try again.'));
-  } catch {
+  let created = null;
+  try { created = await postAds('/api/image-ads/jobs', request, demoAccessCode ? { 'x-silkweb-demo-code': demoAccessCode } : {}); } catch { created = null; }
+  if (gen !== activeGeneration) return;
+  if (!created) {
+    stopGeneratingMessages(); button.disabled = false;
     showGeneratingError('The studio is unreachable. Check your connection and try again.');
-  } finally {
-    stopGeneratingMessages();
-    button.disabled = false;
+    return;
   }
+  if (created.res.status === 202 && created.payload && created.payload.jobId) {
+    if (created.payload.status === 'running') startGeneratingMessages();
+    pollJob(created.payload.jobId, gen);
+    return;
+  }
+  stopGeneratingMessages(); button.disabled = false;
+  if (created.res.status === 401) { showGeneratingError('Missing or invalid demo access code. Enter the demo access code and try again. No generation was started.'); return; }
+  if (created.res.status === 503 && created.payload && created.payload.error && (created.payload.error.code === 'DEMO_GENERATION_UNAVAILABLE' || created.payload.error.code === 'DEMO_JOB_LIMIT_REACHED')) { showGeneratingError(payloadMessage(created.payload, 'Paid generation is unavailable. No generation was started.')); return; }
+  if (created.res.status === 429) {
+    showGeneratingError(payloadMessage(created.payload, 'The studio is busy right now. Please wait a moment and try again. Your request was not charged or retried automatically.'));
+    return;
+  }
+  if (created.res.status === 503 && created.payload && created.payload.error && created.payload.error.code === 'PROVIDER_UNAVAILABLE') {
+    showGeneratingError('Live generation is not configured on this studio. Ask your administrator to set SILKWEB_CREATIVE_PROVIDER=live with MODEL_API_KEY, or preview a clearly labeled local draft instead.');
+    $('#draft-btn').hidden = false;
+    return;
+  }
+  showGeneratingError(payloadMessage(created.payload, 'SilkWeb could not create your ads. Check your input and try again.'));
 }
 
 async function generateDraft(request) {
@@ -339,6 +391,8 @@ function onSubmit(event) {
     $('#product-name').focus();
     return;
   }
+  demoAccessCode = $('#demo-access-code').value;
+  if (!demoAccessCode) { showError('Enter the demo access code to generate ads.'); $('#demo-access-code').focus(); return; }
   const request = { productName, objective: selectedObjective(), productImage: uploadedDataUrl || undefined };
   const differentiator = optionalValue('#differentiator');
   const price = optionalValue('#price');
@@ -351,7 +405,7 @@ function onSubmit(event) {
   generateAds(request);
 }
 
-function resetToCreate() {
+function resetToCreate() { demoAccessCode = ''; stopPolling(); activeGeneration += 1; stopGeneratingMessages();
   $('#ads-form').reset();
   clearUpload();
   clearError();

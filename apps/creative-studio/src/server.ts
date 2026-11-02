@@ -40,6 +40,90 @@ import {
 import { imageAdsGenerateLiveOutcome } from './imageAdsLive.js';
 import { MetaMuseImageAdPlanner } from './imageAdsPlan.js';
 import { MetaMuseImageProvider } from './museImage.js';
+import { ImageAdsJobManager, QueueFullError } from './imageAdsJobs.js';
+import { checkDemoAccess, demoCodeFromHeader, DemoJobCap, DEMO_ACCESS_HEADER } from './demoAccess.js';
+
+/**
+ * Single-instance in-process jobs. NOT durable across restart/deploy:
+ * a restart loses queued/running/finished jobs and polling then gets
+ * 404 JOB_NOT_FOUND — generation is never silently re-run.
+ * Concurrency is fixed at 1 for the MVP so paid work is strictly
+ * serialized; queue depth and retained results are bounded.
+ * Job IDs are unpredictable UUIDs, which only make IDs unguessable —
+ * they are NOT authentication. They are bearer capabilities for polling:
+ * anyone holding an ID can read that job until it expires. Paid creation
+ * additionally requires the server-side demo access code (see
+ * demoAccess.ts); that shared code is demo access control, not per-user
+ * authentication or a spending guarantee.
+ */
+export const imageAdsJobManager = new ImageAdsJobManager({
+  maxConcurrent: 1,
+  maxQueueDepth: 8,
+  maxRetainedJobs: 50,
+  resultTtlMs: 10 * 60 * 1000,
+});
+
+/** The one paid generation function shared by every entry point. */
+function liveImageAdsRunner(body: unknown) {
+  return imageAdsGenerateLiveOutcome(body, {
+    planner: new MetaMuseImageAdPlanner(),
+    images: new MetaMuseImageProvider(),
+  });
+}
+
+/**
+ * MVP admission control for paid job creation: per-client-IP sliding
+ * window. This complements (not replaces) the queue bound — the queue
+ * caps waiting paid work, this caps creation bursts. In-memory only.
+ */
+const JOB_SUBMIT_LIMIT = 20;
+const JOB_SUBMIT_WINDOW_MS = 60 * 1000;
+const jobSubmitHits = new Map<string, number[]>();
+
+function allowJobSubmit(req: IncomingMessage): boolean {
+  const ip = req.socket?.remoteAddress ?? 'unknown';
+  const now = Date.now();
+  const hits = (jobSubmitHits.get(ip) ?? []).filter((t) => now - t < JOB_SUBMIT_WINDOW_MS);
+  if (hits.length >= JOB_SUBMIT_LIMIT) {
+    jobSubmitHits.set(ip, hits);
+    return false;
+  }
+  hits.push(now);
+  jobSubmitHits.set(ip, hits);
+  if (jobSubmitHits.size > 1000) {
+    for (const [key, times] of jobSubmitHits) {
+      if (times.every((t) => now - t >= JOB_SUBMIT_WINDOW_MS)) jobSubmitHits.delete(key);
+    }
+  }
+  return true;
+}
+
+/** Per-process accepted-job cap for paid generation (default 3). */
+export const demoJobCap = new DemoJobCap();
+
+/**
+ * Gate for paid generation. Checks the demo code header before any job
+ * is created or model called. Never logs or echoes the submitted code.
+ * No CORS headers are set anywhere, so cross-origin browsers cannot use
+ * this (the custom header also forces a preflight that gets no allow).
+ */
+function requireDemoAccess(req: IncomingMessage, res: ServerResponse): boolean {
+  res.setHeader('cache-control', 'no-store');
+  const result = checkDemoAccess(demoCodeFromHeader(req.headers[DEMO_ACCESS_HEADER]));
+  if (result.ok) return true;
+  sendJson(res, result.status, { ok: false, error: { code: result.code, message: result.message } });
+  return false;
+}
+
+function rejectDemoCap(res: ServerResponse): void {
+  sendJson(res, 503, {
+    ok: false,
+    error: {
+      code: 'DEMO_JOB_LIMIT_REACHED',
+      message: 'Demo generation limit reached for this deployment. No generation was started. This per-process limit resets when the service restarts or redeploys.',
+    },
+  });
+}
 
 const here = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = join(here, '..', 'public');
@@ -48,9 +132,36 @@ const CONTENT_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
+  '.webp': 'image/webp',
 };
 
-const STATIC_ALLOWLIST = new Set(['/index.html', '/app.js', '/styles.css']);
+const STATIC_ALLOWLIST = new Set([
+  '/index.html',
+  '/creative.html',
+  '/code.html',
+  '/evidence.html',
+  '/research.html',
+  '/app.js',
+  '/styles.css',
+  '/presentation.css',
+  '/presentation.js',
+  '/media/serum/silkweb-serum-ad-01.webp',
+  '/media/serum/silkweb-serum-ad-02.webp',
+  '/media/serum/silkweb-serum-ad-03.webp',
+]);
+
+/** Clean presentation routes mapped to allowlisted files only. */
+const PAGE_ROUTES: Record<string, string> = {
+  '/': '/index.html',
+  '/creative': '/creative.html',
+  '/creative/': '/creative.html',
+  '/code': '/code.html',
+  '/code/': '/code.html',
+  '/evidence': '/evidence.html',
+  '/evidence/': '/evidence.html',
+  '/research': '/research.html',
+  '/research/': '/research.html',
+};
 
 function sendJson(res: ServerResponse, status: number, payload: unknown): void {
   const body = Buffer.from(JSON.stringify(payload), 'utf8');
@@ -62,7 +173,7 @@ function sendJson(res: ServerResponse, status: number, payload: unknown): void {
 }
 
 export function serveStatic(pathname: string): { status: number; type: string; body: Buffer } | null {
-  const file = pathname === '/' ? '/index.html' : pathname;
+  const file = PAGE_ROUTES[pathname] ?? pathname;
   if (!STATIC_ALLOWLIST.has(file)) return null;
   const abs = normalize(join(PUBLIC_DIR, file));
   if (!abs.startsWith(PUBLIC_DIR) || !existsSync(abs)) return null;
@@ -466,7 +577,48 @@ export async function handleApi(
    * otherwise an explicit 503 — drafts are never labeled as
    * Meta-generated. No automatic retries.
    */
+  if (pathname === '/api/image-ads/jobs' && method === 'POST') {
+    if (!requireDemoAccess(req, res)) return true;
+    if (demoJobCap.isExhausted()) { rejectDemoCap(res); return true; }
+    let text: string;
+    try { text = await readBody(req, IMAGE_ADS_MAX_BODY_BYTES); } catch { sendJson(res, 413, { ok: false, issues: [{ field: 'body', message: 'Request body is too large.' }] }); return true; }
+    let parsed: unknown;
+    try { parsed = JSON.parse(text || '{}'); } catch { sendJson(res, 400, { ok: false, issues: [{ field: 'body', message: 'Request body must be valid JSON.' }] }); return true; }
+    if (!isLiveProviderConfigured()) {
+      sendJson(res, 503, { ok: false, error: { code: 'PROVIDER_UNAVAILABLE', message: 'Live image-ads generation is not configured. Set SILKWEB_CREATIVE_PROVIDER=live with MODEL_API_KEY to enable it.' }, generationConnected: false });
+      return true;
+    }
+    if (!allowJobSubmit(req)) {
+      res.setHeader('retry-after', '60');
+      sendJson(res, 429, { ok: false, error: { code: 'RATE_LIMITED', message: 'Too many generation requests. Please wait a minute and try again.' } });
+      return true;
+    }
+    if (!demoJobCap.tryAcquire()) { rejectDemoCap(res); return true; }
+    try {
+      const snap = imageAdsJobManager.submit(parsed, liveImageAdsRunner);
+      sendJson(res, 202, { ok: true, jobId: snap.jobId, status: snap.status });
+    } catch (e) {
+      demoJobCap.release();
+      if (e instanceof QueueFullError) { res.setHeader('retry-after', '30'); sendJson(res, 429, { ok: false, error: { code: 'QUEUE_FULL', message: e.message } }); }
+      else sendJson(res, 500, { ok: false, error: { code: 'INTERNAL_ERROR', message: 'Unexpected server error.' } });
+    }
+    return true;
+  }
+
+  if (pathname.startsWith('/api/image-ads/jobs/') && method === 'GET') {
+    const id = decodeURIComponent(pathname.slice('/api/image-ads/jobs/'.length));
+    const snap = imageAdsJobManager.getJob(id);
+    res.setHeader('cache-control', 'no-store');
+    if (!snap) { sendJson(res, 404, { ok: false, error: { code: 'JOB_NOT_FOUND', message: 'This generation is no longer available. It may have expired or the service restarted. Please generate again manually.' } }); return true; }
+    if (snap.status === 'succeeded') sendJson(res, 200, { ok: true, jobId: snap.jobId, status: snap.status, resultStatus: snap.resultStatus ?? 200, result: snap.result });
+    else if (snap.status === 'failed') sendJson(res, 200, { ok: true, jobId: snap.jobId, status: snap.status, error: snap.error });
+    else sendJson(res, 200, { ok: true, jobId: snap.jobId, status: snap.status });
+    return true;
+  }
+
   if (pathname === '/api/image-ads/generate-live' && method === 'POST') {
+    if (!requireDemoAccess(req, res)) return true;
+    if (demoJobCap.isExhausted()) { rejectDemoCap(res); return true; }
     let text: string;
     try {
       text = await readBody(req, IMAGE_ADS_MAX_BODY_BYTES);
@@ -481,11 +633,25 @@ export async function handleApi(
       sendJson(res, 400, { ok: false, issues: [{ field: 'body', message: 'Request body must be valid JSON.' }] });
       return true;
     }
-    const outcome = await imageAdsGenerateLiveOutcome(parsed, {
-      planner: new MetaMuseImageAdPlanner(),
-      images: new MetaMuseImageProvider(),
-    });
-    sendJson(res, outcome.status, outcome.payload);
+    if (!isLiveProviderConfigured()) {
+      sendJson(res, 503, { ok: false, error: { code: 'PROVIDER_UNAVAILABLE', message: 'Live image-ads generation is not configured. Set SILKWEB_CREATIVE_PROVIDER=live with MODEL_API_KEY to enable it.' }, generationConnected: false });
+      return true;
+    }
+    if (!allowJobSubmit(req)) {
+      res.setHeader('retry-after', '60');
+      sendJson(res, 429, { ok: false, error: { code: 'RATE_LIMITED', message: 'Too many generation requests. Please wait a minute and try again.' } });
+      return true;
+    }
+    try {
+      if (!demoJobCap.tryAcquire()) { rejectDemoCap(res); return true; }
+      const snap = await imageAdsJobManager.submitAndWait(parsed, liveImageAdsRunner).catch((e) => { if (e instanceof QueueFullError) demoJobCap.release(); throw e; });
+      res.setHeader('cache-control', 'no-store');
+      if (snap.status === 'succeeded') { sendJson(res, snap.resultStatus ?? 200, snap.result); }
+      else { sendJson(res, snap.errorStatus ?? 502, { ok: false, error: snap.error ?? { code: 'GENERATION_FAILED', message: 'Generation failed. Please try again.' } }); }
+    } catch (e) {
+      if (e instanceof QueueFullError) { res.setHeader('retry-after', '30'); sendJson(res, 429, { ok: false, error: { code: 'QUEUE_FULL', message: e.message } }); }
+      else { sendJson(res, 500, { ok: false, error: { code: 'INTERNAL_ERROR', message: 'Unexpected server error.' } }); }
+    }
     return true;
   }
 

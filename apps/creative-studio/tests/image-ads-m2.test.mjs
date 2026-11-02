@@ -18,6 +18,7 @@ import {
   MetaMuseImageProvider,
 } from '../dist/museImage.js';
 import { imageAdsGenerateLiveOutcome } from '../dist/imageAdsLive.js';
+import { selectCreativeDirectorReferences } from '../dist/creativeDirector.js';
 import { configPayload } from '../dist/server.js';
 
 /**
@@ -149,8 +150,18 @@ test('m2 image provider routes generations vs edits and returns PNG bytes', asyn
   const plan = goodPlans()[0];
   // With a product photo: POST /v1/images/edits with a documented images entry.
   const input = baseInput({ upload: { format: 'png', bytes: Buffer.alloc(10) } });
+  const previousDirector = process.env.SILKWEB_CREATIVE_DIRECTOR;
+  process.env.SILKWEB_CREATIVE_DIRECTOR = 'on';
   const prompt = buildMuseImagePrompt(plan, input);
-  assert.ok(prompt.includes('No text'));
+  if (previousDirector === undefined) delete process.env.SILKWEB_CREATIVE_DIRECTOR;
+  else process.env.SILKWEB_CREATIVE_DIRECTOR = previousDirector;
+  const choice = selectCreativeDirectorReferences(input).selections.find((s) => s.audience === plan.audience);
+  assert.ok(choice, 'director selection for audience');
+  assert.ok(prompt.includes(choice.family), 'prompt uses selected director family');
+  assert.ok(prompt.includes(choice.scene), 'prompt uses selected director scene');
+  assert.match(prompt, /NO rendered headline, paragraph, CTA, fake button/, 'imagery excludes model-drawn copy/CTA');
+  assert.match(prompt, /Preserve product markings and geometry/, 'product identity/geometry preserved');
+  assert.match(prompt, /Never invent specifications, ports, logos, prices, discounts or outcomes/, 'no invented claims/logos');
   const out = await provider.generate(plan, input);
   assert.equal(out.referenceGuided, true);
   assert.deepEqual(out.png, png);
