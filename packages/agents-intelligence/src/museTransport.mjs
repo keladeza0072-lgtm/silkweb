@@ -62,13 +62,37 @@ export function extractMuseOutput(stdout) {
     try {
       events.push(JSON.parse(line));
     } catch {
-      // Ignore non-JSON diagnostic lines.
+      // Ignore diagnostic lines outside the JSONL stream.
     }
   }
 
   const candidates = [];
+  const outputChunks = [];
+  const usage = [];
 
   for (const event of events) {
+    if (
+      event.payload_type === 'run.output.delta' &&
+      typeof event.payload?.text === 'string'
+    ) {
+      outputChunks.push(event.payload.text);
+    }
+
+    if (
+      event.payload_type === 'run.terminal.completed' &&
+      typeof event.payload?.text === 'string'
+    ) {
+      candidates.push(event.payload.text);
+    }
+
+    if (
+      event.payload_type === 'run.usage' &&
+      event.payload?.kind === 'run_usage'
+    ) {
+      usage.push(event.payload);
+    }
+
+    // Compatibility with existing synthetic test fixtures.
     if (event.type === 'result' && event.result !== undefined) {
       candidates.push(event.result);
     }
@@ -78,14 +102,19 @@ export function extractMuseOutput(stdout) {
     }
   }
 
+  if (outputChunks.length > 0) {
+    candidates.push(outputChunks.join(''));
+  }
+
   for (const candidate of candidates.reverse()) {
     try {
       return {
         decision: parseMuseDecision(candidate),
-        events
+        events,
+        usage
       };
     } catch {
-      // Continue to earlier candidate.
+      // Try the next candidate.
     }
   }
 
@@ -93,7 +122,6 @@ export function extractMuseOutput(stdout) {
     'No valid structured Muse decision found in JSONL output'
   );
 }
-
 export function createMuseTransport({
   executable = 'muse',
   model = 'muse-spark-1.3',
@@ -219,7 +247,8 @@ export function createMuseTransport({
       return {
         decision: parsed.decision,
         elapsedMs: performance.now() - start,
-        events: parsed.events
+        events: parsed.events,
+        usage: parsed.usage
       };
     } finally {
       await rm(directory, {
@@ -229,3 +258,4 @@ export function createMuseTransport({
     }
   };
 }
+
