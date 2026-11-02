@@ -353,3 +353,95 @@ table.ev th,table.ev td{text-align:left;padding:15px 18px;border-top:1px solid v
 .code-bench-note a{color:#FFB98A;font-weight:700}
 @media(max-width:640px){.code-bench{padding:20px 16px}.code-bench-deltas{grid-template-columns:1fr 1fr;gap:10px}.code-bench-deltas strong{font-size:25px}.cb-row{grid-template-columns:52px 1fr auto;gap:9px}.cb-row>b{font-size:12.5px}}
 @media(max-width:400px){.code-bench-deltas{grid-template-columns:1fr}}
+
+/* SILKWEB DATA THEME V1 */
+.data-page {
+  background: #F6D7C3;
+  color: #101B36;
+}
+
+.data-page .site-header {
+  background: rgba(246, 215, 195, .97);
+  border-color: #E4BBA3;
+}
+
+.data-page .hero.data-hero {
+  background: #F6D7C3;
+  border-bottom: 1px solid #E4BBA3;
+}
+
+.data-page .hero.data-hero::after {
+  display: none;
+}
+
+.data-page .hero h1,
+.data-page h2,
+.data-page h3 {
+  color: #101B36;
+}
+
+.data-page .hero-kicker,
+.data-page .sec-index {
+  color: #A34713;
+}
+
+.data-page .hero-lede,
+.data-page .section-head p {
+  color: #37435A;
+}
+
+.data-page .section {
+  background: #F6D7C3;
+}
+
+.data-page .section--wash {
+  background: #FBE8DA;
+}
+
+.data-page .callout,
+.data-page table.ev {
+  background: #FFF7F0;
+  border-color: #E4BBA3;
+}
+
+.data-page table.ev th {
+  background: #101B36;
+  color: #FFFFFF;
+}
+
+.data-page table.ev td {
+  color: #101B36;
+  border-color: #E8C8B4;
+}
+
+.data-page .callout p {
+  color: #37435A;
+}
+
+.data-page .site-footer {
+  background: #F6D7C3;
+  border-color: #E4BBA3;
+}
+
+.data-page .btn-primary {
+  background: #FF6500;
+  color: #FFFFFF;
+}
+
+.data-page :focus-visible {
+  outline-color: #FF6500;
+}
+
+/* Homepage Data application */
+.v4-product--data {
+  background: #F6D7C3;
+  color: #101B36;
+}
+
+.v4-product--data h3 {
+  color: #101B36;
+}
+
+.v4-product--data .v4-prod-copy p {
+  color: #37435A;
+}
