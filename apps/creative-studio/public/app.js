@@ -1,5 +1,5 @@
 'use strict';
-/* SilkWeb Image Ads MVP — Create / Generating / Results flow. */
+/* SilkWeb Image Ads MVP: Create / Generating / Results flow. */
 
 const $ = (s) => document.querySelector(s);
 
@@ -298,7 +298,7 @@ function renderResults(payload, engine) {
       : 'Meta-generated · Muse Spark copy, Muse Image photography.';
     banner.hidden = false;
   } else {
-    banner.textContent = 'Local draft — deterministic preview, not Meta-generated.';
+    banner.textContent = 'Local draft: deterministic preview, not Meta-generated.';
     banner.hidden = false;
   }
   payload.ads.forEach((ad, index) => {
@@ -363,8 +363,8 @@ function renderResults(payload, engine) {
       : 'Meta-generated advertisements. Copy and imagery were produced by Meta models from your supplied product facts.';
   } else {
     const note = payload.photoComposited
-      ? 'Local draft render with your uploaded product photo — not Meta-generated.'
-      : 'Local draft render with a typographic product plate — not Meta-generated. Upload a PNG product photo to composite it into the creative.';
+      ? 'Local draft render with your uploaded product photo (not Meta-generated).'
+      : 'Local draft render with a typographic product plate (not Meta-generated). Upload a PNG product photo to composite it into the creative.';
     $('#results-note').textContent = note;
   }
   showScreen('results');

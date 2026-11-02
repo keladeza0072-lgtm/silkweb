@@ -32,7 +32,7 @@ document.documentElement.classList.add('js');
     document.addEventListener('click',function(e){ if(!e.target.closest('.nav-dropdown')) closeMenu(); });
     document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeMenu(); closeNav(); } });
   }
-  // Hero "Explore Use Cases" dropdown — independent of Products, mutually exclusive.
+  // Hero "Explore Use Cases" dropdown: independent of Products, mutually exclusive.
   var uBtn=document.querySelector('.hero-dropdown-btn'), uMenu=document.getElementById('usecases-menu');
   function closeUseCases(){ if(uBtn&&uMenu){ uMenu.hidden=true; uBtn.setAttribute('aria-expanded','false'); } }
   function openUseCases(){ if(uBtn&&uMenu){ closeMenu(); uMenu.hidden=false; uBtn.setAttribute('aria-expanded','true'); } }
@@ -68,7 +68,7 @@ document.documentElement.classList.add('js');
   setTimeout(function(){ els.forEach(function(el){ el.classList.add('in'); }); },1200);
 })();
 /* Homepage V4 impact scenario calculator (homepage only; no-op elsewhere).
-   Scenario assumptions only — computes illustrative gross avoidance. */
+   Scenario assumptions only: computes illustrative gross avoidance. */
 (function () {
   var tasks = document.getElementById('calc-tasks');
   if (!tasks) return;
