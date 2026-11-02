@@ -147,3 +147,37 @@ test('guidance is passed into model context', async () => {
     ['Read order', 'Resolve', 'Audit']
   );
 });
+
+test('v2 prompt exposes the exact public resolution contract', async () => {
+  let prompt;
+
+  await runAgentDecisionLoop({
+    scenarioId: 'routine',
+    decide: async ({ messages }) => {
+      prompt = JSON.parse(messages[1].content);
+      return { type: 'finish' };
+    }
+  });
+
+  assert.deepEqual(
+    prompt.tools.resolveOrder.required,
+    ['id', 'resolution']
+  );
+});
+
+test('v3 prompt exposes the exact changed contract', async () => {
+  let prompt;
+
+  await runAgentDecisionLoop({
+    scenarioId: 'changedContract',
+    decide: async ({ messages }) => {
+      prompt = JSON.parse(messages[1].content);
+      return { type: 'finish' };
+    }
+  });
+
+  assert.deepEqual(
+    prompt.tools.resolveOrder.required,
+    ['id', 'resolutionCode']
+  );
+});

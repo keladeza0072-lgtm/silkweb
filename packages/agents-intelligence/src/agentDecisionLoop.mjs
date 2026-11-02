@@ -1,4 +1,5 @@
-﻿import { createInteractiveBenchmark } from './interactiveBenchmark.mjs';
+﻿import { publicToolContracts } from './publicToolContracts.mjs';
+import { createInteractiveBenchmark } from './interactiveBenchmark.mjs';
 
 const MAX_DECISIONS = 12;
 
@@ -35,7 +36,7 @@ function buildMessages({
       content: JSON.stringify({
         task: 'Resolve eligible order ORD-001 and write an audit record.',
         toolVersion,
-        tools: TOOL_DESCRIPTIONS,
+        tools: publicToolContracts(toolVersion).tools,
         guidance: guidance ?? null,
         observations: history
       })
@@ -128,3 +129,4 @@ export async function runAgentDecisionLoop({
     outcome
   };
 }
+

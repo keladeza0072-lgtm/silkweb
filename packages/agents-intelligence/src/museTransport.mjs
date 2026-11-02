@@ -191,7 +191,22 @@ export function createMuseTransport({
 
     try {
       const execution = await new Promise((resolve, reject) => {
-        const child = spawn(executable, args, {
+        const command = process.platform === 'win32'
+          ? process.env.ComSpec || 'cmd.exe'
+          : executable;
+
+        const commandArgs = process.platform === 'win32'
+          ? [
+              '/d',
+              '/s',
+              '/c',
+              `"${[executable, ...args].map(value =>
+                `"${String(value).replaceAll('"', '""')}"`
+              ).join(' ')}"`
+            ]
+          : args;
+
+        const child = spawn(command, commandArgs, {
           shell: false,
           windowsHide: true,
           stdio: ['ignore', 'pipe', 'pipe']
@@ -258,4 +273,5 @@ export function createMuseTransport({
     }
   };
 }
+
 
