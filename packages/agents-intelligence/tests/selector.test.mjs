@@ -1,0 +1,171 @@
+﻿import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import {
+  digest,
+  verifyProcedure,
+  selectProcedure
+} from '../src/index.mjs';
+
+function fixture(overrides = {}) {
+  const record = {
+    id: 'order-resolution',
+    version: '1.0.0',
+    task: 'resolve-order',
+    toolVersion: '2.0.0',
+    steps: [
+      'Read order',
+      'Validate eligibility',
+      'Update order',
+      'Record audit'
+    ],
+    constraints: ['Never mutate twice'],
+    provenance: ['AGENTS-001 synthetic fixture'],
+    revoked: false,
+    ...overrides
+  };
+
+  const trust = {
+    approvals: [{
+      id: record.id,
+      version: record.version,
+      status: 'approved',
+      testsPassed: true,
+      evidenceId: 'synthetic-test-evidence',
+      digest: digest(record)
+    }]
+  };
+
+  return { record, trust };
+}
+
+test('selects an independently approved procedure', () => {
+  const { record, trust } = fixture();
+
+  const result = selectProcedure(
+    [record],
+    { task: 'resolve-order', toolVersion: '2.0.0' },
+    trust
+  );
+
+  assert.equal(result.status, 'SELECTED');
+});
+
+test('rejects missing trust store', () => {
+  const { record } = fixture();
+
+  assert.equal(
+    verifyProcedure(record).reason,
+    'MISSING_TRUST_STORE'
+  );
+});
+
+test('rejects unapproved procedure', () => {
+  const { record } = fixture();
+
+  assert.equal(
+    verifyProcedure(record, { approvals: [] }).reason,
+    'NOT_APPROVED'
+  );
+});
+
+test('rejects revoked procedure', () => {
+  const { record, trust } = fixture({ revoked: true });
+
+  assert.equal(
+    verifyProcedure(record, trust).reason,
+    'REVOKED'
+  );
+});
+
+test('rejects changed tool version', () => {
+  const { record, trust } = fixture();
+
+  const result = selectProcedure(
+    [record],
+    { task: 'resolve-order', toolVersion: '3.0.0' },
+    trust
+  );
+
+  assert.equal(result.status, 'NO_MATCH');
+  assert.equal(
+    result.inspected[0].reason,
+    'TOOL_VERSION_MISMATCH'
+  );
+});
+
+test('detects tampered procedure', () => {
+  const { record, trust } = fixture();
+
+  record.steps.push('Unauthorized action');
+
+  assert.equal(
+    verifyProcedure(record, trust).reason,
+    'EVIDENCE_MISMATCH'
+  );
+});
+
+test('rejects self-certified procedures', () => {
+  const { record, trust } = fixture();
+
+  record.verification = {
+    status: 'verified',
+    digest: digest(record)
+  };
+
+  assert.equal(
+    verifyProcedure(record, trust).reason,
+    'EMBEDDED_CERTIFICATION'
+  );
+});
+
+test('rejects approvals without passed tests', () => {
+  const { record, trust } = fixture();
+
+  trust.approvals[0].testsPassed = false;
+
+  assert.equal(
+    verifyProcedure(record, trust).reason,
+    'INVALID_APPROVAL'
+  );
+});
+
+test('rejects duplicate approvals', () => {
+  const { record, trust } = fixture();
+
+  trust.approvals.push({ ...trust.approvals[0] });
+
+  assert.equal(
+    verifyProcedure(record, trust).reason,
+    'AMBIGUOUS_APPROVAL'
+  );
+});
+
+test('rejects ambiguous applicable procedures', () => {
+  const first = fixture();
+  const second = fixture({ id: 'alternate-resolution' });
+
+  const result = selectProcedure(
+    [first.record, second.record],
+    { task: 'resolve-order', toolVersion: '2.0.0' },
+    {
+      approvals: [
+        ...first.trust.approvals,
+        ...second.trust.approvals
+      ]
+    }
+  );
+
+  assert.equal(result.status, 'AMBIGUOUS');
+});
+
+test('rejects missing evidence reference', () => {
+  const { record, trust } = fixture();
+
+  trust.approvals[0].evidenceId = '';
+
+  assert.equal(
+    verifyProcedure(record, trust).reason,
+    'INVALID_APPROVAL'
+  );
+});
