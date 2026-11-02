@@ -4,8 +4,8 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <meta name="theme-color" content="#121212"/>
-<meta name="description" content="SilkWeb Agents: approved-procedure intelligence for AI agents. Trust check, version check, approved procedure — with verified benchmark evidence."/>
-<title>SilkWeb Agents — Trusted Intelligence for AI Agents</title>
+<meta name="description" content="SilkWeb Agents: approved-procedure intelligence for AI agents. Trust check, version check, approved procedure, with verified benchmark evidence."/>
+<title>SilkWeb Agents: Trusted Intelligence for AI Agents</title>
 <link rel="stylesheet" href="/presentation.css"/>
 <style>
 .agent-flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;gap:0;align-items:stretch;border:1px solid #333;border-radius:14px;overflow:hidden;background:#1D1D1D}
@@ -36,28 +36,28 @@
 <nav class="site-nav" id="site-nav" aria-label="Main navigation">
 <a href="/">Home</a>
 <div class="nav-dropdown"><button class="nav-dropdown-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="products-menu">Products <span class="chev" aria-hidden="true">&#9662;</span></button>
-<div class="nav-dropdown-menu" id="products-menu" role="menu" hidden><a role="menuitem" href="/creative"><strong>SilkWeb Creative</strong><small>Image ads studio</small></a><a role="menuitem" href="/code"><strong>SilkWeb Code</strong><small>Verified component registry</small></a><a role="menuitem" href="/data"><strong>SilkWeb Data</strong><small>Trusted business rules</small></a></div></div>
-<a href="/evidence">Evidence</a><a href="/research">Research</a><a href="/agents" aria-current="page">Agents</a>
+<div class="nav-dropdown-menu" id="products-menu" role="menu" hidden><a role="menuitem" href="/creative"><strong>SilkWeb Creative</strong><small>Image ads studio</small></a><a role="menuitem" href="/code"><strong>SilkWeb Code</strong><small>Verified component registry</small></a><a role="menuitem" href="/data"><strong>SilkWeb Data</strong><small>Trusted business rules</small></a><a role="menuitem" href="/agents" aria-current="page"><strong>SilkWeb Agents</strong><small>Approved procedures</small></a></div></div>
+<a href="/evidence">Evidence</a><a href="/research">Research</a>
 </nav></div></header>
 <main id="main">
 <section class="hero"><div class="wrap">
-<h1 style="max-width:15em">SilkWeb Agents — <span class="accent">Trusted Intelligence</span> for AI Agents.</h1>
-<p class="hero-lede">An approved-procedure intelligence layer between an agent's task and its execution. Instead of re-deriving how to act, a capable agent checks what is already approved — then follows it exactly, or fails closed.</p>
+<h1 style="max-width:15em">SilkWeb Agents: <span class="accent">Trusted Intelligence</span> for AI Agents.</h1>
+<p class="hero-lede">An approved-procedure intelligence layer between an agent's task and its execution. Instead of re-deriving how to act, a capable agent checks what is already approved, then follows it exactly, or fails closed.</p>
 <div class="hero-actions"><a class="btn btn-code" href="#flow">See the selection flow</a><a class="btn btn-outline-light" href="/evidence">See verification evidence</a></div>
 <div class="terminal reveal" role="img" aria-label="Terminal example of approved-procedure selection"><div class="terminal-bar"><span></span><span></span><span></span><em>silkweb agents</em></div><pre><code><span class="t-prompt">$</span> silkweb agents resolve --task "validate booking slot"
 <span class="t-ok">approved</span> booking-slot-guard@0.1.0 · trust ok · version ok
 <span class="t-prompt">$</span> silkweb agents resolve --task "unreviewed migration"
-<span class="t-dim"># rejected — no approved procedure: fail closed, model decides</span></code></pre></div></div></section>
+<span class="t-dim"># rejected: no approved procedure, fail closed, model decides</span></code></pre></div></div></section>
 <section class="section"><div class="wrap">
-<div class="section-head reveal"><span class="sec-index">01 — The problem</span><h2>Agents re-reason what is already settled.</h2><p>Given a task, an agent typically reasons from scratch about the procedure to follow, whether its dependencies are compatible, and whether the action is safe — even when a trusted solution already exists. That repeated reasoning costs tokens, costs time, and reintroduces mistakes that review had already eliminated.</p></div>
+<div class="section-head reveal"><span class="sec-index">01: The problem</span><h2>Agents re-reason what is already settled.</h2><p>Given a task, an agent typically reasons from scratch about the procedure to follow, whether its dependencies are compatible, and whether the action is safe, even when a trusted solution already exists. That repeated reasoning costs tokens, costs time, and reintroduces mistakes that review had already eliminated.</p></div>
 <div class="cols-3">
-<div class="card reveal"><h3>Repeated procedure reasoning</h3><p>Every run re-derives steps, flags, and ordering for workflows the team has already approved — paying model calls for answers that have not changed.</p></div>
+<div class="card reveal"><h3>Repeated procedure reasoning</h3><p>Every run re-derives steps, flags, and ordering for workflows the team has already approved, paying model calls for answers that have not changed.</p></div>
 <div class="card reveal"><h3>Repeated compatibility checks</h3><p>Stack versions, schema shapes, and capability match are re-examined per task instead of being pinned once to an approved, versioned procedure.</p></div>
 <div class="card reveal"><h3>Repeated safety reasoning</h3><p>Revoked or incompatible approaches must be re-recognized as unsafe each time, rather than rejected structurally before any reasoning is spent on them.</p></div>
 </div>
 </div></section>
 <section class="section section--wash" id="flow"><div class="wrap">
-<div class="section-head reveal"><span class="sec-index">02 — The intelligence layer</span><h2>Check before you reason.</h2><p>SilkWeb sits between the agent's task and execution as an approved-procedure intelligence layer. For each task the agent performs a trust check and a version check; only a procedure that passes both is returned as approved. Anything else fails closed — the agent falls back to its normal model-driven behavior, with no SilkWeb shortcut applied.</p></div>
+<div class="section-head reveal"><span class="sec-index">02: The intelligence layer</span><h2>Check before you reason.</h2><p>SilkWeb sits between the agent's task and execution as an approved-procedure intelligence layer. For each task the agent performs a trust check and a version check; only a procedure that passes both is returned as approved. Anything else fails closed, so the agent falls back to its normal model-driven behavior, with no SilkWeb shortcut applied.</p></div>
 <div class="agent-flow reveal" role="img" aria-label="Procedure selection flow: Task, then Trust Check, then Version Check, then Approved Procedure">
 <div class="agent-step"><span class="step-k">Step 1</span><h3>Task</h3><p>The agent names the task it must perform.</p></div>
 <div class="agent-arrow" aria-hidden="true">&#8594;</div>
@@ -65,21 +65,21 @@
 <div class="agent-arrow" aria-hidden="true">&#8594;</div>
 <div class="agent-step"><span class="step-k">Step 3</span><h3>Version Check</h3><p>Does the approved version match this stack and these inputs?</p></div>
 <div class="agent-arrow" aria-hidden="true">&#8594;</div>
-<div class="agent-step agent-step--end"><span class="step-k">Step 4</span><h3>Approved Procedure</h3><p>Exactly one pinned procedure is returned — or nothing is.</p></div>
+<div class="agent-step agent-step--end"><span class="step-k">Step 4</span><h3>Approved Procedure</h3><p>Exactly one pinned procedure is returned, or nothing is.</p></div>
 </div>
 <ul class="fail-list reveal">
-<li><strong>Rejected procedures fail closed.</strong> A procedure that was never approved is never returned — <code>NOT_APPROVED</code>, and the agent proceeds without it.</li>
-<li><strong>Revoked procedures fail closed.</strong> A procedure withdrawn after approval is refused on every read — <code>REVOKED</code>, never served from memory.</li>
-<li><strong>Incompatible procedures fail closed.</strong> An approved procedure whose version does not match the current stack or inputs is withheld — <code>VERSION_MISMATCH</code>, never coerced.</li>
+<li><strong>Rejected procedures fail closed.</strong> A procedure that was never approved is never returned (<code>NOT_APPROVED</code>), and the agent proceeds without it.</li>
+<li><strong>Revoked procedures fail closed.</strong> A procedure withdrawn after approval is refused on every read (<code>REVOKED</code>), never served from memory.</li>
+<li><strong>Incompatible procedures fail closed.</strong> An approved procedure whose version does not match the current stack or inputs is withheld (<code>VERSION_MISMATCH</code>), never coerced.</li>
 </ul>
 </div></section>
 <section class="section"><div class="wrap">
-<div class="section-head reveal"><span class="sec-index">03 — Deterministic execution</span><h2>Eligible workflows run without a model call.</h2><p>When a task resolves to an approved procedure and its inputs are fully specified locally, the workflow executes deterministically in the local runner — no model call is needed for those eligible executions. Tasks that do not meet both conditions still use the model as usual; SilkWeb narrows, never replaces, model-driven work. Retrieval over MCP is read-only transport: it fetches verified source but executes nothing — execution happens locally, after the checks above have passed.</p></div>
+<div class="section-head reveal"><span class="sec-index">03: Deterministic execution</span><h2>Eligible workflows run without a model call.</h2><p>When a task resolves to an approved procedure and its inputs are fully specified locally, the workflow executes deterministically in the local runner, so no model call is needed for those eligible executions. Tasks that do not meet both conditions still use the model as usual; SilkWeb narrows, never replaces, model-driven work. Retrieval over MCP is read-only transport. The silkweb_agents_select tool returns guidance data only (the selected procedure, or a fail-closed reason); it never executes procedures and modifies no files. Execution happens locally, after the checks above have passed.</p></div>
 <div class="verify-strip reveal"><div><strong>Trust + version</strong><span>checked on every resolution</span></div><div><strong>Fail-closed</strong><span>rejected · revoked · incompatible</span></div><div><strong>Deterministic</strong><span>eligible local executions only</span></div><div><strong>Read-only MCP</strong><span>retrieval transports, never runs</span></div></div>
 </div></section>
 <section class="section section--wash"><div class="wrap">
-<div class="section-head reveal"><span class="sec-index">04 — Verified benchmarks</span><h2>Measured results, labeled exactly.</h2><p>Two benchmark series support the Agents layer. Both are reported under their recorded conditions — they are evidence for those conditions, not universal performance guarantees. Full methodology lives on <a href="/evidence">Evidence</a>.</p></div>
-<h3 class="reveal" style="color:#fff;font-size:22px;margin-bottom:14px">AGENTS-002 — Muse coding trials</h3>
+<div class="section-head reveal"><span class="sec-index">04: Verified benchmarks</span><h2>Measured results, labeled exactly.</h2><p>Two benchmark series support the Agents layer. Both are reported under their recorded conditions, since they are evidence for those conditions, not universal performance guarantees. Full methodology lives on <a href="/evidence">Evidence</a>.</p></div>
+<h3 class="reveal" style="color:#fff;font-size:22px;margin-bottom:14px">AGENTS-002: Muse coding trials</h3>
 <div style="overflow-x:auto"><table class="ev reveal">
 <thead><tr><th scope="col">Measure (Condition C vs B)</th><th scope="col">Observed difference</th></tr></thead>
 <tbody>
@@ -88,17 +88,35 @@
 <tr><td>Total input tokens</td><td><span class="delta">20.77% fewer</span></td></tr>
 <tr><td>Output tokens</td><td><span class="delta">48.51% fewer</span></td></tr>
 </tbody></table></div>
-<div class="callout reveal" style="margin-top:18px"><p><strong>Nine real Muse trials across three scenarios — all nine passed independent checks.</strong> Figures compare Condition C against Condition B under the recorded benchmark conditions. They describe those runs only and are not universal performance guarantees.</p></div>
-<h3 class="reveal" style="color:#fff;font-size:22px;margin:34px 0 14px">AGENTS-003 — Local deterministic executions</h3>
+<div class="callout reveal" style="margin-top:18px"><p><strong>Nine real Muse trials across three scenarios; all nine passed independent checks.</strong> Figures compare Condition C against Condition B under the recorded benchmark conditions. They describe those runs only and are not universal performance guarantees.</p></div>
+<h3 class="reveal" style="color:#fff;font-size:22px;margin:34px 0 14px">AGENTS-003: Local deterministic executions</h3>
 <div class="ev-grid">
 <article class="ev-stat reveal"><p class="num">90/90</p><p class="lbl">Local deterministic executions passed.</p><p class="src">eligible local executions</p></article>
 <article class="ev-stat reveal"><p class="num">Zero model calls</p><p class="lbl">No model calls in those eligible local executions.</p><p class="src">local runner only</p></article>
-<article class="ev-stat reveal"><p class="num">~2.01 ms</p><p class="lbl">Mean runtime per local execution. Do not compare these local milliseconds directly with end-to-end Muse coding times — they measure different things.</p><p class="src">mean local runtime</p></article>
+<article class="ev-stat reveal"><p class="num">~2.01 ms</p><p class="lbl">Mean runtime per local execution. Do not compare these local milliseconds directly with end-to-end Muse coding times; they measure different things.</p><p class="src">mean local runtime</p></article>
 </div>
-<p class="scope-note reveal"><strong>Scope note:</strong> zero model calls applies to the eligible local executions in AGENTS-003 — not to all agent tasks. Tasks without an approved, compatible procedure still use the model.</p>
+<p class="scope-note reveal"><strong>Scope note:</strong> zero model calls applies to the eligible local executions in AGENTS-003, not to all agent tasks. Tasks without an approved, compatible procedure still use the model.</p>
+</div></section>
+<section class="section section--wash"><div class="wrap">
+<div class="section-head reveal"><span class="sec-index">05: Illustrative cost math</span><h2>What the token savings could mean, in dollars you define.</h2><p>SilkWeb has not measured dollar savings, so this section works an example with stated assumptions. The token reductions are measured (AGENTS-002, recorded conditions); the prices and volumes are hypothetical inputs you supply.</p></div>
+<div style="overflow-x:auto"><table class="ev reveal">
+<thead><tr><th scope="col">Figure</th><th scope="col">Value used</th><th scope="col">Status</th></tr></thead>
+<tbody>
+<tr><td>Uncached input tokens avoided per task</td><td>76.58%</td><td><span class="delta">Measured (AGENTS-002)</span></td></tr>
+<tr><td>Output tokens avoided per task</td><td>48.51%</td><td><span class="delta">Measured (AGENTS-002)</span></td></tr>
+<tr><td>Tasks per month</td><td>5,000</td><td>Hypothetical workload</td></tr>
+<tr><td>Uncached input tokens per task without SilkWeb</td><td>12,000</td><td>Hypothetical workload</td></tr>
+<tr><td>Output tokens per task without SilkWeb</td><td>3,000</td><td>Hypothetical workload</td></tr>
+<tr><td>Example input price</td><td>$3.00 per million tokens</td><td>Pricing assumption, not a quote</td></tr>
+<tr><td>Example output price</td><td>$12.00 per million tokens</td><td>Pricing assumption, not a quote</td></tr>
+</tbody></table></div>
+<div class="cols-2" style="margin-top:22px">
+<div class="callout reveal"><p><strong>Illustrative result: about $225 per month.</strong> Input: 5,000 tasks x 12,000 tokens x 76.58% is 45,948,000 tokens avoided, worth $137.84 at the example input price. Output: 5,000 tasks x 3,000 tokens x 48.51% is 7,276,500 tokens avoided, worth $87.32 at the example output price. Total $225.16 per month, or about $2,702 per year. Gross only, before every cost in the next panel.</p></div>
+<div class="callout reveal"><p><strong>What this leaves out.</strong> Registry storage and lookup overhead, verification and re-verification cost, tasks with no approved procedure (which still pay full model cost), price changes, and any quality change from reuse. After those costs, a real deployment could be zero or net negative. No verified dollar saving is claimed.</p></div>
+</div>
 </div></section>
 <section class="section" style="padding-top:0"><div class="wrap">
-<div class="cta reveal"><div><h2>Reuse is only real if it's checkable.</h2><p>Audit the evidence records yourself — every condition, count, and limitation is in the open.</p></div>
+<div class="cta reveal"><div><h2>Reuse is only real if it's checkable.</h2><p>Audit the evidence records yourself: every condition, count, and limitation is in the open.</p></div>
 <div class="cta-actions"><a class="btn btn-primary" href="/evidence">Explore evidence</a><a class="btn btn-light" href="/code">Inspect SilkWeb Code</a><a class="btn btn-outline-light" href="/creative">Try Creative Studio</a></div></div>
 </div></section>
 </main>
