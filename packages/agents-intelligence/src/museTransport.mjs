@@ -1,4 +1,4 @@
-﻿import { spawn } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -191,27 +191,29 @@ export function createMuseTransport({
 
     try {
       const execution = await new Promise((resolve, reject) => {
-        const command = process.platform === 'win32'
+        const isWindows = process.platform === 'win32';
+
+        const command = isWindows
           ? process.env.ComSpec || 'cmd.exe'
           : executable;
 
-        const commandArgs = process.platform === 'win32'
+        const commandArgs = isWindows
           ? [
               '/d',
               '/s',
               '/c',
-              `"${[executable, ...args].map(value =>
-                `"${String(value).replaceAll('"', '""')}"`
-              ).join(' ')}"`
+              `"${[executable, ...args]
+                .map(value => `"${String(value).replaceAll('"', '""')}"`)
+                .join(' ')}"`
             ]
           : args;
 
         const child = spawn(command, commandArgs, {
           shell: false,
+          windowsVerbatimArguments: isWindows,
           windowsHide: true,
           stdio: ['ignore', 'pipe', 'pipe']
         });
-
         let stdout = '';
         let stderr = '';
         let settled = false;
