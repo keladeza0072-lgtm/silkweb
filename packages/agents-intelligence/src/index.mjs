@@ -1,6 +1,7 @@
 ﻿import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { validateProcedureSteps } from './procedureInterpreter.mjs';
 
 export function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical);
@@ -47,8 +48,7 @@ export function verifyProcedure(record, trust) {
     !nonempty(record.task) ||
     !VERSION.test(record.toolVersion) ||
     !Array.isArray(record.steps) ||
-    record.steps.length === 0 ||
-    !record.steps.every(nonempty) ||
+    !validateProcedureSteps(record.steps).valid ||
     !Array.isArray(record.constraints) ||
     !record.constraints.every(nonempty) ||
     !Array.isArray(record.provenance) ||

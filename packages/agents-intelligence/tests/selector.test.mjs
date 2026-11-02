@@ -14,10 +14,15 @@ function fixture(overrides = {}) {
     task: 'resolve-order',
     toolVersion: '2.0.0',
     steps: [
-      'Read order',
-      'Validate eligibility',
-      'Update order',
-      'Record audit'
+      { op: 'readOrder', args: { id: 'ORD-001' } },
+      {
+        op: 'resolveOrder',
+        args: { id: 'ORD-001', resolution: 'approved' }
+      },
+      {
+        op: 'writeAudit',
+        args: { id: 'ORD-001', note: 'Routine' }
+      }
     ],
     constraints: ['Never mutate twice'],
     provenance: ['AGENTS-001 synthetic fixture'],
@@ -97,7 +102,10 @@ test('rejects changed tool version', () => {
 test('detects tampered procedure', () => {
   const { record, trust } = fixture();
 
-  record.steps.push('Unauthorized action');
+  record.steps.push({
+    op: 'writeAudit',
+    args: { id: 'ORD-001', note: 'Unauthorized action' }
+  });
 
   assert.equal(
     verifyProcedure(record, trust).reason,
@@ -168,4 +176,49 @@ test('rejects missing evidence reference', () => {
     verifyProcedure(record, trust).reason,
     'INVALID_APPROVAL'
   );
+});
+
+test('accepts valid structured steps', () => {
+  const { record, trust } = fixture();
+
+  assert.equal(verifyProcedure(record, trust).reason, 'APPROVED');
+});
+
+test('rejects legacy string steps', () => {
+  const { record, trust } = fixture({
+    steps: ['Read order', 'Resolve order']
+  });
+
+  assert.equal(
+    verifyProcedure(record, trust).reason,
+    'INVALID_SCHEMA'
+  );
+});
+
+test('rejects unsupported structured operations', () => {
+  const { record, trust } = fixture({
+    steps: [{ op: 'deleteOrder', args: { id: 'ORD-001' } }]
+  });
+
+  assert.equal(
+    verifyProcedure(record, trust).reason,
+    'INVALID_SCHEMA'
+  );
+});
+
+test('rejects malformed structured steps', () => {
+  for (const steps of [
+    [],
+    [{ op: 'readOrder', args: {} }],
+    [{ op: 'readOrder', args: { id: 'ORD-001' }, extra: true }],
+    [{ op: 'resolveOrder', args: { id: 'ORD-001' } }],
+    [null]
+  ]) {
+    const { record, trust } = fixture({ steps });
+
+    assert.equal(
+      verifyProcedure(record, trust).reason,
+      'INVALID_SCHEMA'
+    );
+  }
 });

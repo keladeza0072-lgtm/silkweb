@@ -17,10 +17,15 @@ function setup({
     task: 'resolve-order',
     toolVersion,
     steps: [
-      'Read the order before mutation',
-      'Confirm eligibility',
-      'Resolve using the current tool contract',
-      'Write exactly one audit record'
+      { op: 'readOrder', args: { id: 'ORD-001' } },
+      {
+        op: 'resolveOrder',
+        args: { id: 'ORD-001', resolution: 'approved' }
+      },
+      {
+        op: 'writeAudit',
+        args: { id: 'ORD-001', note: 'Routine' }
+      }
     ],
     constraints: [
       'Do not resolve an ineligible order',
@@ -110,7 +115,17 @@ test('host copies procedure and approval inputs', () => {
     version: '1.0.0',
     task: 'resolve-order',
     toolVersion: '2.0.0',
-    steps: ['Read', 'Resolve', 'Audit'],
+    steps: [
+      { op: 'readOrder', args: { id: 'ORD-001' } },
+      {
+        op: 'resolveOrder',
+        args: { id: 'ORD-001', resolution: 'approved' }
+      },
+      {
+        op: 'writeAudit',
+        args: { id: 'ORD-001', note: 'Routine' }
+      }
+    ],
     constraints: ['No duplicate mutation'],
     provenance: ['Synthetic test'],
     revoked: false

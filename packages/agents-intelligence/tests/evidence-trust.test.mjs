@@ -1,4 +1,4 @@
-﻿import test from 'node:test';
+import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
@@ -13,49 +13,20 @@ function procedure() {
     version: '1.0.0',
     task: 'resolve-order',
     toolVersion: '2.0.0',
-    steps: ['Read', 'Check eligibility', 'Resolve', 'Audit'],
+    steps: [
+      { op: 'readOrder', args: { id: 'ORD-001' } },
+      {
+        op: 'resolveOrder',
+        args: { id: 'ORD-001', resolution: 'approved' }
+      },
+      {
+        op: 'writeAudit',
+        args: { id: 'ORD-001', note: 'Routine' }
+      }
+    ],
     constraints: ['No duplicate mutation'],
-    provenance: ['Milestone 7 deterministic fixture'],
-    revoked: false,
-    verificationPlans: {
-      routine: [
-        { tool: 'readOrder', args: { id: 'ORD-001' } },
-        {
-          tool: 'resolveOrder',
-          args: { id: 'ORD-001', resolution: 'approved' }
-        },
-        {
-          tool: 'writeAudit',
-          args: { id: 'ORD-001', note: 'Routine' }
-        }
-      ],
-      'changed-contract': [
-        { tool: 'readOrder', args: { id: 'ORD-001' } },
-        {
-          tool: 'resolveOrder',
-          args: { id: 'ORD-001', resolutionCode: 'approved' }
-        },
-        {
-          tool: 'writeAudit',
-          args: { id: 'ORD-001', note: 'Changed contract' }
-        }
-      ],
-      'transient-recovery': [
-        { tool: 'readOrder', args: { id: 'ORD-001' } },
-        {
-          tool: 'resolveOrder',
-          args: { id: 'ORD-001', resolution: 'approved' }
-        },
-        {
-          tool: 'resolveOrder',
-          args: { id: 'ORD-001', resolution: 'approved' }
-        },
-        {
-          tool: 'writeAudit',
-          args: { id: 'ORD-001', note: 'Recovered' }
-        }
-      ]
-    }
+    provenance: ['Milestone 9 deterministic fixture'],
+    revoked: false
   };
 }
 
@@ -68,7 +39,8 @@ function approvedFixture() {
     procedureVersion: record.version,
     procedureDigest: evidence.procedureDigest,
     evidenceId: evidence.boundEvidenceId,
-    status: 'approved'
+    status: 'approved',
+    testsPassed: true
   };
 
   return { record, evidence, approval };
@@ -99,7 +71,7 @@ test('rejects a forged passing flag', () => {
 test('rejects procedure modification after verification', () => {
   const { record, evidence, approval } = approvedFixture();
 
-  record.steps.push('Unverified instruction');
+  record.steps.push({ op: 'readOrder', args: { id: 'ORD-001' } });
 
   assert.equal(
     validateEvidenceApproval(record, evidence, approval).reason,
@@ -137,6 +109,28 @@ test('rejects evidence that did not pass', () => {
   assert.equal(
     validateEvidenceApproval(record, evidence, approval).reason,
     'VERIFICATION_FAILED'
+  );
+});
+
+test('rejects approvals without genuinely passing tests', () => {
+  const { record, evidence, approval } = approvedFixture();
+
+  approval.testsPassed = false;
+
+  assert.equal(
+    validateEvidenceApproval(record, evidence, approval).reason,
+    'INVALID_APPROVAL'
+  );
+});
+
+test('rejects stale evidence schemas', () => {
+  const { record, evidence, approval } = approvedFixture();
+
+  evidence.schemaVersion = '1.0.0';
+
+  assert.equal(
+    validateEvidenceApproval(record, evidence, approval).reason,
+    'STALE_EVIDENCE_SCHEMA'
   );
 });
 

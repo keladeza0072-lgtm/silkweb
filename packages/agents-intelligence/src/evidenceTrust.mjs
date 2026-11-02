@@ -1,12 +1,17 @@
-﻿import { createHash } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 import { digest } from './index.mjs';
 import { createIntelligenceHost } from './integration.mjs';
-import { generateProcedureEvidence } from './evidenceGenerator.mjs';
+import {
+  EVIDENCE_SCHEMA_VERSION,
+  generateProcedureEvidence
+} from './evidenceGenerator.mjs';
 
 const IMPLEMENTATION_FILES = [
   new URL('./evidenceGenerator.mjs', import.meta.url),
+  new URL('./procedureInterpreter.mjs', import.meta.url),
+  new URL('./publicToolContracts.mjs', import.meta.url),
   new URL('./orderEnvironment.mjs', import.meta.url),
   new URL('./orderEvaluator.mjs', import.meta.url)
 ];
@@ -60,6 +65,18 @@ export function validateEvidenceApproval(
     return { valid: false, reason: 'NOT_APPROVED' };
   }
 
+  // Approval requires genuinely executed passing tests, not a status
+  // flag alone. Identity fields on the approval (reviewer, approver,
+  // contact, or similar) are never consulted here: a name attached to
+  // a record is not authentication and confers no trust.
+  if (approval.testsPassed !== true) {
+    return { valid: false, reason: 'INVALID_APPROVAL' };
+  }
+
+  if (evidence.schemaVersion !== EVIDENCE_SCHEMA_VERSION) {
+    return { valid: false, reason: 'STALE_EVIDENCE_SCHEMA' };
+  }
+
   if (evidence.passed !== true) {
     return { valid: false, reason: 'VERIFICATION_FAILED' };
   }
@@ -94,8 +111,9 @@ export function validateEvidenceApproval(
     return { valid: false, reason: 'APPROVAL_MISMATCH' };
   }
 
-  // Re-execute the current procedure against the current evaluator.
-  // This checks the reported verdict rather than trusting its flag.
+  // Re-execute the actual declared steps against the current
+  // interpreter and evaluator. This checks the reported verdict
+  // rather than trusting its flag.
   const fresh = finalizeEvidence(procedure);
 
   if (

@@ -1,8 +1,14 @@
-﻿import { digest } from './index.mjs';
+import { digest } from './index.mjs';
 import { createOrderEnvironment } from './orderEnvironment.mjs';
 import { evaluateOrderOutcome } from './orderEvaluator.mjs';
+import {
+  INTERPRETER_VERSION,
+  executeProcedureSteps
+} from './procedureInterpreter.mjs';
 
-const SCENARIOS = Object.freeze([
+export const EVIDENCE_SCHEMA_VERSION = '2.0.0';
+
+export const SCENARIOS = Object.freeze([
   {
     id: 'routine',
     toolVersion: '2.0.0',
@@ -20,66 +26,91 @@ const SCENARIOS = Object.freeze([
   }
 ]);
 
+function baseScenarioResult(scenario) {
+  return {
+    scenario: scenario?.id ?? null,
+    toolVersion: scenario?.toolVersion ?? null,
+    transientFailures: scenario?.transientFailures ?? null,
+    trace: [],
+    snapshot: null
+  };
+}
+
 export function executeVerificationScenario(procedure, scenario) {
+  const base = baseScenarioResult(scenario);
+
+  if (
+    !scenario ||
+    typeof scenario !== 'object' ||
+    !['2.0.0', '3.0.0'].includes(scenario.toolVersion) ||
+    !Number.isInteger(scenario.transientFailures) ||
+    scenario.transientFailures < 0
+  ) {
+    return { ...base, passed: false, reason: 'INVALID_SCENARIO' };
+  }
+
+  if (!procedure || typeof procedure !== 'object') {
+    return { ...base, passed: false, reason: 'INVALID_PROCEDURE' };
+  }
+
+  // Legacy verificationPlans are never executed and never count as
+  // evidence. Their presence fails the scenario closed so they cannot
+  // certify steps they were never bound to.
+  if ('verificationPlans' in procedure) {
+    return {
+      ...base,
+      passed: false,
+      reason: 'LEGACY_VERIFICATION_PLAN'
+    };
+  }
+
+  if (!['2.0.0', '3.0.0'].includes(procedure.toolVersion)) {
+    return {
+      ...base,
+      passed: false,
+      reason: 'INCOMPATIBLE_TOOL_CONTRACT'
+    };
+  }
+
   const env = createOrderEnvironment({
     toolVersion: scenario.toolVersion,
     transientFailures: scenario.transientFailures
   });
 
-  const actions = procedure?.verificationPlans?.[scenario.id];
+  // The declared procedure steps are the single source of executable
+  // truth: they are what the interpreter runs here, and they are what
+  // the registry serves to agents. Nothing else is executed.
+  const execution = executeProcedureSteps({
+    steps: procedure.steps,
+    environment: env,
+    toolVersion: scenario.toolVersion
+  });
 
-  if (!Array.isArray(actions) || actions.length === 0) {
+  const snapshot = env.snapshot();
+
+  if (!execution.completed) {
     return {
-      scenario: scenario.id,
+      ...base,
       passed: false,
-      reason: 'MISSING_VERIFICATION_PLAN'
+      reason: execution.reason,
+      failedStep: execution.failedStep,
+      failedCode: execution.failedCode,
+      trace: execution.trace,
+      snapshot
     };
   }
 
-  const observations = [];
-
-  for (const action of actions) {
-    let result;
-
-    switch (action?.tool) {
-      case 'readOrder':
-        result = env.readOrder(action.args?.id);
-        break;
-
-      case 'resolveOrder':
-        result = env.resolveOrder(action.args);
-        break;
-
-      case 'writeAudit':
-        result = env.writeAudit(action.args);
-        break;
-
-      default:
-        return {
-          scenario: scenario.id,
-          passed: false,
-          reason: 'UNKNOWN_TOOL'
-        };
-    }
-
-    observations.push({
-      tool: action.tool,
-      result
-    });
-
-    if (!result?.ok && result?.code !== 'TRANSIENT_FAILURE') {
-      break;
-    }
-  }
-
-  const outcome = evaluateOrderOutcome(env.snapshot());
+  // Final environment state is evaluated independently of the
+  // interpreter's own success claims.
+  const outcome = evaluateOrderOutcome(snapshot);
 
   return {
-    scenario: scenario.id,
+    ...base,
     passed: outcome.passed,
+    reason: outcome.passed ? 'PASS' : 'OUTCOME_FAILED',
     checks: outcome.checks,
-    observations,
-    reason: outcome.passed ? 'PASS' : 'OUTCOME_FAILED'
+    trace: execution.trace,
+    snapshot
   };
 }
 
@@ -100,12 +131,14 @@ export function generateProcedureEvidence(procedure) {
   const passed = scenarios.every(scenario => scenario.passed);
 
   const report = {
-    schemaVersion: '1.0.0',
+    schemaVersion: EVIDENCE_SCHEMA_VERSION,
     procedureId: procedure.id,
     procedureVersion: procedure.version,
     procedureDigest: digest(procedure),
+    stepsDigest: digest(procedure.steps ?? null),
     suiteId: 'AGENTS-001-DETERMINISTIC',
     suiteDigest: digest(SCENARIOS),
+    interpreterVersion: INTERPRETER_VERSION,
     passed,
     scenarios
   };

@@ -1,4 +1,4 @@
-﻿import test from 'node:test';
+import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { prepareABC } from '../src/abcBenchmark.mjs';
@@ -11,14 +11,15 @@ function procedure(toolVersion) {
     task: 'resolve-order',
     toolVersion,
     steps: [
-      'Read ORD-001 before making changes',
-      'Confirm the order is eligible',
-      toolVersion === '3.0.0'
-        ? 'Resolve using resolutionCode'
-        : 'Resolve using resolution',
-      'If a transient failure occurs before mutation, retry safely',
-      'Write the audit record after successful resolution',
-      'Do not resolve the order more than once'
+      { op: 'readOrder', args: { id: 'ORD-001' } },
+      {
+        op: 'resolveOrder',
+        args: { id: 'ORD-001', resolution: 'approved' }
+      },
+      {
+        op: 'writeAudit',
+        args: { id: 'ORD-001', note: 'Benchmark resolution' }
+      }
     ],
     constraints: [
       'Never duplicate a successful mutation',
@@ -26,46 +27,7 @@ function procedure(toolVersion) {
       'Use the current tool contract'
     ],
     provenance: ['AGENTS-001 benchmark fixture'],
-    revoked: false,
-    verificationPlans: {
-      routine: [
-        { tool: 'readOrder', args: { id: 'ORD-001' } },
-        {
-          tool: 'resolveOrder',
-          args: { id: 'ORD-001', resolution: 'approved' }
-        },
-        {
-          tool: 'writeAudit',
-          args: { id: 'ORD-001', note: 'Routine' }
-        }
-      ],
-      'changed-contract': [
-        { tool: 'readOrder', args: { id: 'ORD-001' } },
-        {
-          tool: 'resolveOrder',
-          args: { id: 'ORD-001', resolutionCode: 'approved' }
-        },
-        {
-          tool: 'writeAudit',
-          args: { id: 'ORD-001', note: 'Changed contract' }
-        }
-      ],
-      'transient-recovery': [
-        { tool: 'readOrder', args: { id: 'ORD-001' } },
-        {
-          tool: 'resolveOrder',
-          args: { id: 'ORD-001', resolution: 'approved' }
-        },
-        {
-          tool: 'resolveOrder',
-          args: { id: 'ORD-001', resolution: 'approved' }
-        },
-        {
-          tool: 'writeAudit',
-          args: { id: 'ORD-001', note: 'Recovered' }
-        }
-      ]
-    }
+    revoked: false
   };
 }
 
@@ -77,7 +39,8 @@ function bundle(records) {
     procedureVersion: record.version,
     procedureDigest: evidenceRecords[index].procedureDigest,
     evidenceId: evidenceRecords[index].boundEvidenceId,
-    status: 'approved'
+    status: 'approved',
+    testsPassed: true
   }));
 
   return {
@@ -102,6 +65,10 @@ test('complete evidence-approved registry prepares all nine comparisons', () => 
     procedure('3.0.0')
   ];
 
+  for (const record of records) {
+    assert.equal(finalizeEvidence(record).passed, true);
+  }
+
   const prepared = prepareABC(bundle(records));
 
   assert.equal(prepared.manifest.conditions.length, 3);
@@ -123,6 +90,16 @@ test('complete evidence-approved registry prepares all nine comparisons', () => 
       )
     );
 
+    // Served guidance is exactly the verified declared steps: the
+    // single source of executable truth, with no side plans attached.
+    const declared = records.find(
+      record => record.id === selected.id
+    );
+
+    assert.deepEqual(selected.steps, declared.steps);
+    assert.ok(selected.steps.every(
+      step => typeof step.op === 'string' && step.args
+    ));
     assert.equal('verificationPlans' in selected, false);
     assert.equal('verificationPlans' in full.procedures[0], false);
   }
