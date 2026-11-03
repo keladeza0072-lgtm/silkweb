@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#101B36" />
+  <meta name="description" content="SilkWeb turns one product and one goal into three downloadable image ads." />
+  <title>SilkWeb Creative - Image Ads Studio</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="header"><div class="wrap nav">
+    <a class="brand" href="/" aria-label="SilkWeb home"><svg class="star" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 0 37.2 24.8 51 13 39.2 27 64 32 39.2 37 51 51 37.2 39.2 32 64 26.8 39.2 13 51 24.8 37 0 32 24.8 27 13 13 26.8 24.8Z"/></svg><span>SilkWeb Creative</span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+    <nav class="nav-links site-nav" id="site-nav" aria-label="Main navigation"><a href="/">Home</a><div class="nav-dropdown"><button class="nav-dropdown-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="products-menu" aria-current="true">Products <span aria-hidden="true">▾</span></button><div class="nav-dropdown-menu" id="products-menu" role="menu" hidden><a role="menuitem" href="/creative" aria-current="page"><strong>SilkWeb Creative</strong><small>Image ads studio</small></a><a role="menuitem" href="/code"><strong>SilkWeb Code</strong><small>Verified component registry</small></a><a role="menuitem" href="/data"><strong>SilkWeb Data</strong><small>Trusted business rules</small></a><a role="menuitem" href="/agents"><strong>SilkWeb Agents</strong><small>Approved procedures</small></a></div></div><a href="/evidence">Evidence</a><a href="/research">Research</a></nav>
+  </div></header>
+  <main id="main">
+    <section class="create" id="screen-create" aria-labelledby="create-heading">
+      <div class="wrap create-inner">
+        <p class="eyebrow">IMAGE ADS</p>
+        <h1 id="create-heading">Your product. Three standout ads.</h1>
+        <p class="hero-sub">Upload your product, choose your goal, and let SilkWeb create.</p>
+        <form id="ads-form" class="ads-form" novalidate>
+          <div class="upload" id="upload-zone">
+            <img id="upload-preview" class="upload-preview" alt="Uploaded product preview" hidden />
+            <div class="upload-empty" id="upload-empty">
+              <span class="upload-icon" aria-hidden="true">▣</span>
+              <p><strong>Upload your product image</strong></p>
+              <p class="help">PNG, JPEG, or WebP · up to 1.5&nbsp;MB</p>
+              <label class="button button-secondary" for="product-image">Choose image</label>
+            </div>
+            <div class="upload-actions" id="upload-actions" hidden>
+              <button type="button" class="button button-secondary button-small" id="replace-image">Replace</button>
+              <button type="button" class="button button-secondary button-small" id="remove-image">Remove</button>
+            </div>
+            <input id="product-image" name="product-image" type="file" accept="image/png,image/jpeg,image/webp" hidden />
+          </div>
+          <label class="field-label" for="product-name">Product name <span class="optional">or upload an image above</span></label>
+          <input id="product-name" name="product-name" type="text" maxlength="120" autocomplete="off" placeholder="e.g. Luma Candles" />
+          <fieldset class="objectives">
+            <legend>Campaign objective</legend>
+            <div class="objective-grid" id="objective-grid" role="radiogroup" aria-label="Campaign objective"></div>
+          </fieldset>
+          <details class="details" id="optional-details">
+            <summary>Optional product details</summary>
+            <div class="details-body">
+              <label class="field-label" for="differentiator">What makes it different?</label>
+              <input id="differentiator" name="differentiator" type="text" maxlength="200" autocomplete="off" placeholder="e.g. Poured in small batches" />
+              <div class="price-row">
+                <div>
+                  <label class="field-label" for="price">Price (optional)</label>
+                  <input id="price" name="price" type="text" inputmode="decimal" maxlength="40" autocomplete="off" placeholder="e.g. 49.99" />
+                </div>
+                <div>
+                  <label class="field-label" for="currency">Currency</label>
+                  <input id="currency" name="currency" type="text" maxlength="8" autocomplete="off" placeholder="e.g. USD" />
+                </div>
+              </div>
+              <label class="field-label" for="special-offer">Genuine special offer (only if real)</label>
+              <input id="special-offer" name="special-offer" type="text" maxlength="200" autocomplete="off" placeholder="e.g. Free shipping this weekend" />
+              <p class="help">Only add offers and prices that are genuinely available. SilkWeb never invents discounts.</p>
+            </div>
+          </details>
+          <p class="quantity" aria-label="Three ads per generation, fixed"><span class="quantity-badge" aria-hidden="true">3</span> Three ads per generation · fixed</p>
+          <p class="form-errors" id="form-errors" role="alert" hidden></p>
+          <label class="field-label" for="demo-access-code">Demo access code</label>
+          <input id="demo-access-code" name="demo-access-code" type="password" maxlength="128" autocomplete="off" placeholder="Enter demo access code" />
+          <p class="help">Required for paid generation in this demo. Not stored.</p>
+          <button class="button button-primary button-large" type="submit" id="generate-btn">Generate Ads <span aria-hidden="true">→</span></button>
+          <p class="fineprint" id="engine-note">Local draft render · final copy review connects later.</p>
+        </form>
+      </div>
+    </section>
+    <section class="generating" id="screen-generating" aria-labelledby="generating-heading" hidden>
+      <div class="wrap generating-inner">
+        <div class="spinner" aria-hidden="true"></div>
+        <h2 id="generating-heading">Creating your three ads…</h2>
+        <p class="help" id="generating-status" role="status">Composing layouts…</p>
+        <p class="help">Request accepted first, then generation runs in the background. Keep this tab open. Results are held briefly and are not saved across service restarts.</p>
+        <div class="error-panel" id="generating-error" hidden>
+          <p class="form-errors" id="generating-error-text" role="alert"></p>
+          <button class="button button-primary" type="button" id="retry-btn">Try again</button>
+          <button class="button button-secondary" type="button" id="draft-btn" hidden>Use local draft instead</button>
+        </div>
+      </div>
+    </section>
+    <section class="results" id="screen-results" aria-labelledby="results-heading" hidden>
+      <div class="wrap">
+        <div class="results-head">
+          <div>
+            <p class="eyebrow">IMAGE ADS</p>
+            <p class="engine-badge" id="engine-banner" role="status" hidden></p>
+            <h2 id="results-heading">Your ads are ready.</h2>
+            <p class="help" id="results-note"></p>
+          </div>
+          <button class="button button-secondary" type="button" id="start-new">Start new <span aria-hidden="true">→</span></button>
+        </div>
+        <div class="ads-grid" id="ads-grid"></div>
+      </div>
+    </section>
+  </main>
+  <footer class="footer wrap"><div><p class="footer-brand">SilkWeb Creative · Built with Muse Code</p></div><span class="footer-note" id="footer-note"></span></footer>
+<script src="/app.js" defer></script>
+<script src="/presentation.js" defer></script>
+</body></html>

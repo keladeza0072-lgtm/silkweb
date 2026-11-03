@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Silk Web local MCP server: Day 1 ping smoke test",
+  "description": "Silk Web local MCP server: ping plus read-only verified-registry librarian tools",
   "engines": { "node": ">=20" },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "smoke": "node scripts/smoke.mjs",
-    "check": "npm run build && npm run smoke"
+    "test": "node --test tests/librarian.test.mjs tests/discoverability.test.mjs",
+    "check": "npm run build && npm run smoke && npm run test"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.0.0",

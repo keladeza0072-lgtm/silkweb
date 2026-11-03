@@ -1,0 +1,34 @@
+{
+  "id": "booking-validation",
+  "version": "0.1.0",
+  "sourcePath": "packages/registry/src/validation.ts",
+  "dependencies": [
+    {
+      "id": "booking-schema",
+      "version": "0.1.0"
+    }
+  ],
+  "capabilities": [
+    "booking-validation",
+    "slot-constraints"
+  ],
+  "invariants": [
+    "staffId and serviceId must be positive integers.",
+    "startTime must be the strict canonical UTC form YYYY-MM-DDTHH:mm:00.000Z for a real calendar date; numeric timezone offsets, missing or non-Z timezone markers, non-canonical fractional seconds, non-ISO strings and unreal dates are rejected.",
+    "startTime must fall exactly on a 30-minute boundary (minutes 00 or 30, zero seconds and milliseconds).",
+    "All failures throw BookingValidationError with code BOOKING_VALIDATION_ERROR."
+  ],
+  "runtime": {
+    "stack": "node24+sqlite",
+    "node": ">=24",
+    "dependencies": {
+      "zod": "4.6.7"
+    }
+  },
+  "verification": {
+    "status": "verified",
+    "testCommand": "cd packages/registry && npm run check",
+    "evidence": "registry-data/evidence/booking-validation-0.1.0.json",
+    "sourceHash": "965623360483ea47941bca120a047f9448ddf770f99b63136213dd67f5224926"
+  }
+}

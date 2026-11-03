@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "componentId": "registry-loader",
+  "componentVersion": "0.1.0",
+  "artifactFingerprint": "88786d36021a2ff2ca4c3c2813b941118cfb4a2563df02aa392183d5b90d906b",
+  "sections": {
+    "manifest": "f6fcccd55c40e6866083b0cfdf7f3e108e5148ea0d96844f96a3163513175cd9",
+    "sources": "e9d1978b676090d3c90939eaab0651fc8d3d3b4c2b2ed58e2ddc02e4fc9aaa86",
+    "tests": "ede40ee43c47861ecad6498ff269500c327f54b23dd91c33b14b46dc7474159c",
+    "lockfile": "4e58b27b1f1f654648bbc4bdd7c8537f2d80cc73fa1ccce1e0384fbe019a92b5",
+    "environment": "f585a087cc03cf4baca38a33b7936ea1891ab8d606eb007ff5c224d2c37a44ca",
+    "build": "78511663927828507ec2123e5ff82a1405628a74422366d6036e70691a52eaad"
+  },
+  "testScope": {
+    "command": "node --test tests/loader.test.mjs",
+    "commandKey": "registry:loader-tests",
+    "files": [
+      "packages/registry/tests/loader.test.mjs"
+    ],
+    "limitations": "Runs the freshly built registry-loader suite only; sequential same-process execution, no genuine concurrency coverage."
+  },
+  "build": {
+    "command": "node node_modules/typescript/bin/tsc -p tsconfig.json",
+    "artifacts": [
+      {
+        "file": "packages/registry/dist/evidence.js",
+        "sha256": "8649855df879de6b2b103d6a47ec87d59449b6ef5659caf55aa70dc484473274"
+      },
+      {
+        "file": "packages/registry/dist/fingerprint.js",
+        "sha256": "65feae3ccd8ffe70550723a3f7d4837fbc8716870053439bb1bb11a8ddd780ce"
+      },
+      {
+        "file": "packages/registry/dist/index.js",
+        "sha256": "2cea26dd71f1e8d6e8e4fc5606cb198f821b7b5200641998c4ecb46c0c5864a6"
+      },
+      {
+        "file": "packages/registry/dist/loader.js",
+        "sha256": "65ea7c2aade6a5a415e8c49ff7d9f34a32e87ab65db47baaf0eb0d254d8ba9b3"
+      },
+      {
+        "file": "packages/registry/dist/manifest.js",
+        "sha256": "79b14cf48a710d64851079850600ddbb738d6a19e5cc96a204a3e43c59eb1652"
+      },
+      {
+        "file": "packages/registry/dist/runner.js",
+        "sha256": "8e75ce2f6e81bd7993c419b3be7bbeb0d380fd98dcad009ee12aad454b30ddbc"
+      },
+      {
+        "file": "packages/registry/dist/schema.js",
+        "sha256": "c85b17a2f353fdfc8b4562bc428e8ae0744359ddb353b8d2a6364c0e0fd89de9"
+      },
+      {
+        "file": "packages/registry/dist/slotGuard.js",
+        "sha256": "42a1196eb5096f5f2c328984278c594600655322c00983a5426f49ec1e2c0b33"
+      },
+      {
+        "file": "packages/registry/dist/validate.js",
+        "sha256": "6f949d61506b4ab6ee08f84bc7012d3cc42b0b7df194a08719635744c0358500"
+      },
+      {
+        "file": "packages/registry/dist/validation.js",
+        "sha256": "a65d0f26d662a7ad3d8c5623ae29170f3f69a3433cc1e3d0c0f88a370d23a962"
+      }
+    ]
+  },
+  "exitCode": 0,
+  "outcome": "pass",
+  "nodeVersion": "v24.15.0",
+  "sqliteVersion": "3.51.3",
+  "executedAt": "2026-10-27T11:58:56.910Z"
+}

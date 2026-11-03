@@ -1,0 +1,89 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#101B36"/>
+<meta name="description" content="SilkWeb Data: trusted business rules for more reliable SQL. REV-004 recognised net revenue benchmark."/>
+<title>SilkWeb Data - Trusted business rules. More reliable SQL.</title>
+<link rel="stylesheet" href="/presentation.css"/>
+</head>
+<body class="data-page">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header"><div class="wrap">
+<a class="brand" href="/" aria-label="SilkWeb home"><svg class="brand-star" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 0 37.2 24.8 51 13 39.2 27 64 32 39.2 37 51 51 37.2 39.2 32 64 26.8 39.2 13 51 24.8 37 0 32 24.8 27 13 13 26.8 24.8Z"/></svg><span>SilkWeb</span></a>
+<button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+<nav class="site-nav" id="site-nav" aria-label="Main navigation">
+<a href="/">Home</a>
+<div class="nav-dropdown"><button class="nav-dropdown-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="products-menu" aria-current="true">Products <span class="chev" aria-hidden="true">&#9662;</span></button>
+<div class="nav-dropdown-menu" id="products-menu" role="menu" hidden><a role="menuitem" href="/creative"><strong>SilkWeb Creative</strong><small>Image ads studio</small></a><a role="menuitem" href="/code"><strong>SilkWeb Code</strong><small>Verified component registry</small></a><a role="menuitem" href="/data" aria-current="page"><strong>SilkWeb Data</strong><small>Trusted business rules</small></a><a role="menuitem" href="/agents"><strong>SilkWeb Agents</strong><small>Approved procedures</small></a></div></div>
+<a href="/evidence">Evidence</a><a href="/research">Research</a>
+</nav></div></header>
+<main id="main">
+<section class="hero data-hero"><div class="wrap">
+<p class="hero-kicker">SILKWEB DATA</p>
+<h1>Business context. Better answers.</h1>
+<p class="hero-lede">Give AI the right business rules before it writes the query.</p>
+<div class="hero-actions"><a class="btn btn-primary" href="#benchmark">See the benchmark</a><a class="btn btn-light" href="/evidence">Explore evidence</a></div>
+</div></section>
+<section class="section" id="benchmark"><div class="wrap">
+<div class="section-head"><span class="sec-index">01: Benchmark</span><h2>REV-004: Recognized net revenue SQL</h2><p>Five local SQLite fixture cases. One model run per condition. Development harness, not independent validation.</p></div>
+<div class="ev-grid">
+<article class="ev-stat"><p class="num">2/5</p><p class="lbl">Baseline correct without business rules.</p><p class="src">40% accuracy</p></article>
+<article class="ev-stat"><p class="num">5/5</p><p class="lbl">Full documentation correct with every rule supplied.</p><p class="src">100% accuracy</p></article>
+<article class="ev-stat"><p class="num">5/5</p><p class="lbl">SilkWeb selected contract correct with the compact rule set.</p><p class="src">100% accuracy</p></article>
+</div>
+<figure class="bench-card reveal" style="margin-top:22px"><figcaption class="bench-head"><h3>Accuracy by condition</h3></figcaption><p class="bench-unit">Correct cases out of 5 · higher is better · scale 0-5</p><div class="bench-chart" role="img" aria-label="REV-004 accuracy: Baseline 2 of 5, Full documentation 5 of 5, SilkWeb selected contract 5 of 5."><div class="bench-row"><span class="bench-label">Baseline</span><div class="bench-track"><div class="bench-bar bench-bar--without" style="width:40%"></div></div><span class="bench-value">2/5</span></div><div class="bench-row"><span class="bench-label">Full documentation</span><div class="bench-track"><div class="bench-bar bench-bar--without" style="width:100%"></div></div><span class="bench-value">5/5</span></div><div class="bench-row"><span class="bench-label">SilkWeb</span><div class="bench-track"><div class="bench-bar bench-bar--with" style="width:100%"></div></div><span class="bench-value">5/5</span></div><div class="bench-axis" aria-hidden="true"><span>0</span><span>5 cases</span></div></div><p class="bench-note">Bars start at zero and are proportional.</p></figure>
+<div style="overflow-x:auto"><table class="ev">
+<thead><tr><th scope="col">Condition</th><th scope="col">Correct</th><th scope="col">Accuracy</th></tr></thead>
+<tbody>
+<tr><td>Baseline</td><td>2/5 correct</td><td>40%</td></tr>
+<tr><td>Full documentation</td><td>5/5 correct</td><td>100%</td></tr>
+<tr><td>SilkWeb selected contract</td><td>5/5 correct</td><td>100%</td></tr>
+</tbody></table></div>
+<div class="cols-2" style="margin-top:22px"><div class="callout"><p><strong>Methodology:</strong> one model run per condition against five local SQLite fixture cases. The SilkWeb condition embeds a preselected, verified business contract in the prompt before the model writes SQL. Full documentation embeds every rule instead. There is no unique accuracy advantage over full documentation: both reached 5/5.</p></div><div class="callout"><p><strong>Limitations:</strong> live contract retrieval was not evaluated, so this measures the value of the contract content, not the retrieval path. One run per condition means no variance, average, or guarantee. Development harness, not independent validation.</p></div></div>
+</div></section>
+<section class="section section--wash"><div class="wrap">
+<div class="section-head"><span class="sec-index">02: Efficiency (observed)</span><h2>Less context work, fewer output tokens.</h2><p>Compared with full documentation, SilkWeb observed 27.85% shorter execution time, 6.54% fewer output tokens, and 0.51% fewer input tokens.</p></div>
+<div style="overflow-x:auto"><table class="ev">
+<thead><tr><th scope="col">Condition</th><th scope="col">Time</th><th scope="col">Input tokens</th><th scope="col">Output tokens</th></tr></thead>
+<tbody>
+<tr><td>Baseline</td><td>8.69 seconds</td><td>15,933</td><td>713</td></tr>
+<tr><td>Full documentation</td><td>18.78 seconds</td><td>16,139</td><td>2,400</td></tr>
+<tr><td>SilkWeb</td><td>13.55 seconds</td><td>16,057</td><td>2,243</td></tr>
+</tbody></table></div>
+<figure class="bench-card reveal" style="margin-top:22px"><figcaption class="bench-head"><h3>Execution time</h3></figcaption><p class="bench-unit">Seconds · lower is faster · scale 0-20 s</p><div class="bench-chart" role="img" aria-label="REV-004 execution time in seconds: Baseline 8.69, Full documentation 18.78, SilkWeb 13.55."><div class="bench-row"><span class="bench-label">Baseline</span><div class="bench-track"><div class="bench-bar bench-bar--without" style="width:43.45%"></div></div><span class="bench-value">8.69 s</span></div><div class="bench-row"><span class="bench-label">Full documentation</span><div class="bench-track"><div class="bench-bar bench-bar--without" style="width:93.9%"></div></div><span class="bench-value">18.78 s</span></div><div class="bench-row"><span class="bench-label">SilkWeb</span><div class="bench-track"><div class="bench-bar bench-bar--with" style="width:67.75%"></div></div><span class="bench-value">13.55 s</span></div><div class="bench-axis" aria-hidden="true"><span>0</span><span>20 s</span></div></div><p class="bench-note">27.85% shorter than full documentation in this run. Bars start at zero.</p></figure>
+<figure class="bench-card reveal" style="margin-top:22px"><figcaption class="bench-head"><h3>Output tokens</h3></figcaption><p class="bench-unit">Tokens · scale 0-2,500</p><div class="bench-chart" role="img" aria-label="REV-004 output tokens: Baseline 713, Full documentation 2,400, SilkWeb 2,243."><div class="bench-row"><span class="bench-label">Baseline</span><div class="bench-track"><div class="bench-bar bench-bar--without" style="width:28.52%"></div></div><span class="bench-value">713</span></div><div class="bench-row"><span class="bench-label">Full documentation</span><div class="bench-track"><div class="bench-bar bench-bar--without" style="width:96%"></div></div><span class="bench-value">2,400</span></div><div class="bench-row"><span class="bench-label">SilkWeb</span><div class="bench-track"><div class="bench-bar bench-bar--with" style="width:89.72%"></div></div><span class="bench-value">2,243</span></div><div class="bench-axis" aria-hidden="true"><span>0</span><span>2,500 tokens</span></div></div><p class="bench-note">6.54% fewer than full documentation in this run. Bars start at zero.</p></figure>
+<div class="callout" style="margin-top:22px"><p><strong>Limitations:</strong> Differences in timing and token use are observations, not repeatable performance guarantees. No measured inference-cost reduction is claimed.</p></div>
+</div></section>
+<section class="section section--wash"><div class="wrap">
+<div class="section-head"><span class="sec-index">03: Workflow</span><h2>How the contract reaches the query.</h2><p>Four steps, each one checkable. Retrieval over MCP is read-only transport: the silkweb_data_lookup tool returns verified business rules but executes nothing, and the model still writes the SQL.</p></div>
+<div class="arch" role="img" aria-label="REV-004 workflow: business contract, prompt, model SQL, fixture check">
+<div class="arch-step"><span class="step-k">Contract</span><h3>Select the rules</h3><p>Paid orders count, successful refunds are deducted, duplicates count once.</p></div>
+<div class="arch-step"><span class="step-k">Prompt</span><h3>Embed, do not fetch live</h3><p>The preselected contract is embedded in the prompt. Live retrieval was not evaluated.</p></div>
+<div class="arch-step"><span class="step-k">Model SQL</span><h3>One run per condition</h3><p>The model writes recognized net revenue SQL against local SQLite fixtures.</p></div>
+<div class="arch-step"><span class="step-k">Fixture check</span><h3>Score five cases</h3><p>Each case is correct or not: Baseline 2/5, full documentation 5/5, SilkWeb 5/5.</p></div>
+</div>
+<div class="verify-strip"><div><strong>5</strong><span>local fixture cases</span></div><div><strong>1</strong><span>model run per condition</span></div><div><strong>Read-only</strong><span>MCP lookup, no execution</span></div><div><strong>5/5</strong><span>SilkWeb, matching full docs</span></div></div>
+</div></section>
+<section class="section"><div class="wrap split">
+<div>
+<span class="sec-index">04: Business rules</span>
+<h2>What the contract makes explicit.</h2>
+<ul class="check-list">
+<li>Paid orders count toward recognized revenue.</li>
+<li>Only successful refunds linked to paid orders are deducted.</li>
+<li>Duplicate refund events are counted once.</li>
+<li>The selected business contract makes these rules explicit.</li>
+</ul>
+</div>
+<div class="callout"><p><strong>Scope:</strong> One model run per condition. Five local SQLite fixture cases. Development harness, not independent validation.</p></div>
+</div></section>
+<section class="section" style="padding-top:0"><div class="wrap">
+<div class="cta"><div><h2>Reliable SQL starts with clear rules.</h2><p>SilkWeb Data embeds the selected business contract in the prompt before the model writes SQL.</p></div>
+<div class="cta-actions"><a class="btn btn-primary" href="/code">Explore SilkWeb Code</a><a class="btn btn-light" href="/creative">Try SilkWeb Creative</a><a class="btn btn-outline-light" href="/evidence">Explore evidence</a></div></div>
+</div></section>
+</main>
+<footer class="site-footer"><div class="wrap"><div><a class="brand" href="/" aria-label="SilkWeb home"><svg class="brand-star" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 0 37.2 24.8 51 13 39.2 27 64 32 39.2 37 51 51 37.2 39.2 32 64 26.8 39.2 13 51 24.8 37 0 32 24.8 27 13 13 26.8 24.8Z"/></svg><span>SilkWeb</span></a><p class="footer-note" style="margin-top:12px">One foundation. Many applications. Claims are limited to verified evidence; unmeasured results are marked unavailable.</p><p class="built-with">Built with <strong>Muse Code</strong></p></div><nav class="footer-links" aria-label="Footer navigation"><a href="/">Home</a><a href="/creative">SilkWeb Creative</a><a href="/code">SilkWeb Code</a><a href="/data">SilkWeb Data</a><a href="/agents">Agents</a><a href="/evidence">Evidence</a><a href="/research">Research</a></nav></div></footer>
+<script src="/presentation.js" defer></script>
+</body></html>

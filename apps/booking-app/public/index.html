@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Silk Web Barbershop — Book a Chair</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <h1>Silk Web Barbershop</h1>
+    <p class="sub">Local demo booking. All appointment times are shown in <strong>UTC</strong>. Business hours 09:00&ndash;17:00 UTC.</p>
+  </div>
+</header>
+
+<main class="wrap layout">
+  <section class="panel" aria-labelledby="book-heading">
+    <h2 id="book-heading">Book an appointment</h2>
+
+    <label class="field">
+      <span>1. Barber</span>
+      <select id="barber"></select>
+    </label>
+
+    <label class="field">
+      <span>2. Service (30 minutes)</span>
+      <select id="service"></select>
+    </label>
+
+    <label class="field">
+      <span>3. Date (UTC, next 7 days)</span>
+      <select id="date"></select>
+    </label>
+
+    <div class="field">
+      <span id="slots-label">4. Time slot (UTC)</span>
+      <div id="slots" class="slots" role="group" aria-labelledby="slots-label"></div>
+    </div>
+
+    <button id="book" type="button" disabled>Book selected slot</button>
+    <p id="form-message" class="message" role="status"></p>
+
+    <div id="confirmation" class="confirmation" hidden>
+      <h3>Booking confirmed</h3>
+      <p id="confirmation-text"></p>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="active-heading">
+    <h2 id="active-heading">Active bookings</h2>
+    <p class="hint">Cancel a booking to free its slot for rebooking.</p>
+    <ul id="bookings" class="bookings"></ul>
+    <p id="bookings-message" class="message" role="status"></p>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>Local demo only: no accounts, no payments, no authentication. Data stays in a gitignored SQLite file on this machine.</p>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

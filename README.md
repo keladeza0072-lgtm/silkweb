@@ -1,68 +1,72 @@
-# Silk Web — Day 1 starter
+# SilkWeb — Reusable Intelligence Infrastructure
 
-**State:** template created; not an assertion of installation on your computer.
+**SilkWeb** explores how AI applications can reuse verified knowledge, task-relevant context, and procedures instead of repeatedly solving the same problems from scratch. The goal is to reduce redundant model work while preserving output quality.
 
-## Deliverable
-A private Git monorepo scaffold and a zero-model-cost MCP `ping` tool. The server
-speaks stdio (not HTTP) and returns validated JSON with both a text block and
-structured content. See `docs/day1-checklist.md` for evidence requirements.
+**Live demo:** https://silkweb-creative.onrender.com
 
-### 1. Prerequisites
-Node.js 20+ (recommend current LTS), npm, Git, and Muse Code installed using
-Meta's official OS-specific guide: https://dev.meta.ai/docs/quickstart
+## What it demonstrates
 
-Run:
+| Area | Demonstration |
+| --- | --- |
+| **Creative** | A user supplies a product image or name and a campaign objective to generate three distinct image ads with accompanying copy. Live model generation is access-controlled. |
+| **Code** | A Git-backed knowledge registry and MCP tools expose verified development knowledge to a coding agent. |
+| **Data** | Task-relevant data contracts are selected instead of sending an entire documentation set. |
+| **Agents** | Reusable, verified procedures and a deterministic execution/evaluation layer demonstrate agent knowledge reuse. |
+
+Explore the corresponding sections of the [live website](https://silkweb-creative.onrender.com), including its **Evidence** and **Research** pages.
+
+## Why this matters
+
+Models are increasingly capable, but applications can still waste time and tokens rediscovering solutions or consuming irrelevant context. SilkWeb investigates a complementary optimization: provide the right verified knowledge at the right point in a workflow. It is infrastructure around the model, not a claim that the underlying model itself has become more intelligent.
+
+## Measured results
+
+The results below are **workload-specific experiments**, not general guarantees or production SLAs.
+
+| Experiment | Comparison | Observed result |
+| --- | --- | --- |
+| **Code — RES-002** | One paired coding-agent trial, without vs. with SilkWeb | Evaluation quality **98.5/100 → 100/100**; coding time **−15.20%**; total input tokens **−3.53%**; uncached input tokens **−56.28%**; output tokens **−29.84%**. |
+| **Data — REV-004** | Five SQLite questions: no docs, full docs, selected contract | Correct answers **2/5**, **5/5**, and **5/5**, respectively. Selected contract vs. full docs: time **−27.85%**; output tokens **−6.54%**. |
+| **Agents — AGENTS-002** | Nine coding-agent trials | Time **−16.43%**; total input tokens **−20.77%**; uncached input tokens **−76.58%**; output tokens **−48.51%**. |
+| **Agents — AGENTS-003** | Deterministic local execution test, not a model benchmark | **90/90** successful local executions, **zero model calls**, ~**2.01 ms** mean execution. Not directly comparable to model-driven coding trials. |
+
+**Cost caveat:** Inference-cost reductions were **not independently established** in RES-002; token savings should not be presented as verified dollar savings. Results from the small Data fixture require broader validation.
+
+## Meta technology
+
+SilkWeb's experiments used **Muse Spark 1.3** for coding-agent evaluation. SilkWeb Creative integrates Meta model-powered creative planning and image generation through a live provider workflow. The broader system includes a Git-backed registry, task-relevant context selection, and Model Context Protocol (MCP) interfaces.
+
+## Repository map
+
+- `apps/creative-studio/` — web application, creative workflows, frontend and backend.
+- `apps/mcp-server/` — local MCP server and knowledge access tools.
+- `packages/` — reusable infrastructure and agent components.
+- `experiments/` — benchmark protocols and related experimental artifacts.
+- `docs/` — supporting documentation.
+
+This is a hackathon research prototype with several experimental components. The live Creative workflow requires server-side model credentials and a **private demo access code**. Do not commit credentials or publish judge access codes.
+
+## Run the Creative application locally
+
+Requires Node.js and npm. From the repository root:
+
 ```sh
-node --version
-npm --version
-git --version
-muse --version
+cd apps/creative-studio
+npm ci
+npm run build
+npm test
+npm start
 ```
-If `muse` is not installed, follow the official OS-specific installer rather
-than guessing a third-party npm package.
 
-### 2. Build and test MCP locally (no model calls)
-Run these commands **from the repository root**:
-```sh
-cd apps/mcp-server
-npm install
-npm run check
-cd ../..
-node scripts/show-muse-config.mjs
-```
-`npm install` creates `apps/mcp-server/package-lock.json`. **Commit that file**.
-Expected smoke output:
-`PASS MCP initialization, tools/list and ping: {"ok":true,"service":"silkweb"}`.
-If the smoke fails, do not proceed to Muse; capture the actual error.
+Open `http://localhost:3003` unless a different `PORT` is configured. Live model generation requires provider configuration and credentials; without those, do not interpret offline draft outputs as live AI-generated ads. See `apps/creative-studio/` for implementation details.
 
-### 3. Connect to Muse Code
-Merge the generated `mcp_servers.silkweb` entry into your existing
-`~/.config/muse/settings.json` (do not overwrite other settings). Run Muse
-Code from the repo root in Standard mode, once billing and limits are checked:
-```sh
-muse --model muse-spark-1.3 --contributor-mode off
-```
-Inside Muse Code, run `/models` and `/mcp`. Confirm `silkweb` and `ping` are
-listed. Ask: "Call the silkweb ping MCP tool, then show its exact JSON result."
-Watch an actual tool invocation; inventory alone is insufficient. A successful
-model call may have a usage charge; do not do this until billing is verified.
+## Security and limitations
 
-### 4. Commit a reproducible checkpoint
-```sh
-git init -b main
-git add .
-git commit -m "day1: scaffold Silk Web and local MCP ping"
-git status
-```
-Create a private repository named `silkweb` under your GitHub account, then:
-```sh
-git remote add origin YOUR_PRIVATE_REPO_URL
-git push -u origin main
-```
-Use Git Credential Manager or your existing GitHub sign-in rather than pasting
-a token into a command or conversation.
+- Never commit `.env` files, API keys, or private demo access codes.
+- Live generation has access checks and a per-process accepted-job limit; process restarts can reset that limit. It is **not** a durable financial spending cap.
+- Benchmark improvements reflect the stated tasks and trials, not all model workloads.
+- Publicly accessible pages and deterministic tests do not imply unrestricted live inference access.
 
-Official references:
-- https://dev.meta.ai/docs/muse-code/extending
-- https://dev.meta.ai/docs/muse-code/configuration
-- https://ts.sdk.modelcontextprotocol.io/v2/get-started/first-server
+## Project status
+
+Hackathon MVP. The website, benchmark evidence, and research pages showcase the implemented capabilities; further validation, production-grade persistence, and broader workload testing remain future work.

@@ -1,0 +1,30 @@
+{
+  "id": "registry-loader",
+  "version": "0.1.0",
+  "sourcePath": "packages/registry/src/loader.ts",
+  "dependencies": [],
+  "capabilities": [
+    "registry-loading",
+    "manifest-filtering"
+  ],
+  "invariants": [
+    "Only *.json files in the target directory are read, in sorted filename order.",
+    "Every file must parse as JSON and satisfy the strict manifest schema; any failure aborts the load with RegistryLoadError naming all bad files.",
+    "Unknown manifest fields are rejected (strict schema).",
+    "Filtering uses exact equality for version and stack; capabilities and dependencies use AND semantics with exact matches.",
+    "Output order is always (id, version) ascending, independent of read order."
+  ],
+  "runtime": {
+    "stack": "node24+sqlite",
+    "node": ">=24",
+    "dependencies": {
+      "zod": "4.6.7"
+    }
+  },
+  "verification": {
+    "status": "verified",
+    "testCommand": "cd packages/registry && npm run check",
+    "evidence": "registry-data/evidence/registry-loader-0.1.0.json",
+    "sourceHash": "e9d1978b676090d3c90939eaab0651fc8d3d3b4c2b2ed58e2ddc02e4fc9aaa86"
+  }
+}

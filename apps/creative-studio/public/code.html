@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#121212"/>
+<meta name="description" content="SilkWeb Code: a Git-backed, verified component registry for coding agents, with contracts, executable evidence, and a reproduction guide."/>
+<title>SilkWeb Code: Verified component registry</title>
+<link rel="stylesheet" href="/presentation.css"/>
+</head>
+<body class="code-theme">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header"><div class="wrap">
+<a class="brand" href="/" aria-label="SilkWeb home"><svg class="brand-star" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 0 37.2 24.8 51 13 39.2 27 64 32 39.2 37 51 51 37.2 39.2 32 64 26.8 39.2 13 51 24.8 37 0 32 24.8 27 13 13 26.8 24.8Z"/></svg><span>SilkWeb</span></a>
+<button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+<nav class="site-nav" id="site-nav" aria-label="Main navigation">
+<a href="/">Home</a>
+<div class="nav-dropdown"><button class="nav-dropdown-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="products-menu" aria-current="true">Products <span class="chev" aria-hidden="true">&#9662;</span></button>
+<div class="nav-dropdown-menu" id="products-menu" role="menu" hidden><a role="menuitem" href="/creative"><strong>SilkWeb Creative</strong><small>Image ads studio</small></a><a role="menuitem" href="/code" aria-current="page"><strong>SilkWeb Code</strong><small>Verified component registry</small></a><a role="menuitem" href="/data"><strong>SilkWeb Data</strong><small>Trusted business rules</small></a><a role="menuitem" href="/agents"><strong>SilkWeb Agents</strong><small>Approved procedures</small></a></div></div>
+<a href="/evidence">Evidence</a><a href="/research">Research</a>
+</nav></div></header>
+<main id="main">
+<section class="hero"><div class="wrap">
+<h1 style="max-width:14em">SilkWeb Code: a registry a coding agent can <span class="accent">trust</span>.</h1>
+<p class="hero-lede">Components are stored with contracts and executable evidence. An agent searches, inspects, and retrieves. It never has to take a label's word for it, because verification is recomputed against the live checkout on every call.</p>
+<div class="hero-actions"><a class="btn btn-code" href="#reproduce">Reproduce it locally</a><a class="btn btn-outline-light" href="/evidence">See verification evidence</a></div>
+<div class="terminal reveal" role="img" aria-label="Terminal example of registry search"><div class="terminal-bar"><span></span><span></span><span></span><em>silkweb registry</em></div><pre><code><span class="t-prompt">$</span> silkweb search --capabilities booking-validation --stack node24+sqlite
+<span class="t-ok">booking-validation@0.1.0 verified</span> evidence recomputed
+<span class="t-prompt">$</span> silkweb get-source booking-validation@0.1.0
+<span class="t-dim"># bounded verified source - no reconstruction</span></code></pre></div></div></section>
+<section class="section"><div class="wrap">
+<div class="section-head reveal"><span class="sec-index">01: Registered components</span><h2>The booking kernel, at v0.1.0.</h2><p>Four components on the <span style="font-family:var(--mono);font-size:15px">node24+sqlite</span> stack. Each declares invariants that its evidence must actually cover, so a component never passes on tests written for another.</p></div>
+<div style="overflow-x:auto"><table class="ev reveal">
+<thead><tr><th scope="col">Component</th><th scope="col">Capabilities</th><th scope="col">What it guarantees</th><th scope="col">Status</th></tr></thead>
+<tbody>
+<tr><td>booking-schema@0.1.0</td><td>booking-schema, sqlite-ddl</td><td>Staff/services/appointments tables; one active appointment per staff slot, enforced by a partial unique index and canonical-timestamp CHECK constraints.</td><td><span class="badge badge-verified">Verified</span></td></tr>
+<tr><td>booking-validation@0.1.0</td><td>booking-validation, slot-constraints</td><td>Positive-integer IDs and strict canonical UTC timestamps on 30-minute boundaries; rephrased duplicate instants are rejected.</td><td><span class="badge badge-verified">Verified</span></td></tr>
+<tr><td>booking-slot-guard@0.1.0</td><td>booking-creation, slot-guard, booking-cancellation</td><td>Booking creation runs in a BEGIN IMMEDIATE transaction and rolls back on any failure; cancellation frees the slot for rebooking.</td><td><span class="badge badge-verified">Verified</span></td></tr>
+<tr><td>registry-loader@0.1.0</td><td>registry-loading, manifest-filtering</td><td>Deterministic manifest loading: sorted reads, strict schema, exact-match filtering, (id, version) ordered output.</td><td><span class="badge badge-verified">Verified</span></td></tr>
+</tbody></table></div>
+</div></section>
+<section class="section section--wash"><div class="wrap">
+<div class="section-head reveal"><span class="sec-index">02: How verification works</span><h2>A label is never enough.</h2><p>The fingerprint is a deterministic SHA-256 over manifest metadata, the transitive source closure, covering tests, the lockfile, and the build. Evidence records the exact allowlisted command, the tests it actually executed, the Node/SQLite versions, the exit code, and byte-identical build artifacts.</p></div>
+<div class="arch reveal" role="img" aria-label="Verification flow: fingerprint, run, evidence, validate">
+<div class="arch-step"><span class="step-k">Fingerprint</span><h3>Bind the artifact</h3><p>Sources, tests, lockfile, environment, and build config are hashed together. Change anything and the hash changes.</p></div>
+<div class="arch-step"><span class="step-k">Run</span><h3>Execute, don't assert</h3><p>Only fixed argv allowlists run. Never a manifest-supplied command, never through a shell. A fresh build precedes the tests.</p></div>
+<div class="arch-step"><span class="step-k">Evidence</span><h3>Record what happened</h3><p>Exit code, executed test files, scope, and limitations are written as a JSON record. Failures are preserved as failures.</p></div>
+<div class="arch-step"><span class="step-k">Validate</span><h3>Fail closed</h3><p>Every retrieval recomputes the fingerprint. Missing, stale, or mismatched evidence is rejected with a named code.</p></div>
+</div>
+<div class="verify-strip reveal"><div><strong>4</strong><span>components v0.1.0</span></div><div><strong>SHA-256</strong><span>fingerprint evidence</span></div><div><strong>Fail-closed</strong><span>stale never served</span></div><div><strong>Exit 0</strong><span>recorded per component</span></div></div><div class="cols-2" style="margin-top:22px">
+<div class="callout reveal"><p><strong>Known limitation, stated plainly:</strong> collision checks use sequential same-process connections to a temporary file database. No genuine simultaneous-race coverage is claimed.</p></div>
+<div class="callout reveal"><p><strong>Runtime note:</strong> the registry pins the stable subset of Node's built-in <span style="font-family:var(--mono);font-size:13px">node:sqlite</span>, which upstream still flags experimental. Evidence binds the observed runtime and must be refreshed after any change.</p></div>
+</div>
+</div></section>
+<section class="section" id="reproduce"><div class="wrap split">
+<div class="reveal">
+<span class="sec-index">03: Reproduction guide</span>
+<h2>Run the whole loop yourself.</h2>
+<p class="body-copy">No secrets, no network, no paid calls. Build the registry, run its suites, then build the MCP server. The librarian tools load the compiled registry and refuse to serve if it is missing or stale.</p>
+<ul class="check-list">
+<li><a href="/creative">Creative Studio</a> runs from the same Node server as this page</li>
+<li>Manifests: <span style="font-family:var(--mono);font-size:14px">registry-data/manifests/</span> · Evidence: <span style="font-family:var(--mono);font-size:14px">registry-data/evidence/</span></li>
+<li>MCP tools (search, inspect, get source, code and data lookup) are read-only; the server executes nothing and rewrites no evidence</li>
+</ul>
+</div>
+<div class="mono-box reveal"><span class="c"># 1 · Registry: build + verify</span><br/>cd packages/registry<br/>npm install<br/>npm run check<br/><br/><span class="c"># 2 · MCP librarian server</span><br/>cd apps/mcp-server<br/>npm run check<br/><br/><span class="c"># Tools exposed over stdio</span><br/><span class="k">ping</span> → { ok: true, service: "silkweb" }<br/><span class="k">search_verified_components</span><br/><span class="k">inspect_verified_component</span><br/><span class="k">get_verified_component_source</span></div>
+</div></section>
+<section class="section" style="padding-top:0"><div class="wrap">
+<div class="cta reveal"><div><h2>Reuse is only real if it's checkable.</h2><p>Audit the evidence records yourself: every hash, test file, and limitation is in the open.</p></div>
+<div class="cta-actions"><a class="btn btn-primary" href="/evidence">Explore evidence</a><a class="btn btn-light" href="/creative">Try Creative Studio</a><a class="btn btn-outline-light" href="/research">Read the research</a></div></div>
+</div></section>
+</main>
+<footer class="site-footer"><div class="wrap"><div><a class="brand" href="/" aria-label="SilkWeb home"><svg class="brand-star" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 0 37.2 24.8 51 13 39.2 27 64 32 39.2 37 51 51 37.2 39.2 32 64 26.8 39.2 13 51 24.8 37 0 32 24.8 27 13 13 26.8 24.8Z"/></svg><span>SilkWeb</span></a><p class="footer-note" style="margin-top:12px">One foundation. Many applications. Real experiments. Claims are limited to verified evidence; unmeasured results are marked unavailable.</p><p class="built-with">Built with <strong>Muse Code</strong></p></div><nav class="footer-links" aria-label="Footer navigation"><a href="/">Home</a><a href="/creative">SilkWeb Creative</a><a href="/code">SilkWeb Code</a><a href="/data">SilkWeb Data</a><a href="/agents">Agents</a><a href="/evidence">Evidence</a><a href="/research">Research</a></nav></div></footer>
+<script src="/presentation.js" defer></script>
+</body></html>

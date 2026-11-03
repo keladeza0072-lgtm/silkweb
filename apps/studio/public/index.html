@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Silk Web Studio — Contract Approval</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">Silk Web</span>
+    <span class="brand-sub">Studio · local contract-approval prototype</span>
+  </div>
+  <nav class="steps" aria-label="Studio stages">
+    <button class="step is-active" data-screen="requirements" type="button"><span class="step-num">1</span> Requirements</button>
+    <button class="step" data-screen="contract" type="button"><span class="step-num">2</span> Contract</button>
+    <button class="step" data-screen="verification" type="button"><span class="step-num">3</span> Verification</button>
+  </nav>
+</header>
+
+<main class="layout">
+  <section id="screen-requirements" class="screen is-visible" aria-label="Requirements">
+    <h1>What do you need to build?</h1>
+    <p class="lede">Describe the requirement, pick capability tags, and search the certified registry. Matching is deterministic — exact capability tags, not AI search.</p>
+
+    <label class="field-label" for="requirement">Development requirement</label>
+    <textarea id="requirement" rows="3"></textarea>
+    <div class="row">
+      <button id="sample-btn" class="btn btn-ghost" type="button">Load sample requirement</button>
+    </div>
+
+    <span class="field-label">Capability tags</span>
+    <div id="capability-pills" class="pills" role="group" aria-label="Capability tags"></div>
+
+    <div class="row">
+      <input id="query" class="text-input" type="text" placeholder="Optional text filter (substring over id, capabilities, invariants)" aria-label="Text filter">
+      <button id="search-btn" class="btn btn-primary" type="button">Find certified components</button>
+    </div>
+    <p class="note" id="deterministic-note"></p>
+
+    <div id="results" class="cards" aria-live="polite"></div>
+  </section>
+
+  <section id="screen-contract" class="screen" aria-label="Contract">
+    <h1>Review the contract</h1>
+    <p class="lede">The exact certified contract for the selected component. Approving records your review — it does not retroactively gate the existing booking app.</p>
+    <div id="contract-picker" class="row"></div>
+    <div id="contract" aria-live="polite"></div>
+  </section>
+
+  <section id="screen-verification" class="screen" aria-label="Verification">
+    <h1>Verify the evidence</h1>
+    <p class="lede">Live evidence and the current trust-gate verdict — never a saved “verified” label on its own.</p>
+    <div id="verification-picker" class="row"></div>
+    <div id="verification" aria-live="polite"></div>
+
+    <div class="demo-box">
+      <h2>Booking demo <span class="tag">separate app</span></h2>
+      <p>The barbershop booking app is a separate running demo, not part of Studio.</p>
+      <p><a id="booking-link" href="http://127.0.0.1:3000">Open the booking demo at http://127.0.0.1:3000</a></p>
+      <p id="booking-status" class="note">Booking demo status: not checked yet.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <span>Local prototype only — no authentication. Studio serves only components that declare “verified” <em>and</em> pass current validation.</span>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

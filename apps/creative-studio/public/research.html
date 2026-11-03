@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#101B36"/>
+<meta name="description" content="Constructive Meta Muse model feedback from building SilkWeb: strengths observed, integration considerations, and open questions on latency, fidelity, and reuse accounting."/>
+<title>Research: Meta model feedback from SilkWeb</title>
+<link rel="stylesheet" href="/presentation.css"/>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header"><div class="wrap">
+<a class="brand" href="/" aria-label="SilkWeb home"><svg class="brand-star" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 0 37.2 24.8 51 13 39.2 27 64 32 39.2 37 51 51 37.2 39.2 32 64 26.8 39.2 13 51 24.8 37 0 32 24.8 27 13 13 26.8 24.8Z"/></svg><span>SilkWeb</span></a>
+<button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+<nav class="site-nav" id="site-nav" aria-label="Main navigation">
+<a href="/">Home</a>
+<div class="nav-dropdown"><button class="nav-dropdown-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="products-menu">Products <span class="chev" aria-hidden="true">&#9662;</span></button>
+<div class="nav-dropdown-menu" id="products-menu" role="menu" hidden><a role="menuitem" href="/creative"><strong>SilkWeb Creative</strong><small>Image ads studio</small></a><a role="menuitem" href="/code"><strong>SilkWeb Code</strong><small>Verified component registry</small></a><a role="menuitem" href="/data"><strong>SilkWeb Data</strong><small>Trusted business rules</small></a><a role="menuitem" href="/agents"><strong>SilkWeb Agents</strong><small>Approved procedures</small></a></div></div>
+<a href="/evidence">Evidence</a><a href="/research" aria-current="page">Research</a>
+</nav></div></header>
+<main id="main">
+<section class="hero"><div class="wrap">
+<h1 style="max-width:15em">What I learned building SilkWeb <span class="accent">with Muse</span></h1>
+<p class="hero-lede">An honest research narrative: strengths I observed, integration considerations, and open questions. Throughout, I distinguish my own implementation errors from model behaviour, because conflating the two helps no one.</p>
+</div></section>
+<section class="section roles-section"><div class="wrap">
+<div class="section-head reveal"><span class="sec-index">At a glance: Model roles</span><h2>Who does what in SilkWeb, as I used it.</h2><p>This is the division of labour in this project, not a general claim about what these models can do elsewhere.</p></div>
+<figure class="roles-figure reveal"><div class="roles-row">
+<article class="role-node"><span class="role-k">Muse Spark 1.3</span><h3>Coding / creative planning</h3><p>Creative strategy, advertising copy, and coding reasoning, arriving in schema-shaped structures I could validate before anything rendered.</p></article>
+<article class="role-node"><span class="role-k">Muse Image 1.0</span><h3>Visual generation</h3><p>The photographic image generation behind the live experiment: three advertisements returned at the required 1080 × 1350 format.</p></article>
+<article class="role-node"><span class="role-k">Muse Code / Wonder</span><h3>Implementation work</h3><p>The implementation work of building and iterating on SilkWeb itself, under my direction and review.</p></article>
+</div><div class="role-band"><span class="role-k role-k--light">SilkWeb</span><strong>Contracts, validation and finishing</strong><p>My layer around the models: strict contracts on every call, validation before rendering, honest labelling of live vs. draft, and finishing. SilkWeb does not generate the intelligence. It makes it checkable and reusable.</p></div>
+<figcaption>Figure 1: Muse model roles in SilkWeb (this project). Arrows read top to bottom: model outputs flow into SilkWeb contracts, validation, and finishing before anything reaches a user.</figcaption></figure>
+</div></section>
+<section class="section"><div class="wrap">
+<div class="section-head reveal"><span class="sec-index">01: What I observed</span><h2>Structured planning is the strong suit.</h2></div>
+<div class="cols-2">
+<article class="card reveal"><span class="tag">Muse Spark 1.3</span><h3>Plans that survive validation</h3><p>Creative strategy and advertising copy arrived in schema-shaped structures that passed strict contract validation: distinct angles per audience temperature, usable headlines and CTAs, and visual prompts with composition, lighting, and negative constraints already separated. That structure is what lets SilkWeb validate before it renders.</p></article>
+<article class="card reveal"><span class="tag">Muse Image 1.0</span><h3>Photographic range</h3><p>The live experiment returned three advertisements in genuinely different photographic environments at the required 1080 × 1350 format. Format and count contracts held end-to-end (HTTP 200, three valid ads).</p></article>
+</div>
+</div></section>
+<section class="section section--wash"><div class="wrap">
+<div class="section-head reveal"><span class="sec-index">02: My integration responsibilities</span><h2>Where the integration (ours) carries the risk.</h2><p>These are primarily SilkWeb-side responsibilities. Naming them as model problems would be inaccurate.</p></div>
+<div class="cols-3">
+<article class="card reveal"><h3>Contract-first design</h3><p>Strict schemas on both sides of every model call (brief validation in, concept validation out) caught malformed output before it reached rendering. The discipline is mine to keep; the model's structured-output reliability is what makes it practical.</p></article>
+<article class="card reveal"><h3>Honest labelling</h3><p>Live and local-draft results travel different routes with different banners, and drafts are never presented as Meta-generated. When the provider is unconfigured, the studio says so (explicit 503) instead of silently substituting output.</p></article>
+<article class="card reveal"><h3>No silent retries</h3><p>Partial live results are reported as partial, with failed generations counted and not retried automatically. That is an integration choice. It keeps cost and behaviour predictable, at the price of occasional incomplete sets.</p></article>
+</div>
+</div></section>
+<section class="section journey-section"><div class="wrap">
+<div class="section-head reveal"><span class="sec-index">Interlude: Engineering journey</span><h2>How this was built, in the order it happened.</h2><p>Each stage produced the evidence the next one relies on. Nothing here is back-filled.</p></div>
+<figure class="journey-figure reveal"><ol class="journey">
+<li><span class="journey-num">1</span><div><h3>Registry and verification</h3><p>I built the verified component registry first: evidence records binding source, tests, and build hashes, rechecked on every read and failing closed when stale.</p></div></li>
+<li><span class="journey-num">2</span><div><h3>Controlled benchmarking</h3><p>Then the locked B/C protocol (same spec, same model, registry on vs. off). RES-002 is its one paired trial so far, reported on <a href="/evidence">Evidence</a>.</p></div></li>
+<li><span class="journey-num">3</span><div><h3>Creative generation pipeline</h3><p>Next, the Creative pipeline: contract-first planning and rendering, with live and local-draft results kept on separate, honestly labelled routes.</p></div></li>
+<li><span class="journey-num">4</span><div><h3>Live three-ad experiment</h3><p>One live run through that pipeline: HTTP 200, three valid 1080 × 1350 ads, 102.53 s end-to-end. A single observation (n = 1), which proves the path works and nothing more.</p></div></li>
+<li><span class="journey-num">5</span><div><h3>Website presentation</h3><p>Finally this site: every claim tied to the evidence above, and anything unmeasured marked unavailable rather than estimated.</p></div></li>
+</ol><figcaption>Figure 2: My engineering journey on SilkWeb, from registry and verification to this presentation. I do not claim SAM was used in the successful final live run.</figcaption></figure>
+</div></section>
+<section class="section"><div class="wrap">
+<div class="section-head reveal"><span class="sec-index">03: Hard lessons, numbered</span><h2>What building with Muse taught me, stated plainly.</h2><p>Eight notes from the development journey. Each one names the challenge, the development impact, and the recommendation. The tag on each note says whether I read it as a model limitation or as our own integration mistake.</p></div>
+<figure class="journey-figure reveal"><ol class="journey">
+<li><span class="journey-num">1</span><div><h3>Structured output holds until the schema gets ambitious <span class="tag">Mostly our integration</span></h3><p><strong>Challenge:</strong> Muse Spark returned ad copy and coding plans that passed strict contract validation, but larger nested schemas produced the malformed outputs our own tests reject.</p><p><strong>Development impact:</strong> model-facing schemas had to stay small and flat, with extra validation and coercion code at the boundary.</p><p><strong>Recommendation:</strong> keep every model-facing schema minimal, validate before anything renders, and treat each rejected output as a schema design signal, not a model failure.</p></div></li>
+<li><span class="journey-num">2</span><div><h3>Image generation follows art direction, not product truth <span class="tag">Model limitation</span></h3><p><strong>Challenge:</strong> Muse Image returned three genuinely different photographic ads, but labels and packaging only resembled the reference product instead of matching it.</p><p><strong>Development impact:</strong> no commerce delivery claim is possible from resemblance alone, so the live run stays labeled as proof of plumbing.</p><p><strong>Recommendation:</strong> define a fidelity check (human rubric or perceptual comparison against the reference) and apply it to every live output before any delivery claim.</p></div></li>
+<li><span class="journey-num">3</span><div><h3>One live run proves plumbing, not performance <span class="tag">Our integration</span></h3><p><strong>Challenge:</strong> the single 102.53 second observation has no staged timing, so nobody can say whether planning, image generation, or rendering dominated.</p><p><strong>Development impact:</strong> latency cannot be promised, compared, or optimized with any confidence.</p><p><strong>Recommendation:</strong> instrument each stage (planning, per-image generation, rendering) across repeated runs and report distributions, never a single number.</p></div></li>
+<li><span class="journey-num">4</span><div><h3>Token reductions do not convert themselves into dollars <span class="tag">Our integration</span></h3><p><strong>Challenge:</strong> AGENTS-002 and RES-002 measured token deltas without provider-side cost accounting, and list prices change.</p><p><strong>Development impact:</strong> multiplying saved tokens by a price list would manufacture a saving we never measured, so no dollar figure is claimed.</p><p><strong>Recommendation:</strong> join provider usage reports to our own call ledger before any cost claim, and keep illustrative math labeled with its assumptions, as on <a href="/agents">Agents</a>.</p></div></li>
+<li><span class="journey-num">5</span><div><h3>Retrieval is only honest with evidence checks on every read <span class="tag">Our integration</span></h3><p><strong>Challenge:</strong> a registry that serves cached entries without rechecking would quietly go stale the moment sources, tests, or runtimes moved.</p><p><strong>Development impact:</strong> every MCP read recomputes fingerprints over source, tests, lockfile, and build, and stale evidence fails closed with a named code. The MCP tools (search, inspect, get source, code and data lookup, procedure select) stay read-only over stdio: they return verified source and guidance data, execute nothing, and modify no files.</p><p><strong>Recommendation:</strong> never serve what you have not just rechecked, and never let a retrieval path execute or write.</p></div></li>
+<li><span class="journey-num">6</span><div><h3>Procedure selection pressure is still untested <span class="tag">Methodology, not a finding</span></h3><p><strong>Challenge:</strong> AGENTS-002 Stage 1 gives each scenario exactly one approved matching procedure, so disambiguation between close candidates never happens.</p><p><strong>Development impact:</strong> the selector results say nothing about hard choices, and must not be read that way.</p><p><strong>Recommendation:</strong> freeze ambiguous scenarios (two plausible approved procedures, one correct) before claiming the selector handles real selection pressure.</p></div></li>
+<li><span class="journey-num">7</span><div><h3>Silent retries and substitutions hide cost and behavior <span class="tag">Our integration</span></h3><p><strong>Challenge:</strong> partial live results and an unconfigured provider tempted the classic shortcuts: retry quietly, or substitute a draft and call it live.</p><p><strong>Development impact:</strong> the studio instead reports partial results as partial, counts failed generations without retrying, and answers unconfigured providers with an explicit 503.</p><p><strong>Recommendation:</strong> keep the fail-closed behavior predictable even when it produces visibly incomplete sets, and label live and draft routes so they can never be confused.</p></div></li>
+<li><span class="journey-num">8</span><div><h3>Benchmark scope creep is a constant temptation <span class="tag">Our integration</span></h3><p><strong>Challenge:</strong> single paired trials, local fixtures, and preselected contracts all invite generalization beyond what was run.</p><p><strong>Development impact:</strong> every claim on this site carries its scope (one pair, five fixtures, recorded conditions), and unmeasured results show as unavailable instead of estimates.</p><p><strong>Recommendation:</strong> lock comparison protocols before results exist, publish limitations beside the numbers, and prefer an honest unavailable badge over any extrapolation.</p></div></li>
+</ol><figcaption>Figure 3: Eight numbered lessons. Tags marked model limitation describe model behavior; tags marked our integration or methodology describe choices and limits on our side.</figcaption></figure>
+</div></section>
+<section class="section"><div class="wrap">
+<div class="section-head reveal"><span class="sec-index">04: My open questions</span><h2>What I would measure next.</h2><p>Each question is stated with what would answer it. None is currently claimed as a finding.</p></div>
+<figure class="reasoning-figure reveal"><figcaption class="reasoning-title">How I keep three different things apart</figcaption><div class="reasoning-grid">
+<div class="reasoning-col reasoning-col--observed"><h3>Observed model behaviour</h3><p class="reasoning-vs">What the models did, in §01</p><ul><li>Structured planning and copy that passed strict contract validation.</li><li>Three live ads in different photographic environments, at the required format.</li></ul></div>
+<div class="reasoning-sep" aria-hidden="true">vs</div>
+<div class="reasoning-col reasoning-col--mine"><h3>Integration responsibility</h3><p class="reasoning-vs">What is mine to get right, in §02</p><ul><li>Contract-first design on both sides of every model call.</li><li>Honest labelling of live vs. draft; no silent retries or substitutions.</li></ul></div>
+<div class="reasoning-sep" aria-hidden="true">vs</div>
+<div class="reasoning-col reasoning-col--open"><h3>Open questions</h3><p class="reasoning-vs">What I have not answered yet, in §03</p><ul><li>Where live generation time actually goes, stage by stage.</li><li>Whether product-reference fidelity can be checked, not just eyeballed.</li><li>Whether verified reuse measurably beats reconstruction (the B/C question).</li></ul></div>
+</div><p class="reasoning-note">Reading rule: an observation is not a responsibility, and neither is a finding. I only promote a question to a claim when a measurement in §03's right-hand column answers it.</p></figure>
+<div style="overflow-x:auto"><table class="ev reveal">
+<thead><tr><th scope="col">Question</th><th scope="col">Why it matters</th><th scope="col">What would answer it</th></tr></thead>
+<tbody>
+<tr><td>Creative generation latency &amp; observability</td><td>One live experiment took 102.53 s end-to-end (n=1). Without staged timing, no one can say where that time goes.</td><td>Per-stage instrumentation (planning, per-image generation, rendering) across repeated runs, reported as distributions, not a single number.</td></tr>
+<tr><td>Product-reference fidelity</td><td>Generated imagery visually resembled the reference product, but labels and packaging were not faithfully preserved. For commerce, “resembles” is not “matches.”</td><td>A defined fidelity check (human rubric or perceptual comparison against the reference), applied to every live output before delivery claims are made.</td></tr>
+<tr><td>Coding context &amp; reuse questions</td><td>SilkWeb's thesis is that verified reuse beats reconstruction. Whether retrieved context is used as intended, and what it displaces, is an empirical question.</td><td>The locked B/C benchmark (see <a href="/evidence">Evidence</a>): same spec, same model, registry on vs. off, with trials, repairs, elapsed time, and spend all counted.</td></tr>
+<tr><td>Cache accounting</td><td>Reuse economics depend on knowing what was cached, hit, or recomputed, across both the coding librarian and creative planning paths.</td><td>Provider-side cache/usage reporting joined to SilkWeb's own call ledger, so savings claims (if any) rest on accounting, not inference.</td></tr>
+</tbody></table></div>
+<div class="callout reveal" style="margin-top:22px"><p><strong>My standing rule:</strong> a failure in my validation, rendering, or labelling is reported as a SilkWeb bug. A model limitation is claimed only when the same input, correctly integrated, reproduces it, and even then, with the reproduction attached.</p></div>
+</div></section>
+<section class="section" style="padding-top:0"><div class="wrap">
+<div class="cta reveal"><div><h2>Feedback is better with receipts.</h2><p>Every observation above traces to the evidence page, the registry, or the working studio.</p></div>
+<div class="cta-actions"><a class="btn btn-primary" href="/evidence">Explore evidence</a><a class="btn btn-light" href="/creative">Try Creative Studio</a><a class="btn btn-outline-light" href="/code">Inspect SilkWeb Code</a></div></div>
+</div></section>
+</main>
+<footer class="site-footer"><div class="wrap"><div><a class="brand" href="/" aria-label="SilkWeb home"><svg class="brand-star" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 0 37.2 24.8 51 13 39.2 27 64 32 39.2 37 51 51 37.2 39.2 32 64 26.8 39.2 13 51 24.8 37 0 32 24.8 27 13 13 26.8 24.8Z"/></svg><span>SilkWeb</span></a><p class="footer-note" style="margin-top:12px">One foundation. Many applications. Real experiments. Claims are limited to verified evidence; unmeasured results are marked unavailable.</p><p class="built-with">Built with <strong>Muse Code</strong></p></div><nav class="footer-links" aria-label="Footer navigation"><a href="/">Home</a><a href="/creative">SilkWeb Creative</a><a href="/code">SilkWeb Code</a><a href="/data">SilkWeb Data</a><a href="/agents">Agents</a><a href="/evidence">Evidence</a><a href="/research">Research</a></nav></div></footer>
+<script src="/presentation.js" defer></script>
+</body></html>
