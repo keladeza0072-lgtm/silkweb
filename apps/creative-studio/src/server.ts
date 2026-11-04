@@ -1,5 +1,4 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -442,8 +441,6 @@ export async function conceptsGenerateOutcomeLive(
   };
 }
 
-let museDiagnosticUsed = false;
-
 export async function handleApi(
   req: IncomingMessage,
   res: ServerResponse,
@@ -454,110 +451,6 @@ export async function handleApi(
 
   if (pathname === '/api/health' && method === 'GET') {
     sendJson(res, 200, healthPayload());
-    return true;
-  }
-
-  // Temporary credential equality check. No inference and no secret material returned.
-  if (pathname === '/api/diagnostics/key-fingerprint' && method === 'POST') {
-    if (!requireDemoAccess(req, res)) return true;
-    const key = process.env.MODEL_API_KEY ?? process.env.SILKWEB_MUSE_API_KEY ?? '';
-    if (!key) {
-      sendJson(res, 503, { ok: false, error: 'MISSING_API_KEY' });
-      return true;
-    }
-    const fingerprint = createHash('sha256').update(key, 'utf8').digest('hex').slice(0, 16);
-    sendJson(res, 200, { ok: true, fingerprint, algorithm: 'sha256-first-16-hex', source: process.env.MODEL_API_KEY !== undefined ? 'MODEL_API_KEY' : 'SILKWEB_MUSE_API_KEY' });
-    return true;
-  }
-
-  // Temporary access-controlled model catalog check; no inference and no raw upstream payload.
-  if (pathname === '/api/diagnostics/models' && method === 'POST') {
-    if (!requireDemoAccess(req, res)) return true;
-    const key = process.env.MODEL_API_KEY ?? process.env.SILKWEB_MUSE_API_KEY ?? '';
-    if (!key) {
-      sendJson(res, 503, { ok: false, error: 'MISSING_API_KEY' });
-      return true;
-    }
-    try {
-      const response = await fetch('https://api.meta.ai/v1/models', {
-        headers: { authorization: `Bearer ${key}` },
-        signal: AbortSignal.timeout(20000),
-      });
-      const data: unknown = await response.json().catch(() => null);
-      const topLevelType = Array.isArray(data) ? 'array' : data === null ? 'null' : typeof data;
-      const topLevelKeys = data && typeof data === 'object' && !Array.isArray(data)
-        ? Object.keys(data).slice(0, 20)
-        : [];
-      const arrays: Array<{ path: string; length: number }> = [];
-      let modelFound = false;
-      let scanned = 0;
-      const inspect = (value: unknown, path: string, depth: number): void => {
-        if (depth > 5 || scanned++ > 1000 || value === null) return;
-        if (typeof value === 'string') {
-          if (value === 'muse-spark-1.3') modelFound = true;
-          return;
-        }
-        if (Array.isArray(value)) {
-          if (arrays.length < 12) arrays.push({ path, length: value.length });
-          for (const entry of value.slice(0, 200)) inspect(entry, path + '[]', depth + 1);
-        } else if (typeof value === 'object') {
-          for (const [key, entry] of Object.entries(value).slice(0, 30)) {
-            inspect(entry, path ? path + '.' + key : key, depth + 1);
-          }
-        }
-      };
-      inspect(data, '', 0);
-      let errorCode: string | null = null;
-      if (data && typeof data === 'object' && !Array.isArray(data) && 'error' in data && data.error && typeof data.error === 'object' && 'code' in data.error && typeof data.error.code === 'string') {
-        errorCode = data.error.code.slice(0, 80);
-      }
-      sendJson(res, 200, { ok: response.ok, upstreamStatus: response.status, topLevelType, topLevelKeys, arrays, modelFound, errorCode });
-    } catch (error) {
-      sendJson(res, 200, { ok: false, errorCode: error instanceof Error && error.name === 'TimeoutError' ? 'TIMEOUT' : 'NETWORK_ERROR' });
-    }
-    return true;
-  }
-
-  // Temporary, access-controlled diagnostic: one minimal paid text request per process.
-  // Never return credentials, request headers, raw upstream bodies, or user input.
-  if (pathname === '/api/diagnostics/muse' && method === 'POST') {
-    if (!requireDemoAccess(req, res)) return true;
-    if (museDiagnosticUsed) {
-      sendJson(res, 429, { ok: false, error: 'DIAGNOSTIC_ALREADY_USED' });
-      return true;
-    }
-    museDiagnosticUsed = true;
-    const key = process.env.MODEL_API_KEY ?? process.env.SILKWEB_MUSE_API_KEY ?? '';
-    const model = 'muse-spark-1.3';
-    const endpoint = 'https://api.meta.ai/v1/responses';
-    if (!key) {
-      sendJson(res, 503, { ok: false, model, endpoint, error: 'MISSING_API_KEY' });
-      return true;
-    }
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
-        body: JSON.stringify({ model, input: 'Reply with exactly READY.' }),
-        signal: AbortSignal.timeout(20000),
-      });
-      let errorCode: string | null = null;
-      if (!response.ok) {
-        const body: unknown = await response.json().catch(() => null);
-        if (body && typeof body === 'object' && 'error' in body) {
-          const error = (body as { error?: unknown }).error;
-          if (error && typeof error === 'object' && 'code' in error) {
-            const code = (error as { code?: unknown }).code;
-            if (typeof code === 'string') errorCode = code.slice(0, 80);
-          }
-        }
-      } else {
-        await response.arrayBuffer();
-      }
-      sendJson(res, 200, { ok: response.ok, model, endpoint, upstreamStatus: response.status, errorCode });
-    } catch (error) {
-      sendJson(res, 200, { ok: false, model, endpoint, errorCode: error instanceof Error && error.name === 'TimeoutError' ? 'TIMEOUT' : 'NETWORK_ERROR' });
-    }
     return true;
   }
 
@@ -791,6 +684,15 @@ export async function handleApi(
 
 const server = createServer((req, res) => {
   const url = new URL(req.url ?? '/', 'http://127.0.0.1');
+  // Only legacy deployments configured with this origin redirect visitors.
+  // Keep local health checks reachable by the hosting platform.
+  const canonicalOrigin = process.env.SILKWEB_CANONICAL_ORIGIN;
+  if (canonicalOrigin && url.pathname !== '/api/health') {
+    const destination = new URL(url.pathname + url.search, canonicalOrigin);
+    res.writeHead(307, { location: destination.toString(), 'cache-control': 'no-store' });
+    res.end();
+    return;
+  }
   if ((req.method ?? 'GET').toUpperCase() === 'GET' && !url.pathname.startsWith('/api/')) {
     const staticFile = serveStatic(url.pathname);
     if (staticFile) {
