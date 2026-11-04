@@ -470,6 +470,39 @@ export async function handleApi(
     return true;
   }
 
+  // Temporary access-controlled model catalog check; no inference and no raw upstream payload.
+  if (pathname === '/api/diagnostics/models' && method === 'POST') {
+    if (!requireDemoAccess(req, res)) return true;
+    const key = process.env.MODEL_API_KEY ?? process.env.SILKWEB_MUSE_API_KEY ?? '';
+    if (!key) {
+      sendJson(res, 503, { ok: false, error: 'MISSING_API_KEY' });
+      return true;
+    }
+    try {
+      const response = await fetch('https://api.meta.ai/v1/models', {
+        headers: { authorization: `Bearer ${key}` },
+        signal: AbortSignal.timeout(20000),
+      });
+      const data: unknown = await response.json().catch(() => null);
+      let found = false;
+      let count: number | null = null;
+      let errorCode: string | null = null;
+      if (data && typeof data === 'object') {
+        if ('data' in data && Array.isArray(data.data)) {
+          count = data.data.length;
+          found = data.data.some((entry: unknown) => entry !== null && typeof entry === 'object' && 'id' in entry && entry.id === 'muse-spark-1.3');
+        }
+        if ('error' in data && data.error && typeof data.error === 'object' && 'code' in data.error && typeof data.error.code === 'string') {
+          errorCode = data.error.code.slice(0, 80);
+        }
+      }
+      sendJson(res, 200, { ok: response.ok, upstreamStatus: response.status, modelFound: found, modelCount: count, errorCode });
+    } catch (error) {
+      sendJson(res, 200, { ok: false, errorCode: error instanceof Error && error.name === 'TimeoutError' ? 'TIMEOUT' : 'NETWORK_ERROR' });
+    }
+    return true;
+  }
+
   // Temporary, access-controlled diagnostic: one minimal paid text request per process.
   // Never return credentials, request headers, raw upstream bodies, or user input.
   if (pathname === '/api/diagnostics/muse' && method === 'POST') {
