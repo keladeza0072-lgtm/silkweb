@@ -1,4 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -453,6 +454,19 @@ export async function handleApi(
 
   if (pathname === '/api/health' && method === 'GET') {
     sendJson(res, 200, healthPayload());
+    return true;
+  }
+
+  // Temporary credential equality check. No inference and no secret material returned.
+  if (pathname === '/api/diagnostics/key-fingerprint' && method === 'POST') {
+    if (!requireDemoAccess(req, res)) return true;
+    const key = process.env.MODEL_API_KEY ?? process.env.SILKWEB_MUSE_API_KEY ?? '';
+    if (!key) {
+      sendJson(res, 503, { ok: false, error: 'MISSING_API_KEY' });
+      return true;
+    }
+    const fingerprint = createHash('sha256').update(key, 'utf8').digest('hex').slice(0, 16);
+    sendJson(res, 200, { ok: true, fingerprint, algorithm: 'sha256-first-16-hex', source: process.env.MODEL_API_KEY !== undefined ? 'MODEL_API_KEY' : 'SILKWEB_MUSE_API_KEY' });
     return true;
   }
 
