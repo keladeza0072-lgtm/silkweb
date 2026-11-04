@@ -441,6 +441,8 @@ export async function conceptsGenerateOutcomeLive(
   };
 }
 
+let museDiagnosticUsed = false;
+
 export async function handleApi(
   req: IncomingMessage,
   res: ServerResponse,
@@ -451,6 +453,49 @@ export async function handleApi(
 
   if (pathname === '/api/health' && method === 'GET') {
     sendJson(res, 200, healthPayload());
+    return true;
+  }
+
+  // Temporary, access-controlled diagnostic: one minimal paid text request per process.
+  // Never return credentials, request headers, raw upstream bodies, or user input.
+  if (pathname === '/api/diagnostics/muse' && method === 'POST') {
+    if (!requireDemoAccess(req, res)) return true;
+    if (museDiagnosticUsed) {
+      sendJson(res, 429, { ok: false, error: 'DIAGNOSTIC_ALREADY_USED' });
+      return true;
+    }
+    museDiagnosticUsed = true;
+    const key = process.env.MODEL_API_KEY ?? process.env.SILKWEB_MUSE_API_KEY ?? '';
+    const model = 'muse-spark-1.3';
+    const endpoint = 'https://api.meta.ai/v1/responses';
+    if (!key) {
+      sendJson(res, 503, { ok: false, model, endpoint, error: 'MISSING_API_KEY' });
+      return true;
+    }
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ model, input: 'Reply with exactly READY.' }),
+        signal: AbortSignal.timeout(20000),
+      });
+      let errorCode: string | null = null;
+      if (!response.ok) {
+        const body: unknown = await response.json().catch(() => null);
+        if (body && typeof body === 'object' && 'error' in body) {
+          const error = (body as { error?: unknown }).error;
+          if (error && typeof error === 'object' && 'code' in error) {
+            const code = (error as { code?: unknown }).code;
+            if (typeof code === 'string') errorCode = code.slice(0, 80);
+          }
+        }
+      } else {
+        await response.arrayBuffer();
+      }
+      sendJson(res, 200, { ok: response.ok, model, endpoint, upstreamStatus: response.status, errorCode });
+    } catch (error) {
+      sendJson(res, 200, { ok: false, model, endpoint, errorCode: error instanceof Error && error.name === 'TimeoutError' ? 'TIMEOUT' : 'NETWORK_ERROR' });
+    }
     return true;
   }
 
