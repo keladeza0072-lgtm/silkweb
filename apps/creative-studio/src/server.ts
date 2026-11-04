@@ -484,19 +484,34 @@ export async function handleApi(
         signal: AbortSignal.timeout(20000),
       });
       const data: unknown = await response.json().catch(() => null);
-      let found = false;
-      let count: number | null = null;
+      const topLevelType = Array.isArray(data) ? 'array' : data === null ? 'null' : typeof data;
+      const topLevelKeys = data && typeof data === 'object' && !Array.isArray(data)
+        ? Object.keys(data).slice(0, 20)
+        : [];
+      const arrays: Array<{ path: string; length: number }> = [];
+      let modelFound = false;
+      let scanned = 0;
+      const inspect = (value: unknown, path: string, depth: number): void => {
+        if (depth > 5 || scanned++ > 1000 || value === null) return;
+        if (typeof value === 'string') {
+          if (value === 'muse-spark-1.3') modelFound = true;
+          return;
+        }
+        if (Array.isArray(value)) {
+          if (arrays.length < 12) arrays.push({ path, length: value.length });
+          for (const entry of value.slice(0, 200)) inspect(entry, path + '[]', depth + 1);
+        } else if (typeof value === 'object') {
+          for (const [key, entry] of Object.entries(value).slice(0, 30)) {
+            inspect(entry, path ? path + '.' + key : key, depth + 1);
+          }
+        }
+      };
+      inspect(data, '', 0);
       let errorCode: string | null = null;
-      if (data && typeof data === 'object') {
-        if ('data' in data && Array.isArray(data.data)) {
-          count = data.data.length;
-          found = data.data.some((entry: unknown) => entry !== null && typeof entry === 'object' && 'id' in entry && entry.id === 'muse-spark-1.3');
-        }
-        if ('error' in data && data.error && typeof data.error === 'object' && 'code' in data.error && typeof data.error.code === 'string') {
-          errorCode = data.error.code.slice(0, 80);
-        }
+      if (data && typeof data === 'object' && !Array.isArray(data) && 'error' in data && data.error && typeof data.error === 'object' && 'code' in data.error && typeof data.error.code === 'string') {
+        errorCode = data.error.code.slice(0, 80);
       }
-      sendJson(res, 200, { ok: response.ok, upstreamStatus: response.status, modelFound: found, modelCount: count, errorCode });
+      sendJson(res, 200, { ok: response.ok, upstreamStatus: response.status, topLevelType, topLevelKeys, arrays, modelFound, errorCode });
     } catch (error) {
       sendJson(res, 200, { ok: false, errorCode: error instanceof Error && error.name === 'TimeoutError' ? 'TIMEOUT' : 'NETWORK_ERROR' });
     }
